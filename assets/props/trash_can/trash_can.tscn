@@ -1,0 +1,98 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://core/interaction/trash_receiver.gd" id="1_receiver"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/trash_accept.wav" id="2_accept"]
+[ext_resource type="Material" path="res://assets/materials/bin_plastic.tres" id="3_plastic"]
+[ext_resource type="Material" path="res://assets/materials/neon_cyan.tres" id="4_cyan"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_side"]
+size = Vector3(0.36, 0.78, 0.02)
+
+[sub_resource type="BoxMesh" id="BoxMesh_side"]
+size = Vector3(0.36, 0.78, 0.02)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bottom"]
+size = Vector3(0.36, 0.02, 0.36)
+
+[sub_resource type="BoxMesh" id="BoxMesh_bottom"]
+size = Vector3(0.36, 0.02, 0.36)
+
+[sub_resource type="BoxMesh" id="BoxMesh_rim"]
+size = Vector3(0.37, 0.012, 0.012)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_inside"]
+size = Vector3(0.3, 0.6, 0.3)
+
+[node name="TrashCan" type="Node3D"]
+metadata/_doc = "Open-top bin, 0.36 x 0.36 x 0.78 m (tall so seated players reach the opening). Origin at the floor center. Consumes bodies in group 'trash' that come to rest inside."
+
+[node name="Body" type="StaticBody3D" parent="."]
+
+[node name="Bottom" type="CollisionShape3D" parent="Body"]
+position = Vector3(0, 0.01, 0)
+shape = SubResource("BoxShape3D_bottom")
+
+[node name="North" type="CollisionShape3D" parent="Body"]
+position = Vector3(0, 0.39, -0.17)
+shape = SubResource("BoxShape3D_side")
+
+[node name="South" type="CollisionShape3D" parent="Body"]
+position = Vector3(0, 0.39, 0.17)
+shape = SubResource("BoxShape3D_side")
+
+[node name="East" type="CollisionShape3D" parent="Body"]
+position = Vector3(0.17, 0.39, 0)
+rotation_degrees = Vector3(0, 90, 0)
+shape = SubResource("BoxShape3D_side")
+
+[node name="West" type="CollisionShape3D" parent="Body"]
+position = Vector3(-0.17, 0.39, 0)
+rotation_degrees = Vector3(0, 90, 0)
+shape = SubResource("BoxShape3D_side")
+
+[node name="BottomMesh" type="MeshInstance3D" parent="Body"]
+position = Vector3(0, 0.01, 0)
+mesh = SubResource("BoxMesh_bottom")
+surface_material_override/0 = ExtResource("3_plastic")
+
+[node name="NorthMesh" type="MeshInstance3D" parent="Body"]
+position = Vector3(0, 0.39, -0.17)
+mesh = SubResource("BoxMesh_side")
+surface_material_override/0 = ExtResource("3_plastic")
+
+[node name="SouthMesh" type="MeshInstance3D" parent="Body"]
+position = Vector3(0, 0.39, 0.17)
+mesh = SubResource("BoxMesh_side")
+surface_material_override/0 = ExtResource("3_plastic")
+
+[node name="EastMesh" type="MeshInstance3D" parent="Body"]
+position = Vector3(0.17, 0.39, 0)
+rotation_degrees = Vector3(0, 90, 0)
+mesh = SubResource("BoxMesh_side")
+surface_material_override/0 = ExtResource("3_plastic")
+
+[node name="WestMesh" type="MeshInstance3D" parent="Body"]
+position = Vector3(-0.17, 0.39, 0)
+rotation_degrees = Vector3(0, 90, 0)
+mesh = SubResource("BoxMesh_side")
+surface_material_override/0 = ExtResource("3_plastic")
+
+[node name="RimSouth" type="MeshInstance3D" parent="Body"]
+position = Vector3(0, 0.774, 0.181)
+mesh = SubResource("BoxMesh_rim")
+surface_material_override/0 = ExtResource("4_cyan")
+
+[node name="Receiver" type="Area3D" parent="." node_paths=PackedStringArray("accept_sound")]
+collision_layer = 0
+collision_mask = 4
+monitorable = false
+script = ExtResource("1_receiver")
+accept_sound = NodePath("AcceptSound")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Receiver"]
+position = Vector3(0, 0.32, 0)
+shape = SubResource("BoxShape3D_inside")
+
+[node name="AcceptSound" type="AudioStreamPlayer3D" parent="Receiver"]
+position = Vector3(0, 0.5, 0)
+stream = ExtResource("2_accept")

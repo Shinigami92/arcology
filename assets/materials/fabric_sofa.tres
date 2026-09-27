@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "fabric_sofa"
+albedo_color = Color(0.2, 0.23, 0.3, 1)
+metallic = 0.0
+roughness = 0.95
+

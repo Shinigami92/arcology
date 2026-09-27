@@ -1,0 +1,43 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://bfrlpbsqg5lqr" path="res://addons/godot-xr-tools/objects/pickable.gd" id="1_pickable"]
+[ext_resource type="Script" path="res://core/interaction/impact_sound.gd" id="2_impact"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/ball_bounce.wav" id="3_bounce"]
+[ext_resource type="Material" path="res://assets/materials/rubber_ball.tres" id="4_rubber"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_rubber"]
+friction = 0.8
+bounce = 0.75
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_ball"]
+radius = 0.1
+
+[sub_resource type="SphereMesh" id="SphereMesh_ball"]
+radius = 0.1
+height = 0.2
+radial_segments = 24
+rings = 12
+
+[node name="Ball" type="RigidBody3D"]
+collision_layer = 4
+collision_mask = 196615
+mass = 0.35
+physics_material_override = SubResource("PhysicsMaterial_rubber")
+continuous_cd = true
+angular_damp = 0.4
+freeze_mode = 1
+script = ExtResource("1_pickable")
+ranged_grab_method = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_ball")
+
+[node name="Mesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_ball")
+surface_material_override/0 = ExtResource("4_rubber")
+
+[node name="ImpactSound" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("3_bounce")
+unit_size = 3.0
+max_polyphony = 2
+script = ExtResource("2_impact")

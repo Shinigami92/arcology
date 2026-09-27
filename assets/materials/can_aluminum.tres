@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "can_aluminum"
+albedo_color = Color(0.02, 0.72, 0.78, 1)
+metallic = 0.9
+roughness = 0.25
+

@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "bin_plastic"
+albedo_color = Color(0.1, 0.11, 0.12, 1)
+metallic = 0.0
+roughness = 0.6
+

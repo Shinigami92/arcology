@@ -1,0 +1,59 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://bfrlpbsqg5lqr" path="res://addons/godot-xr-tools/objects/pickable.gd" id="1_pickable"]
+[ext_resource type="Script" path="res://core/interaction/impact_sound.gd" id="2_impact"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/can_hit.wav" id="3_hit"]
+[ext_resource type="Material" path="res://assets/materials/can_aluminum.tres" id="4_alu"]
+[ext_resource type="Material" path="res://assets/materials/brushed_steel.tres" id="5_steel"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_can"]
+friction = 0.5
+bounce = 0.2
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_can"]
+height = 0.122
+radius = 0.033
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_can"]
+top_radius = 0.033
+bottom_radius = 0.033
+height = 0.122
+radial_segments = 20
+rings = 1
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_lid"]
+top_radius = 0.029
+bottom_radius = 0.031
+height = 0.004
+radial_segments = 20
+rings = 1
+
+[node name="BeverageCan" type="RigidBody3D" groups=["trash"]]
+collision_layer = 4
+collision_mask = 196615
+mass = 0.05
+physics_material_override = SubResource("PhysicsMaterial_can")
+continuous_cd = true
+freeze_mode = 1
+script = ExtResource("1_pickable")
+ranged_grab_method = 2
+metadata/_doc = "Empty 330 ml can. Tagged 'trash' (group) so a TrashReceiver accepts it. Origin at the center."
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CylinderShape3D_can")
+
+[node name="Mesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("CylinderMesh_can")
+surface_material_override/0 = ExtResource("4_alu")
+
+[node name="Lid" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.063, 0)
+mesh = SubResource("CylinderMesh_lid")
+surface_material_override/0 = ExtResource("5_steel")
+
+[node name="ImpactSound" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("3_hit")
+unit_size = 2.0
+max_polyphony = 2
+script = ExtResource("2_impact")
+min_speed = 0.3

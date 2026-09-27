@@ -1,0 +1,76 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://zones/skyline/skyline_blocks.gd" id="1_blocks"]
+[ext_resource type="Shader" path="res://assets/shaders/skyline_facade.gdshader" id="2_facade"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_night"]
+sky_top_color = Color(0.02, 0.028, 0.055, 1)
+sky_horizon_color = Color(0.16, 0.09, 0.16, 1)
+sky_curve = 0.12
+sky_energy_multiplier = 1.0
+ground_bottom_color = Color(0.05, 0.035, 0.03, 1)
+ground_horizon_color = Color(0.16, 0.09, 0.16, 1)
+ground_curve = 0.05
+sun_angle_max = 0.0
+use_debanding = true
+
+[sub_resource type="Sky" id="Sky_night"]
+sky_material = SubResource("ProceduralSkyMaterial_night")
+process_mode = 1
+radiance_size = 1
+
+[sub_resource type="Environment" id="Environment_night"]
+background_mode = 2
+sky = SubResource("Sky_night")
+ambient_light_source = 3
+ambient_light_color = Color(0.3, 0.32, 0.45, 1)
+ambient_light_sky_contribution = 0.6
+ambient_light_energy = 0.4
+tonemap_mode = 4
+tonemap_white = 6.0
+glow_enabled = true
+glow_intensity = 0.6
+glow_bloom = 0.04
+glow_hdr_threshold = 1.2
+fog_enabled = true
+fog_mode = 0
+fog_light_color = Color(0.11, 0.1, 0.16, 1)
+fog_light_energy = 1.0
+fog_density = 0.0016
+fog_sky_affect = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_facade"]
+shader = ExtResource("2_facade")
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_street"]
+size = Vector2(4000, 4000)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_street"]
+albedo_color = Color(0.02, 0.02, 0.025, 1)
+emission_enabled = true
+emission = Color(1, 0.55, 0.2, 1)
+emission_energy_multiplier = 0.35
+
+[node name="Skyline" type="Node3D"]
+metadata/_doc = "World backdrop outside every zone: sky, environment, moonlight, far city. M2 world_state drives the environment; see docs/decisions.md D-008 for coordinates."
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_night")
+
+[node name="Moon" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-35, 150, 0)
+light_color = Color(0.6, 0.7, 1, 1)
+light_energy = 0.15
+shadow_enabled = false
+sky_mode = 1
+
+[node name="Blocks" type="MultiMeshInstance3D" parent="."]
+material_override = SubResource("ShaderMaterial_facade")
+cast_shadow = 0
+script = ExtResource("1_blocks")
+
+[node name="StreetGlow" type="MeshInstance3D" parent="."]
+position = Vector3(0, -180, 0)
+cast_shadow = 0
+mesh = SubResource("PlaneMesh_street")
+surface_material_override/0 = SubResource("StandardMaterial3D_street")

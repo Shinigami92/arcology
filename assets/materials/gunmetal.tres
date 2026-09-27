@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "gunmetal"
+albedo_color = Color(0.18, 0.19, 0.21, 1)
+metallic = 0.6
+roughness = 0.45
+
