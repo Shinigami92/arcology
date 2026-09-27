@@ -6,6 +6,7 @@
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/door_bump.wav" id="4_bump"]
 [ext_resource type="Material" path="res://assets/materials/door_panel.tres" id="5_panel"]
 [ext_resource type="Material" path="res://assets/materials/brushed_steel.tres" id="6_steel"]
+[ext_resource type="Script" path="res://core/interaction/hinge_body_blocker.gd" id="7_blocker"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_leaf"]
 size = Vector3(0.88, 2.08, 0.04)
@@ -27,7 +28,7 @@ rings = 1
 radius = 0.06
 
 [node name="Door" type="Node3D"]
-metadata/_doc = "Hinged door, 0.88 x 2.08 m leaf. Origin = bottom of the hinge axis; the leaf extends along +X and opens toward -Z (0..100 degrees). Grab either handle to swing it."
+metadata/_doc = "Hinged door, 0.88 x 2.08 m leaf. Origin = bottom of the hinge axis; the leaf extends along +X and opens toward -Z (0..100 degrees). Handle at 1.1 m (seated reach). Grab either handle to swing it; the leaf stops instead of passing through the player."
 
 [node name="HingeOrigin" type="Node3D" parent="."]
 rotation_degrees = Vector3(0, 0, 90)
@@ -52,29 +53,29 @@ mesh = SubResource("BoxMesh_leaf")
 surface_material_override/0 = ExtResource("5_panel")
 
 [node name="RoseFront" type="MeshInstance3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody"]
-position = Vector3(0.78, 1.0, -0.045)
+position = Vector3(0.78, 1.1, -0.045)
 rotation_degrees = Vector3(90, 0, 0)
 mesh = SubResource("CylinderMesh_rose")
 surface_material_override/0 = ExtResource("6_steel")
 
 [node name="LeverFront" type="MeshInstance3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody"]
-position = Vector3(0.735, 1.0, -0.07)
+position = Vector3(0.735, 1.1, -0.07)
 mesh = SubResource("BoxMesh_lever")
 surface_material_override/0 = ExtResource("6_steel")
 
 [node name="RoseBack" type="MeshInstance3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody"]
-position = Vector3(0.78, 1.0, 0.045)
+position = Vector3(0.78, 1.1, 0.045)
 rotation_degrees = Vector3(90, 0, 0)
 mesh = SubResource("CylinderMesh_rose")
 surface_material_override/0 = ExtResource("6_steel")
 
 [node name="LeverBack" type="MeshInstance3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody"]
-position = Vector3(0.735, 1.0, 0.07)
+position = Vector3(0.735, 1.1, 0.07)
 mesh = SubResource("BoxMesh_lever")
 surface_material_override/0 = ExtResource("6_steel")
 
 [node name="HandleOriginFront" type="Node3D" parent="HingeOrigin/InteractableHinge/Leaf"]
-position = Vector3(0.74, 1.0, -0.07)
+position = Vector3(0.74, 1.1, -0.07)
 
 [node name="InteractableHandle" type="RigidBody3D" parent="HingeOrigin/InteractableHinge/Leaf/HandleOriginFront"]
 collision_layer = 262144
@@ -87,7 +88,7 @@ picked_up_layer = 0
 shape = SubResource("SphereShape3D_grab")
 
 [node name="HandleOriginBack" type="Node3D" parent="HingeOrigin/InteractableHinge/Leaf"]
-position = Vector3(0.74, 1.0, 0.07)
+position = Vector3(0.74, 1.1, 0.07)
 
 [node name="InteractableHandle" type="RigidBody3D" parent="HingeOrigin/InteractableHinge/Leaf/HandleOriginBack"]
 collision_layer = 262144
@@ -100,7 +101,12 @@ picked_up_layer = 0
 shape = SubResource("SphereShape3D_grab")
 
 [node name="StopSound" type="AudioStreamPlayer3D" parent="HingeOrigin/InteractableHinge" node_paths=PackedStringArray("hinge")]
-position = Vector3(1.0, -0.8, 0)
+position = Vector3(1.1, -0.8, 0)
 stream = ExtResource("4_bump")
 script = ExtResource("3_stop")
 hinge = NodePath("..")
+
+[node name="BodyBlocker" type="Node" parent="." node_paths=PackedStringArray("hinge", "leaf")]
+script = ExtResource("7_blocker")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+leaf = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
