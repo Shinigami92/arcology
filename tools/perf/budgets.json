@@ -1,0 +1,13 @@
+{
+  "frame_budget_ms": 11.11,
+  "zones": {
+    "apartment": {
+      "frames_over_budget_pct": 0.5,
+      "frame_ms_p99": 11.5,
+      "gpu_ms_p95": 8.0,
+      "cpu_ms_p95": 6.0,
+      "draw_calls_max": 600,
+      "primitives_max": 1500000
+    }
+  }
+}
