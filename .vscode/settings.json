@@ -1,3 +1,37 @@
 {
-  "godotTools.editorPath.godot4": "${env:GODOT4_EDITOR}"
+  "godotTools.editorPath.godot4": "${env:GODOT4_EDITOR}",
+  "cSpell.words": [
+    "arcology",
+    "autoload",
+    "autoloads",
+    "BSDF",
+    "colonly",
+    "Coruscant",
+    "countertop",
+    "diffable",
+    "gdshader",
+    "GDAI",
+    "gltf",
+    "holo",
+    "interactable",
+    "interactables",
+    "lightmap",
+    "lightmaps",
+    "megacity",
+    "MSAA",
+    "multiview",
+    "Murzak's",
+    "openxr",
+    "pickable",
+    "pickables",
+    "reprojection",
+    "scanlines",
+    "texel",
+    "tonemapper",
+    "trimesh",
+    "tscn",
+    "unshadowed",
+    "voxelgi",
+    "voxelizer"
+  ]
 }

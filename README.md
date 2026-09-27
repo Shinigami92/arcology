@@ -2,11 +2,11 @@
 
 A VR experience set in a dense, vertical cyberpunk megacity. It starts in a single apartment with a large window onto the city and grows zone by zone (hallway, elevator, streets, markets) until you can walk outside. Inspired by **The Fifth Element**, **Star Citizen's Area18**, **Cyberpunk 2077**, **Ghost in the Shell**, **Coruscant** and **Elysium**: neon, holographic ads, flying traffic, rain and fog.
 
-> **Status: very early development.** Tooling and project setup only. Nothing is playable yet.
+> **Status: very early development.** Milestone 1: a blockout apartment you can walk around in VR, with a grabbable door, a ball, cans and a trash can.
 
 ## Tech
 
-- **Engine:** Godot 4.7, Forward+ renderer (D3D12), Jolt Physics, OpenXR.
+- **Engine:** Godot 4.7, Forward+ renderer (Vulkan), Jolt Physics at 90 Hz, OpenXR, [Godot XR Tools](https://github.com/GodotVR/godot-xr-tools).
 - **Target:** Valve Steam Frame, streamed via SteamVR from a Windows PC (RTX 4080 Super class). PC build only.
 - **Performance:** 90 FPS in stereo, always.
 - **Assets:** modeled and rendered in Blender, exported as `.glb`.
@@ -41,12 +41,30 @@ setx BLENDER_MCP_PATH "D:\path\to\blender_mcp\mcp"
 2. Open `project.godot` in Godot 4.7.
 3. Press **F5**.
 
+Controls: left stick moves (push fully forward to sprint), right stick turns, grip grabs, hold **Y** for a second to recenter and recalibrate your eye height (works seated).
+
+### Performance test
+
+```powershell
+& $env:GODOT4_EDITOR --path . -- --perf=apartment               # in the headset
+& $env:GODOT4_EDITOR --path . --xr-mode off -- --perf=apartment # desktop approximation
+```
+
+Prints `PERF: PASS` or `PERF: FAIL` and writes a JSON report to `tools/perf/results/`. Budgets are in `tools/perf/budgets.json`.
+
 ## AI tooling
 
 `.mcp.json` registers two MCP servers for Claude Code:
 
 - **blender**: the [Blender Lab MCP server](https://www.blender.org/lab/mcp-server/). Blender must be running with the add-on enabled and online access allowed.
 - **godot-ai**: [godot-ai](https://github.com/hi-godot/godot-ai), with its editor plugin in `addons/godot_ai/`. The Godot editor must be open. Don't use the dock's **Configure** button: it writes an absolute `uvx` path into `.mcp.json`.
+
+## Docs
+
+- [CLAUDE.md](./CLAUDE.md): conventions, performance budgets, recipes
+- [docs/ideas.md](./docs/ideas.md): backlog
+- [docs/style-guide.md](./docs/style-guide.md): look and feel
+- [docs/decisions.md](./docs/decisions.md): decision log
 
 ## License
 

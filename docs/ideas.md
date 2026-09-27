@@ -1,0 +1,70 @@
+# Ideas
+
+The user's idea backlog. Work items come from here. Add new ideas at the bottom of the matching section; move shipped items to **Done** with the commit or milestone.
+
+Tags: `[M1]` `[M2]` `[M3]` milestone, `[later]` unscheduled, `[?]` needs a decision from the user.
+
+## Vision
+
+A first-class VR experience set in a cyberpunk megacity. It starts as a single apartment (a living room with a large window onto the city) and grows zone by zone (hallway, elevator, streets, markets) until the user can walk outside.
+
+Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic), Star Citizen Area18, Cyberpunk 2077, Ghost in the Shell, Star Wars Coruscant, Elysium (the ring). Dense vertical city, neon, holographic ads, flying vehicles, rain, fog.
+
+## Player and comfort
+
+- [M1] XR rig with hands (XR Tools), smooth locomotion and smooth turning as defaults.
+- [M1] Comfort options: teleport, snap turn, vignette. Off by default.
+- [M1] Seated-first: eye-height calibration so a seated player sees from a standing adult's height; recenter action.
+- [M1] Better sprint than holding stick-click. Default: push the stick past a threshold. Alternatives to try: arm-swing, toggle.
+- [later] Grab assist for low objects so seated players never have to reach the floor.
+- [later] In-world settings panel for comfort options (no flat menus).
+- [later] Hand tracking (Steam Frame) in addition to controllers.
+
+## Interaction
+
+- [M1] Everything interactable is physical: doors open by grabbing the handle, drawers slide, buttons get pressed. No "press A to open".
+- [M1] One grabbable door (hinge).
+- [M1] A ball that bounces, with impact sounds.
+- [M1] A beverage can.
+- [M1] A trash can that accepts objects tagged "trash".
+- [M1] XR Tools setup: pickables, throwing, hinges, sliders, buttons, snap zones, impact sounds, tags.
+- [later] Drawers and cabinets (sliders).
+- [later] Physical light switches and dimmers.
+
+## World state and weather
+
+- [M2] Global world state: time of day, weather, automatic cycle at configurable speed, manual override.
+- [M2] Day/night cycle with live lighting in the apartment.
+- [M2] Weather: rain particles, rain-on-glass shader, wet surfaces, fog, lightning, sky crossfade, audio layers.
+- [M2] World-state control panel in the apartment, e.g. a holographic wall terminal with physical buttons and sliders.
+- [M2] Panorama variants: day, dusk, night, rain/fog, crossfaded by time and weather.
+
+## City view
+
+- [M1] Simple window view.
+- [M2] Window view in layers: near facades as real low-poly geometry, mid-distance as impostors/cards, far city as Blender-rendered panoramas.
+- [later] Upgrade a layer to real geometry when its zone is built.
+- [later] Flying traffic lanes (The Fifth Element), holographic ads, neon signage.
+- [later] Elysium-style ring visible in the sky.
+
+## Zones
+
+- [M1] Apartment: living room with a large window.
+- [M3] Hallway and elevator with seamless zone loading.
+- [M3] Persistence: object state across zones, save/load.
+- [later] Streets, markets, eventually walking outside.
+- No loading screens, ever. Doors start background loading on approach; if not ready, a diegetic delay (e.g. an "ID scan") covers it. Elevator rides last as long as loading needs.
+
+## Performance and tooling
+
+- [M1] Scripted camera flythrough per zone that logs frame times and fails on budget regressions.
+- [M2] Shader precompile helper (the XR Tools demo hitched when first picking up the scoped rifle: a first-use shader compile or the second camera).
+- [later] Budget SubViewport cameras (scopes, mirrors, security monitors) explicitly.
+
+## Rejected or low priority
+
+- Grappling hook (least satisfying in the XR Tools demo; not a fit).
+
+## Done
+
+- M1 scaffold (2026-09-27): XR rig with hands, smooth move/turn, stick-deflection sprint, teleport/snap/vignette options, hold-Y recenter; apartment blockout with window and hallway stub; grabbable door, bouncing ball, beverage cans, trash can; procedural skyline; perf flythrough.
