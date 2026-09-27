@@ -12,6 +12,10 @@
 [ext_resource type="PackedScene" uid="uid://b6bk2pj8vbj28" path="res://addons/godot-xr-tools/functions/movement_turn.tscn" id="10_turn"]
 [ext_resource type="PackedScene" uid="uid://fiul51tsyoop" path="res://addons/godot-xr-tools/functions/function_teleport.tscn" id="11_teleport"]
 [ext_resource type="PackedScene" uid="uid://diyu06cw06syv" path="res://addons/godot-xr-tools/player/player_body.tscn" id="12_body"]
+[ext_resource type="Script" path="res://core/player/grab_ray.gd" id="13_grab_ray"]
+[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/functions/movement_jump.tscn" id="14_jump"]
+[ext_resource type="PackedScene" path="res://addons/godot-xr-tools/functions/movement_crouch.tscn" id="15_crouch"]
+[ext_resource type="PackedScene" uid="uid://wtpox7m5vu2b" path="res://addons/godot-xr-tools/effects/fade.tscn" id="16_fade"]
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_sghtj"]
 animation = &"Grip"
@@ -134,7 +138,11 @@ script = ExtResource("8_sprint")
 [node name="FunctionPickup" parent="LeftHand/CollisionHand" unique_id=371165047 instance=ExtResource("9_pickup")]
 transform = Transform3D(1, 0, 0, 0, 0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, 0, 0, 0)
 grab_distance = 0.1
-ranged_angle = 10.0
+ranged_distance = 4.0
+ranged_angle = 12.0
+
+[node name="GrabRay" type="Node3D" parent="LeftHand/CollisionHand/FunctionPickup"]
+script = ExtResource("13_grab_ray")
 
 [node name="RightHand" type="XRController3D" parent="." unique_id=615345187]
 transform = Transform3D(1, 0, 0, 0, 0.707107, -0.707107, 0, 0.707107, 0.707107, 0.25, 1.1, -0.35)
@@ -179,14 +187,28 @@ turn_mode = 2
 [node name="FunctionPickup" parent="RightHand/CollisionHand" unique_id=159131112 instance=ExtResource("9_pickup")]
 transform = Transform3D(1, 0, 0, 0, 0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, 0, 0, 0)
 grab_distance = 0.1
-ranged_angle = 10.0
+ranged_distance = 4.0
+ranged_angle = 12.0
 
 [node name="FunctionTeleport" parent="RightHand/CollisionHand" unique_id=263870346 instance=ExtResource("11_teleport")]
 transform = Transform3D(1, 0, 0, 0, 0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, 0, -0.07071068, -0.07071068)
 enabled = false
 
+[node name="GrabRay" type="Node3D" parent="RightHand/CollisionHand/FunctionPickup"]
+script = ExtResource("13_grab_ray")
+
+[node name="MovementJump" parent="RightHand/CollisionHand" instance=ExtResource("14_jump")]
+jump_button_action = "ax_button"
+
+[node name="MovementCrouch" parent="RightHand/CollisionHand" instance=ExtResource("15_crouch")]
+crouch_height = 1.05
+crouch_button_action = "by_button"
+crouch_type = 1
+
 [node name="PlayerBody" parent="." unique_id=1220268131 instance=ExtResource("12_body")]
 player_calibrate_height = false
+
+[node name="Fade" parent="." instance=ExtResource("16_fade")]
 
 [editable path="LeftHand/CollisionHand/Hand"]
 [editable path="LeftHand/CollisionHand/Hand/Hand_Nails_low_L"]
