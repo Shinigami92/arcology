@@ -1,0 +1,15 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Export output
+/builds/
+/export/
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude Code local settings (per-user, not shared)
+.claude/settings.local.json
