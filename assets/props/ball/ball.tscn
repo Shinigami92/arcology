@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://core/interaction/impact_sound.gd" id="2_impact"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/ball_bounce.wav" id="3_bounce"]
 [ext_resource type="Material" path="res://assets/materials/rubber_ball.tres" id="4_rubber"]
+[ext_resource type="Script" path="res://core/interaction/grab_highlight.gd" id="9_highlight"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_rubber"]
 friction = 0.8
@@ -28,6 +29,7 @@ angular_damp = 0.4
 freeze_mode = 1
 script = ExtResource("1_pickable")
 ranged_grab_method = 2
+second_hand_grab = 1
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("SphereShape3D_ball")
@@ -41,3 +43,6 @@ stream = ExtResource("3_bounce")
 unit_size = 3.0
 max_polyphony = 2
 script = ExtResource("2_impact")
+
+[node name="GrabHighlight" type="Node" parent="."]
+script = ExtResource("9_highlight")
