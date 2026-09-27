@@ -1,5 +1,6 @@
 {
   "godotTools.editorPath.godot4": "${env:GODOT4_EDITOR}",
+  "godotTools.lsp.serverPort": 6005,
   "cSpell.words": [
     "arcology",
     "autoload",
