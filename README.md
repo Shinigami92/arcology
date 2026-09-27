@@ -2,7 +2,7 @@
 
 A VR experience set in a dense, vertical cyberpunk megacity. It starts in a single apartment with a large window onto the city and grows zone by zone (hallway, elevator, streets, markets) until you can walk outside. Inspired by **The Fifth Element**, **Star Citizen's Area18**, **Cyberpunk 2077**, **Ghost in the Shell**, **Coruscant** and **Elysium**: neon, holographic ads, flying traffic, rain and fog.
 
-> **Status: very early development.** Milestone 1: a blockout apartment you can walk around in VR, with a grabbable door, a ball, cans and a trash can.
+> **Status: very early development.** Milestone 1: a five-room blockout apartment you can walk around in VR, with doors, a ball, cans, a trash can, and a sofa and bed to sit on.
 
 ## Tech
 
@@ -41,7 +41,7 @@ setx BLENDER_MCP_PATH "D:\path\to\blender_mcp\mcp"
 2. Open `project.godot` in Godot 4.7.
 3. Press **F5**.
 
-Controls: left stick moves (push fully forward to sprint), right stick turns, grip grabs, hold **Y** for a second to recenter and recalibrate your eye height (works seated).
+Controls: left stick moves (push fully forward to sprint), right stick turns, grip grabs (point at farther objects and grip to pull them in), **A** jumps, **B** toggles crouch, **X** sits down on the sofa or bed and gets up again, hold **Y** for a second to recenter and recalibrate your eye height (works seated).
 
 ### Performance test
 

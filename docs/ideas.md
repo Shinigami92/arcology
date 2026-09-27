@@ -16,7 +16,8 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [M1] Comfort options: teleport, snap turn, vignette. Off by default.
 - [M1] Seated-first: eye-height calibration so a seated player sees from a standing adult's height; recenter action.
 - [M1] Better sprint than holding stick-click. Default: push the stick past a threshold. Alternatives to try: arm-swing, toggle.
-- [later] Grab assist for low objects so seated players never have to reach the floor.
+- [later] Gravity-glove flick (point, grip, flick the wrist) instead of pull-on-grip.
+- [later] Lie down on the bed.
 - [later] In-world settings panel for comfort options (no flat menus).
 - [later] Hand tracking (Steam Frame) in addition to controllers.
 
@@ -28,7 +29,8 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [M1] A beverage can.
 - [M1] A trash can that accepts objects tagged "trash".
 - [M1] XR Tools setup: pickables, throwing, hinges, sliders, buttons, snap zones, impact sounds, tags.
-- [later] Drawers and cabinets (sliders).
+- [later] Drawers and cabinets (sliders); fridge door, wardrobe doors.
+- [later] Bathroom: working tap/shower, mirror (needs a SubViewport budget).
 - [later] Physical light switches and dimmers.
 
 ## World state and weather
@@ -66,5 +68,7 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - Grappling hook (least satisfying in the XR Tools demo; not a fit).
 
 ## Done
+
+- Feedback round 1 (2026-09-27): five-room apartment; visible ranged grab with highlight; door handles at 1.1 m; doors can't swing through the player; sit on sofa/bed; jump and crouch buttons; recenter confirmation; skyline window anti-aliasing; VS Code language server port.
 
 - M1 scaffold (2026-09-27): XR rig with hands, smooth move/turn, stick-deflection sprint, teleport/snap/vignette options, hold-Y recenter; apartment blockout with window and hallway stub; grabbable door, bouncing ball, beverage cans, trash can; procedural skyline; perf flythrough.
