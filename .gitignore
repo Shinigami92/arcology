@@ -13,3 +13,10 @@ desktop.ini
 
 # Claude Code local settings (per-user, not shared)
 .claude/settings.local.json
+
+# Blender backups
+*.blend1
+*.blend2
+
+# Perf test output
+/tools/perf/results/
