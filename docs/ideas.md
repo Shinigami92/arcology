@@ -20,6 +20,7 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [later] Lie down on the bed.
 - [later] In-world settings panel for comfort options (no flat menus).
 - [later] Hand tracking (Steam Frame) in addition to controllers.
+- [later] Player avatar / body (IK from head and hands); prerequisite for a meaningful mirror.
 
 ## Interaction
 
@@ -32,8 +33,9 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [M2] Openable fridge in the kitchen (Blender asset with a proper door and interior; KinematicFollower door like D-018).
 - [later] Drawers and cabinets (sliders); wardrobe doors.
 - [later] Use the Frame's left D-pad and bumpers (free for now): e.g. quick comfort toggles.
-- [later] Bathroom: working tap/shower, mirror (needs a SubViewport budget).
-- [later] Physical light switches and dimmers.
+- [later] Bathroom: working tap/shower.
+- [later] Working bathroom mirror. Makes most sense once there's a player avatar. Godot 4.7 has no hardware ray tracing, so the options to measure against the 90 FPS budget are: planar reflection via a SubViewport (renders the room again for both eyes, the expensive but correct one), a box-projected ReflectionProbe updated in real time, or SSR (can't show what's off screen). Good stress test for the budget.
+- [M2] Physical light switches and dimmers per room, and/or a smart-home hub panel (could be the same in-world terminal as the world-state control panel).
 
 ## World state and weather
 
