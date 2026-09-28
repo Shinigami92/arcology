@@ -95,3 +95,7 @@ Under the 2.6 m ceiling a 1.8 m body can lift its feet only 0.8 m, too little to
 ## D-023: Interaction and shimmer tests (2026-09-28)
 
 `tools/tests/` holds runnable suites started through `main.gd` (`-- --test=<suite>`), so the XR Tools autoloads exist, unlike with `--script`: `interaction` (doorways closed/open against the physics server, door blocker, grab pass-through, jump height and table landing, eye height after landing, ranged grab pull and line of sight) and `skyline` (shimmer under a half-pixel head turn). Run `interaction` after any change to the player, props or the apartment generator. They don't need the editor or the headset. Measured with `skyline`: the window glass and glow don't cause the remaining flicker (5.3% through glass, 6.7% without, 5.4% without glow). What the headset still shows is likely residual aliasing plus the Steam Frame's video stream, where tiny bright dots are a worst case for compression. Deferred to the Blender/panorama rebuild.
+
+## D-024: XR perf counts dropped frames, not frames over 11.1 ms (2026-09-28)
+
+The first in-headset run "failed" with 51% of frames over 11.1 ms while the GPU p95 was 4.5 ms and CPU p95 1.7 ms. In XR the runtime paces frames to 90 Hz, so frame intervals jitter around 11.11 ms (average 11.24 ms) and half of the normal frames land a hair above. A real drop is a missed refresh (about 22 ms). The frame budget is now `frames_dropped_pct`: intervals over 1.5x the budget (16.7 ms), at most 0.5%. `frames_over_budget_pct` and `frame_ms_p99` stay in the report for reference.

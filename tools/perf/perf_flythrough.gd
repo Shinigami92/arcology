@@ -42,6 +42,9 @@ var _physics_ms: PackedFloat32Array = []
 var _draw_calls: PackedInt32Array = []
 var _primitives: PackedInt32Array = []
 var _objects: PackedInt32Array = []
+# Where each sampled frame was: seconds since start, nearest PerfPath marker.
+var _frame_time: PackedFloat32Array = []
+var _frame_marker: PackedInt32Array = []
 var _frame_start := _FrameStart.new()
 
 
@@ -119,6 +122,8 @@ func _process(delta: float) -> void:
 
 	if _elapsed > warmup:
 		_frame_ms.append(frame)
+		_frame_time.append(_elapsed)
+		_frame_marker.append(roundi(t * (_markers.size() - 1)))
 		_gpu_ms.append(RenderingServer.viewport_get_measured_render_time_gpu(_viewport_rid))
 		# Physics monitor is in seconds; render time is in ms.
 		var render_cpu := RenderingServer.viewport_get_measured_render_time_cpu(_viewport_rid)
@@ -164,10 +169,23 @@ func _finish() -> void:
 	var frame_budget: float = budgets.get("frame_budget_ms", 11.11)
 	var zone_budget: Dictionary = budgets.get("zones", {}).get(zone_name, {})
 
+	# In XR the runtime paces frames to the display, so intervals jitter
+	# around the budget (11.1 ms +/- a little) and "over budget" counts
+	# normal frames. A dropped frame is a missed refresh: > 1.5x the budget.
 	var over := 0
-	for ms in _frame_ms:
+	var dropped := 0
+	var dropped_at: Array[Dictionary] = []
+	for i in _frame_ms.size():
+		var ms := _frame_ms[i]
 		if ms > frame_budget:
 			over += 1
+		if ms > frame_budget * 1.5:
+			dropped += 1
+			dropped_at.append({
+				"t": snappedf(_frame_time[i], 0.01),
+				"ms": snappedf(ms, 0.1),
+				"marker": _markers[_frame_marker[i]].name,
+			})
 	var stats := {
 		"zone": zone_name,
 		"mode": "xr" if _xr else "desktop-approx",
@@ -180,6 +198,10 @@ func _finish() -> void:
 		"frame_ms_p99": _pct(_frame_ms, 0.99),
 		"frame_ms_max": _pct(_frame_ms, 1.0),
 		"frames_over_budget_pct": 100.0 * over / maxf(_frame_ms.size(), 1.0),
+		"frames_dropped": dropped,
+		"frames_dropped_pct": 100.0 * dropped / maxf(_frame_ms.size(), 1.0),
+		# Hitches: time since start and the nearest PerfPath marker.
+		"frames_dropped_at": dropped_at,
 		"gpu_ms_avg": _avg(_gpu_ms),
 		"gpu_ms_p95": _pct(_gpu_ms, 0.95),
 		"cpu_ms_p95": _pct(_cpu_ms, 0.95),
