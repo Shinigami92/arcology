@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tools/perf/stall_probe.gd" id="1_probe"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_box"]
+
+[node name="StallProbe" type="Node3D"]
+script = ExtResource("1_probe")
+metadata/_doc = "Machine hitch check: an almost empty scene that logs frame intervals over 16.7 ms. See the script."
+
+[node name="Camera3D" type="Camera3D" parent="."]
+
+[node name="Box" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0, -3)
+mesh = SubResource("BoxMesh_box")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-45, 30, 0)

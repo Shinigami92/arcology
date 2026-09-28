@@ -45,6 +45,10 @@ var _objects: PackedInt32Array = []
 # Where each sampled frame was: seconds since start, nearest PerfPath marker.
 var _frame_time: PackedFloat32Array = []
 var _frame_marker: PackedInt32Array = []
+# Pipeline compilations per frame (draw-time and specialization; the
+# monitors are totals since startup). A hitch with compiles is a shader stall.
+var _frame_compiles: PackedInt32Array = []
+var _last_compiles := 0
 var _frame_start := _FrameStart.new()
 
 
@@ -109,6 +113,7 @@ func _ready() -> void:
 	print("PERF: zone=%s mode=%s duration=%.0fs warmup=%.0fs markers=%d hidden=%s" % [
 			zone_name, "xr" if _xr else "desktop-approx", duration, warmup, _markers.size(), hide_nodes])
 	_last_usec = Time.get_ticks_usec()
+	_last_compiles = _pipeline_compiles()
 
 
 func _process(delta: float) -> void:
@@ -124,6 +129,9 @@ func _process(delta: float) -> void:
 		_frame_ms.append(frame)
 		_frame_time.append(_elapsed)
 		_frame_marker.append(roundi(t * (_markers.size() - 1)))
+		var compiles := _pipeline_compiles()
+		_frame_compiles.append(compiles - _last_compiles)
+		_last_compiles = compiles
 		_gpu_ms.append(RenderingServer.viewport_get_measured_render_time_gpu(_viewport_rid))
 		# Physics monitor is in seconds; render time is in ms.
 		var render_cpu := RenderingServer.viewport_get_measured_render_time_cpu(_viewport_rid)
@@ -175,7 +183,10 @@ func _finish() -> void:
 	var over := 0
 	var dropped := 0
 	var dropped_at: Array[Dictionary] = []
+	var compiles_at: Array[Dictionary] = []
 	for i in _frame_ms.size():
+		if _frame_compiles[i] > 0:
+			compiles_at.append({"t": snappedf(_frame_time[i], 0.01), "n": _frame_compiles[i], "ms": snappedf(_frame_ms[i], 0.1)})
 		var ms := _frame_ms[i]
 		if ms > frame_budget:
 			over += 1
@@ -185,6 +196,9 @@ func _finish() -> void:
 				"t": snappedf(_frame_time[i], 0.01),
 				"ms": snappedf(ms, 0.1),
 				"marker": _markers[_frame_marker[i]].name,
+				"gpu_ms": snappedf(_gpu_ms[i], 0.1),
+				"cpu_ms": snappedf(_cpu_ms[i], 0.1),
+				"pipeline_compiles": _frame_compiles[i],
 			})
 	var stats := {
 		"zone": zone_name,
@@ -202,6 +216,8 @@ func _finish() -> void:
 		"frames_dropped_pct": 100.0 * dropped / maxf(_frame_ms.size(), 1.0),
 		# Hitches: time since start and the nearest PerfPath marker.
 		"frames_dropped_at": dropped_at,
+		"pipeline_compiles": _sum_i(_frame_compiles),
+		"pipeline_compiles_at": compiles_at,
 		"gpu_ms_avg": _avg(_gpu_ms),
 		"gpu_ms_p95": _pct(_gpu_ms, 0.95),
 		"cpu_ms_p95": _pct(_cpu_ms, 0.95),
@@ -254,6 +270,18 @@ static func _pct(values: PackedFloat32Array, p: float) -> float:
 	var sorted := values.duplicate()
 	sorted.sort()
 	return sorted[clampi(int(ceil(p * sorted.size())) - 1, 0, sorted.size() - 1)]
+
+
+static func _pipeline_compiles() -> int:
+	return int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_DRAW)
+			+ Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_SPECIALIZATION))
+
+
+static func _sum_i(values: PackedInt32Array) -> int:
+	var s := 0
+	for v in values:
+		s += v
+	return s
 
 
 static func _max_i(values: PackedInt32Array) -> int:

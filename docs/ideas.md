@@ -65,7 +65,7 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 ## Performance and tooling
 
 - [M1] Scripted camera flythrough per zone that logs frame times and fails on budget regressions.
-- [M2] Shader precompile helper. The M1 XR baseline drops 8 frames (up to 58 ms) exactly when rooms first come into view (perf markers P4, P8, P10; `frames_dropped_at` in the report), and the XR Tools demo hitched when first picking up the scoped rifle. Target: 0 dropped frames.
+- [later] Shader precompile helper, if a perf report ever shows pipeline compiles on dropped frames. The M1 hitches (8 frames up to 58 ms) turned out to come from the machine, not compiles (D-025); the XR Tools demo also hitched when first picking up the scoped rifle.
 - [later] Budget SubViewport cameras (scopes, mirrors, security monitors) explicitly.
 
 ## Rejected or low priority
