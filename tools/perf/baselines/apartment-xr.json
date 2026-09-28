@@ -1,0 +1,33 @@
+{
+  "budget": {
+    "cpu_ms_p95": 6.0,
+    "draw_calls_max": 600.0,
+    "frames_dropped_pct": 0.5,
+    "gpu_ms_p95": 8.0,
+    "primitives_max": 1500000.0
+  },
+  "cpu_ms_p95": 1.72599995136261,
+  "date": "2026-09-28T17:51:33",
+  "draw_calls_max": 151,
+  "failures": [],
+  "frame_ms_avg": 11.2703070436397,
+  "frame_ms_max": 58.3800010681152,
+  "frame_ms_p95": 11.4940004348755,
+  "frame_ms_p99": 11.9300003051758,
+  "frames": 1775,
+  "frames_dropped": 8,
+  "frames_dropped_pct": 0.450704225352113,
+  "frames_over_budget_pct": 51.943661971831,
+  "gpu": "NVIDIA GeForce RTX 4080 SUPER",
+  "gpu_ms_avg": 4.23005126496436,
+  "gpu_ms_p95": 4.97599983215332,
+  "hidden": [],
+  "mode": "xr",
+  "objects_max": 176,
+  "pass": true,
+  "physics_ms_p95": 0.962000012397766,
+  "primitives_max": 23186,
+  "process_ms_p95": 0.453999996185303,
+  "render_cpu_ms_p95": 0.43299999833107,
+  "zone": "apartment"
+}

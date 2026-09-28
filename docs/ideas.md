@@ -65,7 +65,7 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 ## Performance and tooling
 
 - [M1] Scripted camera flythrough per zone that logs frame times and fails on budget regressions.
-- [M2] Shader precompile helper (the XR Tools demo hitched when first picking up the scoped rifle: a first-use shader compile or the second camera).
+- [M2] Shader precompile helper. The M1 XR baseline drops 8 frames (up to 58 ms) exactly when rooms first come into view (perf markers P4, P8, P10; `frames_dropped_at` in the report), and the XR Tools demo hitched when first picking up the scoped rifle. Target: 0 dropped frames.
 - [later] Budget SubViewport cameras (scopes, mirrors, security monitors) explicitly.
 
 ## Rejected or low priority
@@ -73,6 +73,8 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - Grappling hook (least satisfying in the XR Tools demo; not a fit).
 
 ## Done
+
+- **Milestone 1 complete (2026-09-28).** In-headset perf: GPU p95 5.0 ms / 8 ms budget, CPU p95 1.7 ms, 0.45 % dropped frames (baseline `tools/perf/baselines/apartment-xr.json`).
 
 - Feedback round 3 (2026-09-28): doors that open away can be pushed open (hand passes its own door); jump tucks and lands on tables; player body ignores cans and balls; interaction and skyline test suites. Skyline flicker deferred to the Blender/panorama rebuild (D-023).
 

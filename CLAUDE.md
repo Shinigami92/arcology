@@ -108,13 +108,13 @@ Frame budget at 90 Hz: **11.1 ms**. Targets leave headroom for SteamVR compositi
 |---|---|
 | GPU frame time (stereo, both eyes) | ≤ 8.0 ms |
 | CPU main thread (process + physics + render submit) | ≤ 6.0 ms |
-| Frames over 11.1 ms (XR mode) | ≤ 0.5 % |
+| Dropped frames: intervals > 16.7 ms, a missed refresh (XR mode) | ≤ 0.5 % |
 
 Per-zone budgets live in `tools/perf/budgets.json`. Current zones:
 
-| Zone | Draw calls | Triangles | Lights (shadowed) | GI | Last measured (desktop-approx) |
+| Zone | Draw calls | Triangles | Lights (shadowed) | GI | Last measured |
 |---|---|---|---|---|---|
-| apartment (5 rooms) | ≤ 600 | ≤ 1.5 M | ≤ 16 (1) | none (D-012); 1 ReflectionProbe per room | GPU p95 5.0 ms, 161 draw calls, 22 k tris; startup hitch up to 94 ms (probes) |
+| apartment (5 rooms) | ≤ 600 | ≤ 1.5 M | ≤ 16 (1) | none (D-012); 1 ReflectionProbe per room | XR: GPU p95 5.0 ms, CPU p95 1.7 ms, 151 draw calls, 23 k tris, 8 dropped frames (0.45 %): hitches up to 58 ms when rooms first come into view (P4, P8, P10), likely first-use shader compiles |
 
 Rules of thumb:
 - **One shadow-casting light per room.** Everything else unshadowed, small range. Emissive materials for neon, not lights.

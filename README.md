@@ -2,7 +2,7 @@
 
 A VR experience set in a dense, vertical cyberpunk megacity. It starts in a single apartment with a large window onto the city and grows zone by zone (hallway, elevator, streets, markets) until you can walk outside. Inspired by **The Fifth Element**, **Star Citizen's Area18**, **Cyberpunk 2077**, **Ghost in the Shell**, **Coruscant** and **Elysium**: neon, holographic ads, flying traffic, rain and fog.
 
-> **Status: very early development.** Milestone 1: a five-room blockout apartment you can walk around in VR, with doors, a ball, cans, a trash can, and a sofa and bed to sit on.
+> **Status: early development.** Milestone 1 done: a five-room blockout apartment you can walk around in VR, with doors, a ball, cans, a trash can, and a sofa and bed to sit on. Next: Milestone 2 (day/night cycle, weather, world-state control panel, city panoramas).
 
 ## Tech
 
@@ -50,7 +50,7 @@ Controls (Steam Frame; other controllers in [CLAUDE.md](./CLAUDE.md#controls)): 
 & $env:GODOT4_EDITOR --path . --xr-mode off -- --perf=apartment # desktop approximation
 ```
 
-Prints `PERF: PASS` or `PERF: FAIL` and writes a JSON report to `tools/perf/results/`. Budgets are in `tools/perf/budgets.json`.
+Prints `PERF: PASS` or `PERF: FAIL` and writes a JSON report to `tools/perf/results/` (including where any dropped frames happened). Budgets are in `tools/perf/budgets.json`.
 
 ## AI tooling
 
