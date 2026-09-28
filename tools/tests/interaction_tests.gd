@@ -9,6 +9,7 @@ extends Node
 ## XR Tools autoloads exist.
 
 const DOORS := ["DoorLiving", "DoorBedroom", "DoorBathroom", "DoorEntrance"]
+const CAN_SCENE := "res://assets/props/beverage_can/beverage_can.tscn"
 # Sweep start and motion through each doorway (capsule center at 0.9 m).
 const DOORWAYS := {
 	"DoorLiving": [Vector3(2.05, 0.9, 1.2), Vector3(0, 0, 1.7)],
@@ -31,6 +32,11 @@ func _ready() -> void:
 	await _test_jump()
 	await _test_jump_onto_table()
 	await _test_ranged_grab()
+	await _test_fridge("Fridge")
+	await _test_swing("Fridge", 20.0, 150.0)
+	await _test_swing("DoorLiving", 20.0, 120.0)
+	await _test_flick_shut("Fridge")
+	await _test_fridge_door_bin()
 	print("TEST DONE: %d failure(s)" % _failures)
 	get_tree().quit(_failures)
 
@@ -250,3 +256,113 @@ func _dummy_body(pos: Vector3) -> CharacterBody3D:
 	_main.add_child(dummy)
 	dummy.global_position = pos
 	return dummy
+
+
+## Fridge: the door's collision follows the door, the interior light is on
+## only while open, the seal pulls a nearly closed door shut, and a can
+## dropped inside stays on a shelf.
+func _test_fridge(fridge: String) -> void:
+	var root: Node3D = _main.get_node("Zones/Apartment/Props/" + fridge)
+	var hinge: XRToolsInteractableHinge = root.get_node("HingeOrigin/InteractableHinge")
+	var door_body: PhysicsBody3D = root.get_node("HingeOrigin/InteractableHinge/Leaf/DoorBody")
+	var light: Light3D = root.get_node("InteriorLight")
+	var space := _main.get_world_3d().direct_space_state
+	# Just in front of the cabinet, in the middle of the closed door.
+	var query := PhysicsPointQueryParameters3D.new()
+	query.position = root.to_global(Vector3(0, 1.0, 0.35))
+	var hits_door := func() -> bool:
+		return space.intersect_point(query).any(func(hit: Dictionary) -> bool: return hit.collider == door_body)
+
+	_set_hinge(fridge, 0.0)
+	await _frames(3)
+	var closed_hit: bool = hits_door.call()
+	var closed_light := light.visible
+	_set_hinge(fridge, 90.0)
+	await _frames(3)
+	var open_hit: bool = hits_door.call()
+	var open_light := light.visible
+	_check(fridge + "_door_collision", closed_hit and not open_hit,
+			"door body at the closed door's spot: closed %s, open %s" % [closed_hit, open_hit])
+	_check(fridge + "_light", not closed_light and open_light,
+			"interior light closed %s, open %s" % [closed_light, open_light])
+
+	# A can dropped into the middle of the cabinet lands on a shelf.
+	var can: RigidBody3D = (load(CAN_SCENE) as PackedScene).instantiate()
+	_main.add_child(can)
+	can.global_position = root.to_global(Vector3(0, 1.3, 0.05))
+	await _frames(120)
+	var local := root.to_local(can.global_position)
+	can.queue_free()
+	_check(fridge + "_can_on_shelf", local.y > 0.6 and absf(local.x) < 0.26 and local.z > -0.33 and local.z < 0.33,
+			"can at local %s after dropping from y 1.3" % local.snappedf(0.01))
+
+	# Released 10° open: the seal pulls it shut. Released 40° open: it stays.
+	_set_hinge(fridge, 10.0)
+	hinge.released.emit(hinge)
+	await _frames(30)
+	var snapped := hinge.hinge_position
+	_set_hinge(fridge, 40.0)
+	hinge.released.emit(hinge)
+	await _frames(30)
+	var stayed := hinge.hinge_position
+	_set_hinge(fridge, 0.0)
+	await _frames(2)
+	_check(fridge + "_latch", snapped < 0.01 and absf(stayed - 40.0) < 0.5 and not light.visible,
+			"released at 10° ends at %.1f°, at 40° stays %.1f°, light off after closing %s" % [snapped, stayed, not light.visible])
+
+
+## Moves the hinge like a hand would (while "grabbed"), then lets go.
+func _throw_hinge(door: String, from: float, speed: float) -> void:
+	var hinge := _hinge(door)
+	_set_hinge(door, from)
+	hinge.grabbed.emit(hinge)
+	var start := Time.get_ticks_usec()
+	for i in 10:
+		await get_tree().physics_frame
+		_set_hinge(door, from + speed * (Time.get_ticks_usec() - start) / 1e6)
+	hinge.released.emit(hinge)
+
+
+## Let go while opening: the hinge swings on, then friction stops it short
+## of the open limit.
+func _test_swing(door: String, from: float, speed: float) -> void:
+	var hinge := _hinge(door)
+	await _throw_hinge(door, from, speed)
+	var released_at := hinge.hinge_position
+	await _frames(180)
+	var ended := hinge.hinge_position
+	var swing: HingeSwing = _main.get_node("Zones/Apartment/Props/%s/Swing" % door)
+	var resting := swing.get_velocity() == 0.0
+	_set_hinge(door, 0.0)
+	await _frames(2)
+	_check(door + "_swing", ended > released_at + 10.0 and ended < hinge.hinge_limit_max and resting,
+			"released at %.1f° going %.0f°/s, came to rest at %.1f° (resting %s)" % [released_at, speed, ended, resting])
+
+
+## Flicked shut from wide open: it swings closed and the seal holds it.
+func _test_flick_shut(door: String) -> void:
+	var hinge := _hinge(door)
+	await _throw_hinge(door, 70.0, -250.0)
+	await _frames(180)
+	var ended := hinge.hinge_position
+	_set_hinge(door, 0.0)
+	await _frames(2)
+	_check(door + "_flick_shut", ended < 0.01, "flicked shut from 70° at 250°/s, ended at %.1f°" % ended)
+
+
+## A can dropped into a door bin of the open fridge stays in the bin.
+func _test_fridge_door_bin() -> void:
+	var door_body: Node3D = _main.get_node("Zones/Apartment/Props/Fridge/HingeOrigin/InteractableHinge/Leaf/DoorBody")
+	_set_hinge("Fridge", 90.0)
+	await _frames(3)
+	var can: RigidBody3D = (load(CAN_SCENE) as PackedScene).instantiate()
+	_main.add_child(can)
+	# Middle bin (floor top at 0.866), in door-local coordinates.
+	can.global_position = door_body.to_global(Vector3(0.3, 0.98, -0.045))
+	await _frames(120)
+	var local := door_body.to_local(can.global_position)
+	can.queue_free()
+	_set_hinge("Fridge", 0.0)
+	await _frames(2)
+	_check("Fridge_can_in_door_bin", local.y > 0.86 and local.y < 1.0 and local.z < 0.0 and local.z > -0.09,
+			"can at door-local %s (bin floor 0.866, bin z -0.09..0)" % local.snappedf(0.01))

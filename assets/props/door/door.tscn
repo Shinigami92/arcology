@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://c8otihf11a0u7" path="res://core/interaction/hinge_body_blocker.gd" id="7_blocker"]
 [ext_resource type="Script" uid="uid://ccxwohhkuuyo1" path="res://core/interaction/kinematic_follower.gd" id="8_follower"]
 [ext_resource type="Script" uid="uid://dwnb8l1buro5f" path="res://core/interaction/grab_pass_through.gd" id="9_pass"]
+[ext_resource type="Script" path="res://core/interaction/hinge_swing.gd" id="10_swing"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_leaf"]
 size = Vector3(0.88, 2.08, 0.04)
@@ -30,7 +31,7 @@ size = Vector3(0.13, 0.022, 0.022)
 radius = 0.06
 
 [node name="Door" type="Node3D" unique_id=32924855]
-metadata/_doc = "Hinged door, 0.88 x 2.08 m leaf. Origin = bottom of the hinge axis; the leaf extends along +X and opens toward -Z (0..100 degrees). Handle at 1.1 m (seated reach). Grab either handle to swing it; the leaf stops instead of passing through the player."
+metadata/_doc = "Hinged door, 0.88 x 2.08 m leaf. Origin = bottom of the hinge axis; the leaf extends along +X and opens toward -Z (0..100 degrees). Handle at 1.1 m (seated reach). Grab either handle to swing it; let go while moving and it swings on (the latch catches it within 3 degrees of closed); the leaf stops instead of passing through the player."
 
 [node name="HingeOrigin" type="Node3D" parent="." unique_id=1841479411]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0)
@@ -116,3 +117,12 @@ leaf = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
 script = ExtResource("9_pass")
 body = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
 handles_root = NodePath("../HingeOrigin/InteractableHinge/Leaf")
+
+[node name="Swing" type="Node" parent="." node_paths=PackedStringArray("hinge")]
+script = ExtResource("10_swing")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+friction = 60.0
+damping = 0.8
+bounce = 0.25
+latch_angle = 3.0
+latch_pull = 200.0

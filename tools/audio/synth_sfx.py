@@ -103,8 +103,70 @@ def door_bump() -> list[float]:
     return out
 
 
+def fridge_seal() -> list[float]:
+    """Fridge door unsticking from its rubber seal: soft suction pop and a breath of air."""
+    rng = random.Random(5)
+    n = int(RATE * 0.35)
+    raw = [rng.uniform(-1, 1) for _ in range(n)]
+    out, y = [], 0.0
+    for i in range(n):
+        t = i / RATE
+        alpha = 0.02 + 0.25 * math.exp(-t / 0.03)  # filter closes: pop, then air
+        y += alpha * (raw[i] - y)
+        pop = math.sin(2 * math.pi * (90 + 120 * math.exp(-t / 0.01)) * t) * env(t, 0.002, 0.025)
+        air = y * env(t, 0.01, 0.12)
+        out.append(0.8 * pop + 1.4 * air)
+    return out
+
+
+def fridge_close() -> list[float]:
+    """Fridge door closing: padded thump, seal puff and a faint bottle clink."""
+    rng = random.Random(6)
+    n = int(RATE * 0.45)
+    noise = lowpass([rng.uniform(-1, 1) for _ in range(n)], 0.08)
+    out = []
+    for i in range(n):
+        t = i / RATE
+        s = 0.8 * math.sin(2 * math.pi * 70 * t) * env(t, 0.003, 0.06)
+        s += 0.3 * math.sin(2 * math.pi * 143 * t) * env(t, 0.002, 0.04)
+        s += 0.9 * noise[i] * env(t, 0.004, 0.05)
+        tc = t - 0.06  # bottles in the door bins
+        if tc > 0:
+            clink = sum(math.sin(2 * math.pi * f * tc) for f in (2350, 3710, 5230)) / 3
+            s += 0.06 * clink * env(tc, 0.0005, 0.03)
+        out.append(s)
+    return out
+
+
+def fridge_hum() -> list[float]:
+    """Compressor hum, 4 s seamless loop (import with loop mode Forward)."""
+    rng = random.Random(7)
+    seconds = 4.0
+    n = int(RATE * seconds)
+    noise = lowpass([rng.uniform(-1, 1) for _ in range(n)], 0.01)
+    fade = int(RATE * 0.5)
+    # Make the noise periodic: crossfade its tail into its head.
+    for i in range(fade):
+        w = i / fade
+        noise[i] = noise[i] * w + noise[n - fade + i] * (1 - w)
+    noise = noise[: n - fade]
+    n = len(noise)
+    base = round(50 * n / RATE) * RATE / n  # whole cycles per loop
+    out = []
+    for i in range(n):
+        t = i / RATE
+        wobble = 1 + 0.08 * math.sin(2 * math.pi * t * RATE / n)  # one slow swell per loop
+        s = 0.5 * math.sin(2 * math.pi * base * t) + 0.35 * math.sin(2 * math.pi * 2 * base * t)
+        s += 0.12 * math.sin(2 * math.pi * 3 * base * t)
+        out.append(wobble * s * 0.6 + 3.0 * noise[i])
+    return out
+
+
 if __name__ == "__main__":
     write_wav("ball_bounce", ball_bounce())
     write_wav("can_hit", can_hit())
     write_wav("trash_accept", trash_accept())
     write_wav("door_bump", door_bump())
+    write_wav("fridge_seal", fridge_seal())
+    write_wav("fridge_close", fridge_close())
+    write_wav("fridge_hum", fridge_hum())

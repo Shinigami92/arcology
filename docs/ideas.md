@@ -30,7 +30,6 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [M1] A beverage can.
 - [M1] A trash can that accepts objects tagged "trash".
 - [M1] XR Tools setup: pickables, throwing, hinges, sliders, buttons, snap zones, impact sounds, tags.
-- [M2] Openable fridge in the kitchen (Blender asset with a proper door and interior; KinematicFollower door like D-018).
 - [later] Drawers and cabinets (sliders); wardrobe doors.
 - [later] Use the Frame's left D-pad and bumpers (free for now): e.g. quick comfort toggles.
 - [later] Bathroom: working tap/shower.
@@ -49,7 +48,7 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 ## City view
 
 - [M1] Simple window view.
-- [M2] Window view in layers: near facades as real low-poly geometry, mid-distance as impostors/cards, far city as Blender-rendered panoramas.
+- [M2] Window view in layers: near facades as real, realistic geometry (simplified only where distance hides it), mid-distance as impostors/cards, far city as Blender-rendered panoramas.
 - [later] Upgrade a layer to real geometry when its zone is built.
 - [later] Flying traffic lanes (The Fifth Element), holographic ads, neon signage.
 - [later] Elysium-style ring visible in the sky.
@@ -73,6 +72,8 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - Grappling hook (least satisfying in the XR Tools demo; not a fit).
 
 ## Done
+
+- Fridge (2026-09-28): realistic Blender fridge (Fable 5.1 won a blind A/B against Opus 5.5 by a hair), grab-to-open door with swing, magnetic seal, interior light, seal/close/hum sounds, cans on shelves and in door bins. Apartment doors swing on after release too.
 
 - **Milestone 1 complete (2026-09-28).** In-headset perf: GPU p95 5.0 ms / 8 ms budget, CPU p95 1.7 ms, 0.45 % dropped frames (baseline `tools/perf/baselines/apartment-xr.json`).
 

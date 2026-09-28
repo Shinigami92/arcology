@@ -38,6 +38,7 @@ SCENES = {
     "ball": "res://assets/props/ball/ball.tscn",
     "can": "res://assets/props/beverage_can/beverage_can.tscn",
     "trash": "res://assets/props/trash_can/trash_can.tscn",
+    "fridge": "res://assets/props/fridge/fridge.tscn",
 }
 SEAT_SCRIPT = "res://core/interaction/seat.gd"
 
@@ -147,7 +148,6 @@ box("Living", "NeonStrip", (-2.99, 2.2, -0.2), (0.02, 0.03, 1.6), "magenta", Fal
 box("Living", "LampDisc", (0, 2.585, -0.5), (0.6, 0.03, 0.6), "lamp", False)
 
 # --- Kitchen ---------------------------------------------------------------
-box("Kitchen", "Fridge", (6.05, 0.95, -2.6), (0.7, 1.9, 0.7), "steel")
 box("Kitchen", "CounterBody", (6.1, 0.44, -0.5), (0.6, 0.88, 3.4), "dark")
 box("Kitchen", "CounterTop", (6.08, 0.9, -0.5), (0.64, 0.04, 3.44), "steel")
 box("Kitchen", "Backsplash", (6.39, 1.25, -0.5), (0.02, 0.6, 3.4), "ceramic", False)
@@ -189,6 +189,8 @@ INSTANCES = [
     ("DoorBathroom", "door", (0.98, 0, 3.82), (0, 180, 0)),
     ("DoorEntrance", "door", (6.38, 0, 3.33), (0, 90, 0)),
     ("TrashCan", "trash", (6.15, 0, 1.6), (0, 0, 0)),
+    # Origin bottom center of the cabinet, front +Z, hinge on local -X: NE corner, faces west, hinge north.
+    ("Fridge", "fridge", (6.055, 0, -2.53), (0, -90, 0)),
     ("Ball", "ball", (-2.84, 1.22, -1.8), (0, 0, 0)),
     ("CanLivingTable", "can", (1.25, 0.812, -1.25), (0, 0, 0)),
     ("CanWindowLedge", "can", (-1.2, 0.502, -2.94), (0, 0, 0)),

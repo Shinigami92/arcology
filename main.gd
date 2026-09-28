@@ -8,8 +8,10 @@ extends Node3D
 ##   --perf-duration=<s>  flythrough length in seconds (default 20)
 ##   --perf-hide=<a,b>    zone-relative node paths to hide (A/B cost tests)
 ##   --test=<suite>       run tools/tests/<suite>_tests.gd and quit with the failure count
+##   --shots=<views>      render still images and quit (see tools/shots/shots.gd)
 
 const PERF_SCRIPT := "res://tools/perf/perf_flythrough.gd"
+const SHOTS_SCRIPT := "res://tools/shots/shots.gd"
 
 ## Entry marker path inside the zone to spawn at.
 @export var entry := NodePath("Zones/Apartment/Entries/Default")
@@ -29,6 +31,12 @@ func _ready() -> void:
 		_start_perf(args)
 	elif args.has("test"):
 		add_child(load("res://tools/tests/%s_tests.gd" % args["test"]).new())
+	elif args.has("shots"):
+		var shots: Node = load(SHOTS_SCRIPT).new()
+		shots.set("zone", $Zones.get_child(0))
+		shots.set("views", (args["shots"] as String).split(";", false))
+		shots.set("hinges", (args.get("shot-hinge", "") as String).split(",", false))
+		add_child(shots)
 
 
 func _start_perf(args: Dictionary) -> void:

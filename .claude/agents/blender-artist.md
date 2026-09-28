@@ -25,7 +25,7 @@ Before starting, read `CLAUDE.md` (budgets, conventions, asset recipe) and `docs
 
 ## Verify
 
-After export, render a thumbnail (`render_thumbnail_to_path`) to the scratchpad and look at it. Check scale against a 1.8 m reference figure or the 2.1 m door if unsure.
+After export, render a thumbnail (`render_thumbnail_to_path`, or a Cycles render from a background script when Blender's GUI isn't running) to the scratchpad and look at it. Check scale against a 1.8 m reference figure or the 2.1 m door if unsure.
 
 ## A/B runs
 

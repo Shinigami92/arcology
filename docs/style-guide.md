@@ -2,6 +2,8 @@
 
 ## Mood
 
+**Realistic, not stylized.** Assets aim for believable, photoreal materials and proportions (PBR textures, wear, bevels that catch light), not low-poly or toon looks. Geometry is only simplified where the player can't tell: far away, or hidden by distance and fog.
+
 Lived-in, dense, vertical. The apartment is a warm, slightly cramped refuge; the city outside is cold, huge and never dark. The contrast between warm interior light and cool, neon-soaked exterior is the signature look.
 
 | Source | Take | Leave |
