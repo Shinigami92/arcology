@@ -42,6 +42,7 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [M2] Weather: rain particles, rain-on-glass shader, wet surfaces, fog, lightning, sky crossfade, audio layers.
 - [M2] World-state control panel in the apartment, e.g. a holographic wall terminal with physical buttons and sliders.
 - [M2] Panorama variants: day, dusk, night, rain/fog, crossfaded by time and weather.
+- [M2] Replace the procedural window pattern with prefiltered (mipmapped) facades/impostors; the remaining flicker in the headset is probably aliasing plus stream compression (D-023).
 
 ## City view
 
@@ -70,6 +71,8 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - Grappling hook (least satisfying in the XR Tools demo; not a fit).
 
 ## Done
+
+- Feedback round 3 (2026-09-28): doors that open away can be pushed open (hand passes its own door); jump tucks and lands on tables; player body ignores cans and balls; interaction and skyline test suites. Skyline flicker deferred to the Blender/panorama rebuild (D-023).
 
 - Feedback round 2 (2026-09-27): ranged grab actually pulls (own targeting, 6 m, line of sight); door collisions follow the door; all doors open; jump reaches the table; Steam Frame buttons: right A jump, B crouch, X sit, Y recenter; less skyline shimmer (measured).
 

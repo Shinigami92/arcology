@@ -23,6 +23,10 @@ const FADE_TIME := 0.15
 @export_custom(PROPERTY_HINT_NONE, "suffix:m/s") var move_speed := 2.0: set = set_move_speed
 ## Speed multiplier when the left stick is pushed fully forward.
 @export_range(1.0, 4.0, 0.1) var sprint_multiplier := 2.0: set = set_sprint_multiplier
+## Body height while airborne after a jump (feet tucked). A 1.8 m body under
+## the 2.6 m ceiling can only lift its feet 0.8 m; tucking lets it clear a
+## table. The view doesn't change in the air.
+@export_custom(PROPERTY_HINT_NONE, "suffix:m") var jump_tuck_height := 1.1
 
 @export_group("Comfort")
 @export var turn_style := TurnStyle.SMOOTH: set = set_turn_style
@@ -52,6 +56,11 @@ var _seats: Array[Seat] = []
 var _seat: Seat
 var _busy := false
 var _stand_stick_held := 0.0
+var _tucked := false
+var _tuck_time := 0.0
+var _untucking := false
+var _untuck_height := 0.0
+var _untuck_still := 0
 
 @onready var _camera: XRCamera3D = $XRCamera3D
 @onready var _vignette: XRToolsVignette = $XRCamera3D/Vignette
@@ -69,6 +78,7 @@ func _ready() -> void:
 	var start_xr := XRToolsStartXR.get_start_xr_node()
 	if start_xr:
 		start_xr.xr_started.connect(_on_xr_started)
+	_body.player_jumped.connect(_on_jumped)
 	_left.button_pressed.connect(_on_button.bind("left"))
 	_right.button_pressed.connect(_on_button.bind("right"))
 
@@ -81,6 +91,17 @@ func _physics_process(delta: float) -> void:
 			recenter()
 	else:
 		_recenter_held = 0.0
+
+	if _tucked:
+		_tuck_time += delta
+		if _tuck_time > 0.15 and _body.is_on_floor():
+			_tucked = false
+			_body.override_player_height(self)
+			_untucking = true
+			_untuck_height = _body_height()
+			_untuck_still = 0
+	elif _untucking:
+		_follow_untuck()
 
 	# Pushing the move stick while seated gets the player up.
 	if seated and not _busy:
@@ -266,6 +287,34 @@ func _on_button(button: String, hand: String) -> void:
 		var seat := _nearest_seat()
 		if seat:
 			sit(seat)
+
+
+## XR Tools grows the body downward (its feet sit below a fixed camera), so
+## after landing tucked the feet would sink into whatever was landed on, and
+## a thin surface (a table) throws the player off. Raising the origin by the
+## height gained each frame grows the body upward instead: the player stands
+## up where they landed.
+func _follow_untuck() -> void:
+	var height := _body_height()
+	var gained := height - _untuck_height
+	_untuck_height = height
+	if gained > 0.0001:
+		global_position += global_basis.y * gained
+		_untuck_still = 0
+	else:
+		_untuck_still += 1
+		if _untuck_still > 5:
+			_untucking = false
+
+
+func _body_height() -> float:
+	return (_body._collision_node.shape as CapsuleShape3D).height
+
+
+func _on_jumped() -> void:
+	_tucked = true
+	_tuck_time = 0.0
+	_body.override_player_height(self, jump_tuck_height)
 
 
 func _on_xr_started() -> void:

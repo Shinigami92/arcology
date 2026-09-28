@@ -45,6 +45,12 @@ boxes = []  # (group, name, center, size, material, collide)
 
 
 def box(group, name, center, size, mat, collide=True):
+    """collide: True (collision = visual box), False, or (center, size) for a
+    different collision box. Use a solid volume for anything the player can
+    stand on: XR Tools regrows the body downward after a jump or crouch and
+    pushes it through thin plates."""
+    if isinstance(collide, tuple):
+        collide = (tuple(collide[0]), tuple(collide[1]))
     boxes.append((group, name, tuple(center), tuple(size), mat, collide))
 
 
@@ -128,9 +134,9 @@ wall("Vestibule", "VestEnd", "z", 8.3, (2.2, 3.6))
 box("Vestibule", "VestSign", (8.19, 2.2, 2.9), (0.02, 0.12, 0.6), "cyan", False)
 
 # --- Living room -----------------------------------------------------------
-box("Living", "TableTop", (1.1, 0.73, -1.3), (1.0, 0.04, 0.6), "dark")
-box("Living", "TablePedestal", (1.1, 0.36, -1.3), (0.1, 0.7, 0.1), "steel")
-box("Living", "TableBase", (1.1, 0.01, -1.3), (0.5, 0.02, 0.4), "steel")
+box("Living", "TableTop", (1.1, 0.73, -1.3), (1.0, 0.04, 0.6), "dark", ((1.1, 0.375, -1.3), (1.0, 0.75, 0.6)))
+box("Living", "TablePedestal", (1.1, 0.36, -1.3), (0.1, 0.7, 0.1), "steel", False)
+box("Living", "TableBase", (1.1, 0.01, -1.3), (0.5, 0.02, 0.4), "steel", False)
 box("Living", "SofaSeat", (-1.6, 0.22, 0.9), (2.0, 0.44, 0.85), "sofa")
 box("Living", "SofaBack", (-1.6, 0.65, 1.25), (2.0, 0.42, 0.18), "sofa")
 box("Living", "SofaArmWest", (-2.65, 0.32, 0.9), (0.14, 0.64, 0.85), "sofa")
@@ -146,9 +152,9 @@ box("Kitchen", "CounterBody", (6.1, 0.44, -0.5), (0.6, 0.88, 3.4), "dark")
 box("Kitchen", "CounterTop", (6.08, 0.9, -0.5), (0.64, 0.04, 3.44), "steel")
 box("Kitchen", "Backsplash", (6.39, 1.25, -0.5), (0.02, 0.6, 3.4), "ceramic", False)
 box("Kitchen", "CounterNeon", (6.37, 1.56, -0.5), (0.02, 0.02, 3.2), "cyan", False)
-box("Kitchen", "TableTop", (4.4, 0.73, -1.0), (0.9, 0.04, 0.9), "wood")
-box("Kitchen", "TablePedestal", (4.4, 0.36, -1.0), (0.1, 0.7, 0.1), "steel")
-box("Kitchen", "TableBase", (4.4, 0.01, -1.0), (0.5, 0.02, 0.5), "steel")
+box("Kitchen", "TableTop", (4.4, 0.73, -1.0), (0.9, 0.04, 0.9), "wood", ((4.4, 0.375, -1.0), (0.9, 0.75, 0.9)))
+box("Kitchen", "TablePedestal", (4.4, 0.36, -1.0), (0.1, 0.7, 0.1), "steel", False)
+box("Kitchen", "TableBase", (4.4, 0.01, -1.0), (0.5, 0.02, 0.5), "steel", False)
 box("Kitchen", "LampDisc", (4.8, 2.585, -0.5), (0.5, 0.03, 0.5), "lamp", False)
 
 # --- Bedroom ---------------------------------------------------------------
@@ -270,7 +276,8 @@ def main():
     add_ext("seat", "Script", SEAT_SCRIPT)
 
     sizes = {}
-    for *_, size, _, _ in boxes:
+    all_sizes = [b[3] for b in boxes] + [b[5][1] for b in boxes if isinstance(b[5], tuple)]
+    for size in all_sizes:
         if size not in sizes:
             sid = f"s{len(sizes)}"
             sizes[size] = sid
@@ -301,10 +308,11 @@ def main():
                 f'mesh = SubResource("BoxMesh_{sid}")\n'
                 f'surface_material_override/0 = ExtResource("{ids[mat]}")\n')
             if collide:
+                col_center, col_size = collide if isinstance(collide, tuple) else (center, size)
                 nodes.append(
                     f'[node name="{name}Collision" type="CollisionShape3D" parent="{g}"]\n'
-                    f"position = {v3(center)}\n"
-                    f'shape = SubResource("BoxShape3D_{sid}")\n')
+                    f"position = {v3(col_center)}\n"
+                    f'shape = SubResource("BoxShape3D_{sizes[col_size]}")\n')
 
     nodes.append('[node name="Props" type="Node3D" parent="."]\n')
     for name, key, pos, rot in INSTANCES:

@@ -478,6 +478,18 @@ size = Vector3(0.3, 0.03, 0.3)
 [sub_resource type="BoxShape3D" id="BoxShape3D_s75"]
 size = Vector3(0.3, 0.03, 0.3)
 
+[sub_resource type="BoxMesh" id="BoxMesh_s76"]
+size = Vector3(1, 0.75, 0.6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s76"]
+size = Vector3(1, 0.75, 0.6)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s77"]
+size = Vector3(0.9, 0.75, 0.9)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s77"]
+size = Vector3(0.9, 0.75, 0.9)
+
 [sub_resource type="BoxShape3D" id="BoxShape3D_seat0"]
 size = Vector3(2.2, 2, 1.2)
 
@@ -931,26 +943,18 @@ mesh = SubResource("BoxMesh_s42")
 surface_material_override/0 = ExtResource("6_dark")
 
 [node name="TableTopCollision" type="CollisionShape3D" parent="Living"]
-position = Vector3(1.1, 0.73, -1.3)
-shape = SubResource("BoxShape3D_s42")
+position = Vector3(1.1, 0.375, -1.3)
+shape = SubResource("BoxShape3D_s76")
 
 [node name="TablePedestal" type="MeshInstance3D" parent="Living"]
 position = Vector3(1.1, 0.36, -1.3)
 mesh = SubResource("BoxMesh_s43")
 surface_material_override/0 = ExtResource("5_steel")
 
-[node name="TablePedestalCollision" type="CollisionShape3D" parent="Living"]
-position = Vector3(1.1, 0.36, -1.3)
-shape = SubResource("BoxShape3D_s43")
-
 [node name="TableBase" type="MeshInstance3D" parent="Living"]
 position = Vector3(1.1, 0.01, -1.3)
 mesh = SubResource("BoxMesh_s44")
 surface_material_override/0 = ExtResource("5_steel")
-
-[node name="TableBaseCollision" type="CollisionShape3D" parent="Living"]
-position = Vector3(1.1, 0.01, -1.3)
-shape = SubResource("BoxShape3D_s44")
 
 [node name="SofaSeat" type="MeshInstance3D" parent="Living"]
 position = Vector3(-1.6, 0.22, 0.9)
@@ -1064,26 +1068,18 @@ mesh = SubResource("BoxMesh_s57")
 surface_material_override/0 = ExtResource("15_wood")
 
 [node name="TableTopCollision" type="CollisionShape3D" parent="Kitchen"]
-position = Vector3(4.4, 0.73, -1)
-shape = SubResource("BoxShape3D_s57")
+position = Vector3(4.4, 0.375, -1)
+shape = SubResource("BoxShape3D_s77")
 
 [node name="TablePedestal" type="MeshInstance3D" parent="Kitchen"]
 position = Vector3(4.4, 0.36, -1)
 mesh = SubResource("BoxMesh_s43")
 surface_material_override/0 = ExtResource("5_steel")
 
-[node name="TablePedestalCollision" type="CollisionShape3D" parent="Kitchen"]
-position = Vector3(4.4, 0.36, -1)
-shape = SubResource("BoxShape3D_s43")
-
 [node name="TableBase" type="MeshInstance3D" parent="Kitchen"]
 position = Vector3(4.4, 0.01, -1)
 mesh = SubResource("BoxMesh_s58")
 surface_material_override/0 = ExtResource("5_steel")
-
-[node name="TableBaseCollision" type="CollisionShape3D" parent="Kitchen"]
-position = Vector3(4.4, 0.01, -1)
-shape = SubResource("BoxShape3D_s58")
 
 [node name="LampDisc" type="MeshInstance3D" parent="Kitchen"]
 position = Vector3(4.8, 2.585, -0.5)

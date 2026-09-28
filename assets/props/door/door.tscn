@@ -1,22 +1,20 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cko2r73ubjat5"]
 
 [ext_resource type="Script" uid="uid://c8gx2wc7hsxf5" path="res://addons/godot-xr-tools/interactables/interactable_hinge.gd" id="1_hinge"]
 [ext_resource type="Script" uid="uid://dlojnwxo25bky" path="res://addons/godot-xr-tools/interactables/interactable_handle.gd" id="2_handle"]
-[ext_resource type="Script" path="res://core/interaction/hinge_stop_sound.gd" id="3_stop"]
-[ext_resource type="AudioStream" path="res://assets/audio/sfx/door_bump.wav" id="4_bump"]
+[ext_resource type="Script" uid="uid://0qo7w8nlh6eu" path="res://core/interaction/hinge_stop_sound.gd" id="3_stop"]
+[ext_resource type="AudioStream" uid="uid://dgrgkkkb7rd03" path="res://assets/audio/sfx/door_bump.wav" id="4_bump"]
 [ext_resource type="Material" path="res://assets/materials/door_panel.tres" id="5_panel"]
 [ext_resource type="Material" path="res://assets/materials/brushed_steel.tres" id="6_steel"]
-[ext_resource type="Script" path="res://core/interaction/hinge_body_blocker.gd" id="7_blocker"]
-[ext_resource type="Script" path="res://core/interaction/kinematic_follower.gd" id="8_follower"]
+[ext_resource type="Script" uid="uid://c8otihf11a0u7" path="res://core/interaction/hinge_body_blocker.gd" id="7_blocker"]
+[ext_resource type="Script" uid="uid://ccxwohhkuuyo1" path="res://core/interaction/kinematic_follower.gd" id="8_follower"]
+[ext_resource type="Script" uid="uid://dwnb8l1buro5f" path="res://core/interaction/grab_pass_through.gd" id="9_pass"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_leaf"]
 size = Vector3(0.88, 2.08, 0.04)
 
 [sub_resource type="BoxMesh" id="BoxMesh_leaf"]
 size = Vector3(0.88, 2.08, 0.04)
-
-[sub_resource type="BoxMesh" id="BoxMesh_lever"]
-size = Vector3(0.13, 0.022, 0.022)
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_rose"]
 top_radius = 0.025
@@ -25,90 +23,96 @@ height = 0.05
 radial_segments = 16
 rings = 1
 
+[sub_resource type="BoxMesh" id="BoxMesh_lever"]
+size = Vector3(0.13, 0.022, 0.022)
+
 [sub_resource type="SphereShape3D" id="SphereShape3D_grab"]
 radius = 0.06
 
-[node name="Door" type="Node3D"]
+[node name="Door" type="Node3D" unique_id=32924855]
 metadata/_doc = "Hinged door, 0.88 x 2.08 m leaf. Origin = bottom of the hinge axis; the leaf extends along +X and opens toward -Z (0..100 degrees). Handle at 1.1 m (seated reach). Grab either handle to swing it; the leaf stops instead of passing through the player."
 
-[node name="HingeOrigin" type="Node3D" parent="."]
-rotation_degrees = Vector3(0, 0, 90)
+[node name="HingeOrigin" type="Node3D" parent="." unique_id=1841479411]
+transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0)
 
-[node name="InteractableHinge" type="Node3D" parent="HingeOrigin"]
+[node name="InteractableHinge" type="Node3D" parent="HingeOrigin" unique_id=1643218810]
 script = ExtResource("1_hinge")
 hinge_limit_min = 0.0
 hinge_limit_max = 100.0
 
-[node name="Leaf" type="Node3D" parent="HingeOrigin/InteractableHinge"]
-rotation_degrees = Vector3(0, 0, -90)
+[node name="Leaf" type="Node3D" parent="HingeOrigin/InteractableHinge" unique_id=1276270077]
+transform = Transform3D(-4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0)
 
-[node name="DoorBody" type="AnimatableBody3D" parent="HingeOrigin/InteractableHinge/Leaf"]
+[node name="DoorBody" type="AnimatableBody3D" parent="HingeOrigin/InteractableHinge/Leaf" unique_id=559964461]
 script = ExtResource("8_follower")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody"]
-position = Vector3(0.45, 1.04, 0)
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody" unique_id=154862264]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.45, 1.04, 0)
 shape = SubResource("BoxShape3D_leaf")
 
-[node name="Panel" type="MeshInstance3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody"]
-position = Vector3(0.45, 1.04, 0)
+[node name="Panel" type="MeshInstance3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody" unique_id=183302237]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.45, 1.04, 0)
 mesh = SubResource("BoxMesh_leaf")
 surface_material_override/0 = ExtResource("5_panel")
 
-[node name="RoseFront" type="MeshInstance3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody"]
-position = Vector3(0.78, 1.1, -0.045)
-rotation_degrees = Vector3(90, 0, 0)
+[node name="RoseFront" type="MeshInstance3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody" unique_id=1750868434]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0.78, 1.1, -0.045)
 mesh = SubResource("CylinderMesh_rose")
 surface_material_override/0 = ExtResource("6_steel")
 
-[node name="LeverFront" type="MeshInstance3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody"]
-position = Vector3(0.735, 1.1, -0.07)
+[node name="LeverFront" type="MeshInstance3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody" unique_id=411049738]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.735, 1.1, -0.07)
 mesh = SubResource("BoxMesh_lever")
 surface_material_override/0 = ExtResource("6_steel")
 
-[node name="RoseBack" type="MeshInstance3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody"]
-position = Vector3(0.78, 1.1, 0.045)
-rotation_degrees = Vector3(90, 0, 0)
+[node name="RoseBack" type="MeshInstance3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody" unique_id=443737723]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0.78, 1.1, 0.045)
 mesh = SubResource("CylinderMesh_rose")
 surface_material_override/0 = ExtResource("6_steel")
 
-[node name="LeverBack" type="MeshInstance3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody"]
-position = Vector3(0.735, 1.1, 0.07)
+[node name="LeverBack" type="MeshInstance3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody" unique_id=1765390619]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.735, 1.1, 0.07)
 mesh = SubResource("BoxMesh_lever")
 surface_material_override/0 = ExtResource("6_steel")
 
-[node name="HandleOriginFront" type="Node3D" parent="HingeOrigin/InteractableHinge/Leaf"]
-position = Vector3(0.74, 1.1, -0.07)
+[node name="HandleOriginFront" type="Node3D" parent="HingeOrigin/InteractableHinge/Leaf" unique_id=891829970]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.74, 1.1, -0.07)
 
-[node name="InteractableHandle" type="RigidBody3D" parent="HingeOrigin/InteractableHinge/Leaf/HandleOriginFront"]
+[node name="InteractableHandle" type="RigidBody3D" parent="HingeOrigin/InteractableHinge/Leaf/HandleOriginFront" unique_id=800741288]
 collision_layer = 262144
 collision_mask = 0
 freeze = true
 script = ExtResource("2_handle")
 picked_up_layer = 0
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="HingeOrigin/InteractableHinge/Leaf/HandleOriginFront/InteractableHandle"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HingeOrigin/InteractableHinge/Leaf/HandleOriginFront/InteractableHandle" unique_id=1047465731]
 shape = SubResource("SphereShape3D_grab")
 
-[node name="HandleOriginBack" type="Node3D" parent="HingeOrigin/InteractableHinge/Leaf"]
-position = Vector3(0.74, 1.1, 0.07)
+[node name="HandleOriginBack" type="Node3D" parent="HingeOrigin/InteractableHinge/Leaf" unique_id=2119918506]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.74, 1.1, 0.07)
 
-[node name="InteractableHandle" type="RigidBody3D" parent="HingeOrigin/InteractableHinge/Leaf/HandleOriginBack"]
+[node name="InteractableHandle" type="RigidBody3D" parent="HingeOrigin/InteractableHinge/Leaf/HandleOriginBack" unique_id=301708774]
 collision_layer = 262144
 collision_mask = 0
 freeze = true
 script = ExtResource("2_handle")
 picked_up_layer = 0
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="HingeOrigin/InteractableHinge/Leaf/HandleOriginBack/InteractableHandle"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HingeOrigin/InteractableHinge/Leaf/HandleOriginBack/InteractableHandle" unique_id=572699995]
 shape = SubResource("SphereShape3D_grab")
 
-[node name="StopSound" type="AudioStreamPlayer3D" parent="HingeOrigin/InteractableHinge" node_paths=PackedStringArray("hinge")]
-position = Vector3(1.1, -0.8, 0)
+[node name="StopSound" type="AudioStreamPlayer3D" parent="HingeOrigin/InteractableHinge" unique_id=1639755731 node_paths=PackedStringArray("hinge")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1, -0.8, 0)
 stream = ExtResource("4_bump")
 script = ExtResource("3_stop")
 hinge = NodePath("..")
 
-[node name="BodyBlocker" type="Node" parent="." node_paths=PackedStringArray("hinge", "leaf")]
+[node name="BodyBlocker" type="Node" parent="." unique_id=1765348498 node_paths=PackedStringArray("hinge", "leaf")]
 script = ExtResource("7_blocker")
 hinge = NodePath("../HingeOrigin/InteractableHinge")
 leaf = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+
+[node name="GrabPassThrough" type="Node" parent="." unique_id=523517475 node_paths=PackedStringArray("body", "handles_root")]
+script = ExtResource("9_pass")
+body = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+handles_root = NodePath("../HingeOrigin/InteractableHinge/Leaf")

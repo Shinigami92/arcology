@@ -7,6 +7,7 @@ extends Node3D
 ##   --perf=<zone>        run the perf flythrough for that zone and quit
 ##   --perf-duration=<s>  flythrough length in seconds (default 20)
 ##   --perf-hide=<a,b>    zone-relative node paths to hide (A/B cost tests)
+##   --test=<suite>       run tools/tests/<suite>_tests.gd and quit with the failure count
 
 const PERF_SCRIPT := "res://tools/perf/perf_flythrough.gd"
 
@@ -26,6 +27,8 @@ func _ready() -> void:
 	var args := _user_args()
 	if args.has("perf"):
 		_start_perf(args)
+	elif args.has("test"):
+		add_child(load("res://tools/tests/%s_tests.gd" % args["test"]).new())
 
 
 func _start_perf(args: Dictionary) -> void:

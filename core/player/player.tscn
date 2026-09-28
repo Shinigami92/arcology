@@ -207,6 +207,8 @@ crouch_type = 1
 [node name="PlayerBody" parent="." unique_id=1220268131 instance=ExtResource("12_body")]
 player_calibrate_height = false
 physics = ExtResource("17_physics")
+collision_mask = 1019
+ground_control = 2
 
 [node name="Fade" parent="." unique_id=245932940 instance=ExtResource("16_fade")]
 
