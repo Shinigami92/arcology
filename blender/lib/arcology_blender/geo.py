@@ -182,3 +182,23 @@ def collision_box(name, lo, hi, collection):
     ob = new_object(f"{name}-convcolonly", bm, collection)
     ob.display_type = "WIRE"
     return ob
+
+
+def join(objs, name):
+    """Join mesh objects into the first one, renamed `name` (mesh too)."""
+    bpy.ops.object.select_all(action="DESELECT")
+    for ob in objs:
+        ob.select_set(True)
+    bpy.context.view_layer.objects.active = objs[0]
+    bpy.ops.object.join()
+    ob = bpy.context.view_layer.objects.active
+    ob.name = name
+    ob.data.name = name
+    return ob
+
+
+def remove_attribute(ob, name):
+    """Drop a build-time mesh attribute (e.g. `soft.SEAM_ATTR`) so it doesn't reach the glb."""
+    a = ob.data.attributes.get(name)
+    if a is not None:
+        ob.data.attributes.remove(a)

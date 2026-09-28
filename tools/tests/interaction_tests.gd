@@ -37,8 +37,8 @@ func _ready() -> void:
 	await _test_swing("DoorLiving", 20.0, 120.0)
 	await _test_flick_shut("Fridge")
 	await _test_fridge_door_bin()
-	for sofa: String in ["SofaA", "SofaB"]:
-		await _test_sofa(sofa)
+	await _test_sofa()
+	await _test_spare_sofa()
 	print("TEST DONE: %d failure(s)" % _failures)
 	get_tree().quit(_failures)
 
@@ -371,25 +371,40 @@ func _test_fridge_door_bin() -> void:
 
 
 ## A can dropped on the middle seat rests on the seat surface (0.44 m), and the
-## sofa's throw pillows have settled on the sofa, not on the floor.
-func _test_sofa(sofa: String) -> void:
-	var root: Node3D = _main.get_node("Zones/Apartment/Props/" + sofa)
+## throw pillows have settled on the sofa, not on the floor.
+func _test_sofa() -> void:
+	var root: Node3D = _main.get_node("Zones/Apartment/Props/Sofa")
+	var local := await _drop_can_on_seat(root)
+	_check("sofa_can_on_seat", absf(local.y - 0.50) < 0.05,
+			"can center at local y %.2f (seat 0.44 + half can)" % local.y)
+	var settled: Array[String] = []
+	var ok := true
+	for i in [1, 2]:
+		var pillow: RigidBody3D = _main.get_node("Zones/Apartment/Props/SofaPillow%d" % i)
+		var p := root.to_local(pillow.global_position)
+		ok = ok and p.y > 0.45 and absf(p.x) < 1.05 and absf(p.z) < 0.5 and pillow.linear_velocity.length() < 0.05
+		settled.append("%s at %s" % [pillow.name, p.snappedf(0.01)])
+	_check("sofa_pillows_settled", ok, ", ".join(settled))
+
+
+## The spare boucle sofa (kept for other apartments) isn't placed anywhere:
+## spawn it away from the apartment and check its seat collision.
+func _test_spare_sofa() -> void:
+	var sofa: Node3D = (load("res://assets/props/sofa/sofa_boucle.tscn") as PackedScene).instantiate()
+	_main.add_child(sofa)
+	sofa.global_position = Vector3(30, 0, 30)
+	await _frames(2)
+	var local := await _drop_can_on_seat(sofa)
+	sofa.queue_free()
+	_check("sofa_boucle_can_on_seat", absf(local.y - 0.50) < 0.05,
+			"can center at local y %.2f (seat 0.44 + half can)" % local.y)
+
+
+func _drop_can_on_seat(root: Node3D) -> Vector3:
 	var can: RigidBody3D = (load(CAN_SCENE) as PackedScene).instantiate()
 	_main.add_child(can)
 	can.global_position = root.to_global(Vector3(0, 0.7, 0.15))
 	await _frames(120)
 	var local := root.to_local(can.global_position)
 	can.queue_free()
-	_check(sofa + "_can_on_seat", absf(local.y - 0.50) < 0.05,
-			"can center at local y %.2f (seat 0.44 + half can)" % local.y)
-
-	var letter := sofa.substr(4)
-	var settled: Array[String] = []
-	var ok := true
-	for i in [1, 2]:
-		var pillow: RigidBody3D = _main.get_node("Zones/Apartment/Props/Pillow%s%d" % [letter, i])
-		var p := root.to_local(pillow.global_position)
-		var on_sofa := p.y > 0.45 and absf(p.x) < 1.05 and absf(p.z) < 0.5
-		ok = ok and on_sofa and pillow.linear_velocity.length() < 0.05
-		settled.append("%s at %s" % [pillow.name, p.snappedf(0.01)])
-	_check(sofa + "_pillows_settled", ok, ", ".join(settled))
+	return local

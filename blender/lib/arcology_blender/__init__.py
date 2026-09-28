@@ -19,6 +19,8 @@ Modules:
     shading    `Graph` node builder for procedural source materials, plain and emissive materials, bitmap text
     wear       reusable wear layers on a `Graph` (edge highlights, scuffs, grime, dust, smudges)
     materials  generic procedural recipes (plastics, rubber, paint, paper)
+    soft       soft goods geometry: upholstered blocks, dents, lumps, throw pillows (with seam attribute)
+    fabric     upholstery layers for `Graph`: base weave, welts/piping, creases, rub, pilling, stains
     bake       UV unwrap and Cycles bake of src_ materials into one PBR atlas set per part
     export     glTF export with the project's settings
     studio     neutral studio lights, camera and still renders

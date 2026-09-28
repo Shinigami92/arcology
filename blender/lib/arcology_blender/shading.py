@@ -117,6 +117,18 @@ class Graph:
     def pointiness(self):
         return self.geo.outputs["Pointiness"]
 
+    def attribute(self, name):
+        """Float value of a mesh attribute (interpolated across faces)."""
+        n = self.nodes.new("ShaderNodeAttribute")
+        n.attribute_type = "GEOMETRY"
+        n.attribute_name = name
+        return n.outputs["Fac"]
+
+    def dist_xy(self, cx, cy):
+        """Distance in world x/y from (cx, cy)."""
+        dx, dy = self.sub(self.x, cx), self.sub(self.y, cy)
+        return self.math("SQRT", self.add(self.mul(dx, dx), self.mul(dy, dy)))
+
     def _mix(self, dtype, fac, a, b):
         n = self.nodes.new("ShaderNodeMix")
         n.data_type = dtype

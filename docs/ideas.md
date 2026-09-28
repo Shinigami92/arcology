@@ -73,6 +73,8 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 
 ## Done
 
+- Sofa (2026-09-28): realistic three-seater (Opus 5.5 won the blind A/B for texture realism) with two pickable throw pillows; Fable 5.1's boucle sofa kept as `sofa_boucle` for other apartments. Shared Blender toolkit gained soft-goods geometry and fabric layers.
+
 - Fridge (2026-09-28): realistic Blender fridge (Fable 5.1 won a blind A/B against Opus 5.5 by a hair), grab-to-open door with swing, magnetic seal, interior light, seal/close/hum sounds, cans on shelves and in door bins. Apartment doors swing on after release too.
 
 - **Milestone 1 complete (2026-09-28).** In-headset perf: GPU p95 5.0 ms / 8 ms budget, CPU p95 1.7 ms, 0.45 % dropped frames (baseline `tools/perf/baselines/apartment-xr.json`).
