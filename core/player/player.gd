@@ -34,11 +34,14 @@ const FADE_TIME := 0.15
 @export var vignette_enabled := false: set = set_vignette_enabled
 
 @export_group("Buttons")
-## Left controller button, held: recenter view and recalibrate eye height.
-@export var recenter_action := "by_button"
+## OpenXR action (either hand), held: recenter view and recalibrate eye
+## height. Bound per controller in openxr_action_map.tres (Steam Frame:
+## right Y; Touch: left Y; Index: left B).
+@export var recenter_action := "recenter"
 @export_custom(PROPERTY_HINT_NONE, "suffix:s") var recenter_hold_time := 1.0
-## Left controller button: interact (sit down / get up).
-@export var interact_action := "ax_button"
+## OpenXR action (either hand): interact, i.e. sit down / get up (Steam
+## Frame: right X; Touch: left X; Index: left A).
+@export var interact_action := "interact"
 ## Print every controller button press to the log (to check button mapping).
 @export var log_buttons := true
 
@@ -66,13 +69,12 @@ func _ready() -> void:
 	var start_xr := XRToolsStartXR.get_start_xr_node()
 	if start_xr:
 		start_xr.xr_started.connect(_on_xr_started)
-	_left.button_pressed.connect(_on_left_button)
-	if log_buttons:
-		_right.button_pressed.connect(func(button: String) -> void: print("XR button: right ", button))
+	_left.button_pressed.connect(_on_button.bind("left"))
+	_right.button_pressed.connect(_on_button.bind("right"))
 
 
 func _physics_process(delta: float) -> void:
-	if _left.get_is_active() and _left.is_button_pressed(recenter_action):
+	if _pressed(_left, recenter_action) or _pressed(_right, recenter_action):
 		_recenter_held += delta
 		if _recenter_held >= recenter_hold_time:
 			_recenter_held = -INF  # fire once per press
@@ -249,9 +251,13 @@ func _nearest_seat() -> Seat:
 	return best
 
 
-func _on_left_button(button: String) -> void:
+static func _pressed(controller: XRController3D, action: String) -> bool:
+	return controller.get_is_active() and controller.is_button_pressed(action)
+
+
+func _on_button(button: String, hand: String) -> void:
 	if log_buttons:
-		print("XR button: left ", button)
+		print("XR button: %s %s" % [hand, button])
 	if button != interact_action:
 		return
 	if seated:

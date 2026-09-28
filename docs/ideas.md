@@ -29,7 +29,9 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [M1] A beverage can.
 - [M1] A trash can that accepts objects tagged "trash".
 - [M1] XR Tools setup: pickables, throwing, hinges, sliders, buttons, snap zones, impact sounds, tags.
-- [later] Drawers and cabinets (sliders); fridge door, wardrobe doors.
+- [M2] Openable fridge in the kitchen (Blender asset with a proper door and interior; KinematicFollower door like D-018).
+- [later] Drawers and cabinets (sliders); wardrobe doors.
+- [later] Use the Frame's left D-pad and bumpers (free for now): e.g. quick comfort toggles.
 - [later] Bathroom: working tap/shower, mirror (needs a SubViewport budget).
 - [later] Physical light switches and dimmers.
 
@@ -68,6 +70,8 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - Grappling hook (least satisfying in the XR Tools demo; not a fit).
 
 ## Done
+
+- Feedback round 2 (2026-09-27): ranged grab actually pulls (own targeting, 6 m, line of sight); door collisions follow the door; all doors open; jump reaches the table; Steam Frame buttons: right A jump, B crouch, X sit, Y recenter; less skyline shimmer (measured).
 
 - Feedback round 1 (2026-09-27): five-room apartment; visible ranged grab with highlight; door handles at 1.1 m; doors can't swing through the player; sit on sofa/bed; jump and crouch buttons; recenter confirmation; skyline window anti-aliasing; VS Code language server port.
 

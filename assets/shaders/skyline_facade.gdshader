@@ -19,6 +19,14 @@ uniform float window_spacing = 2.6;
 uniform float lit_fraction : hint_range(0.0, 1.0) = 0.38;
 uniform float window_energy = 2.2;
 uniform float neon_energy = 7.0;
+// Anti-aliasing: pane edges are smoothed over edge_softness pixels; the pattern
+// fades to its average between far_start and far_end cells per pixel.
+uniform float edge_softness = 2.0;
+uniform float far_start = 0.2;
+uniform float far_end = 0.5;
+// The tonemapper compresses bright windows, so the true average reads too
+// bright from afar; scale it down to match the look of resolved windows.
+uniform float far_brightness = 0.5;
 
 // Pane extent inside a cell (fractions of the cell).
 const vec2 PANE_MIN = vec2(0.18, 0.25);
@@ -57,7 +65,7 @@ void fragment() {
 		float u = abs(world_normal.x) > 0.5 ? world_pos.z : world_pos.x;
 		vec2 cell = vec2(u / window_spacing, world_pos.y / floor_height);
 		// Derivatives of the continuous coordinate (fract() would jump at borders).
-		vec2 fw = fwidth(cell);
+		vec2 fw = fwidth(cell) * edge_softness;
 		vec2 id = floor(cell);
 		vec2 f = fract(cell);
 
@@ -70,8 +78,8 @@ void fragment() {
 
 		vec2 pane_size = PANE_MAX - PANE_MIN;
 		vec3 average = mix(warm_light, cold_light, COLD_SHARE) * pane_size.x * pane_size.y
-				* lit_fraction * 0.875 * window_energy;
-		float far = smoothstep(0.35, 0.9, max(fw.x, fw.y));
+				* lit_fraction * 0.875 * window_energy * far_brightness;
+		float far = smoothstep(far_start, far_end, max(fw.x, fw.y) / max(edge_softness, 1e-4));
 		vec3 emission = mix(near_emission, average, far);
 
 		// Rare horizontal neon band on some buildings; thins out by coverage.

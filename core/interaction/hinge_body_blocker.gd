@@ -50,9 +50,14 @@ func _on_hinge_moved(angle: float) -> void:
 
 func _overlaps() -> bool:
 	var space := leaf.get_world_3d().direct_space_state
+	# A KinematicFollower catches up on the next physics frame; test where it
+	# is going to be, not where it still is.
+	var base := leaf.global_transform
+	if leaf is KinematicFollower:
+		base = (leaf as KinematicFollower).follow.global_transform
 	for shape in _shapes:
 		_params.shape = shape.shape
-		_params.transform = shape.global_transform
+		_params.transform = base * shape.transform
 		if not space.intersect_shape(_params, 1).is_empty():
 			return true
 	return false

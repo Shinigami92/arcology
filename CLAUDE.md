@@ -31,8 +31,8 @@ assets/
   shaders/                shared .gdshader
 blender/                  .blend sources (LFS), exported to assets/ as .glb
 core/
-  player/                 ArcologyPlayer rig (player.tscn), StickSprint, GrabRay
-  interaction/            ImpactSound, TrashReceiver, HingeStopSound, HingeBodyBlocker, Seat, GrabHighlight
+  player/                 ArcologyPlayer rig (player.tscn), StickSprint, GrabRay, player_physics.tres (jump height)
+  interaction/            ImpactSound, TrashReceiver, HingeStopSound, HingeBodyBlocker, KinematicFollower, Seat, GrabHighlight
   world_state/            (M2) time of day, weather, overrides
   weather/                (M2)
   zones/                  (M3) zone loader
@@ -52,7 +52,7 @@ tools/
 - **Scale and coordinates (D-008):** 1 unit = 1 m, Y up, -Z forward. Apartment floor is y = 0 at the world origin; street level is y = -180. The apartment window faces -Z. Zones are authored at their real world position; nothing gets offset at load time.
 - **Files** `snake_case`, **nodes** `PascalCase`, **classes** `PascalCase` with `class_name` for reusable components. GDScript is statically typed (typed vars, arrays, returns), tab-indented. Scene transforms in hand-written `.tscn` use `position` and `rotation_degrees`, not raw `Transform3D`.
 - **Text formats everywhere:** `.tscn`, `.tres`, `.gdshader`, `.gd`, `.json`. Binary only where unavoidable (`.glb`, textures, audio, baked data), and those go through LFS (`.gitattributes`, D-007).
-- **Don't modify `addons/`.** Extend or wrap in `core/`.
+- **Don't modify `addons/`.** Extend or wrap in `core/`. Known XR Tools 4.6.0-dev1 bug worked around in core: ranged grab (D-017).
 - **Everything interactable is physical.** Doors by their handles, drawers slide, buttons get pressed. No "press A to open".
 - **Seated-first.** The user mostly plays seated. Grab points (handles, buttons, switches) sit between 1.1 m and 1.6 m; pickables can be anywhere because ranged grab (visible ray, `ranged_grab_method = LERP`) reaches them, but keep them above about 0.5 m where possible.
 - **Hand-written scenes and the editor:** after writing a `.tscn` on disk, run `filesystem_manage(op="scan")` and reopen the scene with `force_reload=true` if it's open (otherwise the editor may save its stale copy over yours). Run the game with `autosave=false`. Adding autoloads or enabling plugins needs an editor restart before scripts can see them (`editor_manage(op="quit")`, then relaunch `"$GODOT4_EDITOR" --editor --path .` in the background).
@@ -84,17 +84,20 @@ Add new tags here when introducing them.
 
 ## Controls
 
-| Input | Action |
-|---|---|
-| Left stick | move; push fully forward to sprint |
-| Right stick | turn (smooth by default) |
-| Grip | grab; point at something farther away and grip to pull it in (ray + highlight shows the target) |
-| Right A | jump |
-| Right B | crouch (toggle) |
-| Left X | sit down at a seat when its prompt shows; get up (or push the left stick) |
-| Left Y, hold 1 s | recenter and recalibrate eye height (blink + buzz confirm it) |
+Gameplay buttons are named OpenXR actions bound per controller in `openxr_action_map.tres` (D-019). Never bind gameplay to raw `ax_button`/`by_button`: the Steam Frame puts all four face buttons on the right controller.
 
-Every button press is printed to the log (`XR button: left ax_button`), so a mapping problem shows up in `user://logs/godot.log`. Turn it off with `ArcologyPlayer.log_buttons`.
+| Action | Steam Frame | Touch | Index |
+|---|---|---|---|
+| move (push fully forward to sprint) | left stick | left stick | left stick |
+| turn (smooth by default) | right stick | right stick | right stick |
+| grab; point + grip pulls far objects in (ray + highlight) | grip | grip | grip |
+| `jump` | right A | right A | right A |
+| `crouch` (toggle) | right B | right B | right B |
+| `interact`: sit down when a seat prompt shows / get up (or push the left stick) | right X | left X | left A |
+| `recenter`, hold 1 s: recenter + recalibrate eye height (blink + buzz) | right Y | left Y | left B |
+| free for later | left D-pad, bumpers, left View | | |
+
+Every button press is printed to the log (`XR button: right interact`), so a mapping problem shows up in `user://logs/godot.log`. Turn it off with `ArcologyPlayer.log_buttons`.
 
 ## Performance budget
 
@@ -110,7 +113,7 @@ Per-zone budgets live in `tools/perf/budgets.json`. Current zones:
 
 | Zone | Draw calls | Triangles | Lights (shadowed) | GI | Last measured (desktop-approx) |
 |---|---|---|---|---|---|
-| apartment (5 rooms) | ≤ 600 | ≤ 1.5 M | ≤ 16 (1) | none (D-012); 1 ReflectionProbe per room | GPU p95 5.1 ms, 161 draw calls, 22 k tris; startup hitch up to 94 ms (probes) |
+| apartment (5 rooms) | ≤ 600 | ≤ 1.5 M | ≤ 16 (1) | none (D-012); 1 ReflectionProbe per room | GPU p95 5.0 ms, 161 draw calls, 22 k tris; startup hitch up to 94 ms (probes) |
 
 Rules of thumb:
 - **One shadow-casting light per room.** Everything else unshadowed, small range. Emissive materials for neon, not lights.
@@ -161,7 +164,7 @@ Root `RigidBody3D` with `res://addons/godot-xr-tools/objects/pickable.gd`, `coll
 
 ### Add a hinged interactable (door, lid, lever)
 
-Copy the structure of `assets/props/door/door.tscn`: `HingeOrigin` (rotated so its local X is the hinge axis) → `XRToolsInteractableHinge` (limits in degrees) → `Leaf` (rotated back, so children are authored in normal axes) → `AnimatableBody3D` with the visuals and collision, plus one `HandleOrigin/InteractableHandle` (layer 19, frozen, identity transform) per grip point. Add `HingeStopSound` for the bump at the limits and a `HingeBodyBlocker` (hinge + leaf) so the leaf can't swing through the player.
+Copy the structure of `assets/props/door/door.tscn`: `HingeOrigin` (rotated so its local X is the hinge axis) → `XRToolsInteractableHinge` (limits in degrees) → `Leaf` (rotated back, so children are authored in normal axes) → `AnimatableBody3D` with the visuals and collision, plus one `HandleOrigin/InteractableHandle` (layer 19, frozen, identity transform) per grip point. The `AnimatableBody3D` must use `core/interaction/kinematic_follower.gd` (D-018), or its collision won't move with the hinge. Add `HingeStopSound` for the bump at the limits and a `HingeBodyBlocker` (hinge + leaf) so the leaf can't swing through the player.
 
 ### Add a receiver for tagged objects
 

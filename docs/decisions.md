@@ -67,3 +67,19 @@ The apartment grew to five rooms (bedroom, living room, kitchen, hallway, bathro
 ## D-016: Seated reach: handles at 1.1 m, visible ranged grab, seats (2026-09-27)
 
 In the first headset test the door handle at 1.0 m was too low to reach seated, and picking things up from low surfaces was hard. Handles go to 1.1 m. XR Tools' ranged grab (point, then grip, and the object flies to the hand) was already on but invisible, so each hand now draws a ray and highlights the target (`GrabRay`, `GrabHighlight`). Seats (sofa, bed edge) let the player sit down with X: the view moves to a seated eye point, and X or the move stick gets them up. Doors can't swing through the player anymore (`HingeBodyBlocker`); they used to, which let the player end up inside a door and walk through it.
+
+## D-017: Own ranged grab; XR Tools' is broken in 4.6.0-dev1 (2026-09-27)
+
+`function_pickup.gd` rejects every ranged target: it checks `target.has_method('can_ranged_grab')`, but `can_ranged_grab` is a property. 4.5.1 had `'can_ranged_grab' in target`, and master still has the regression. Instead of patching the addon, `GrabRay` does the targeting (cone up to 6 m, 12°, line of sight against static world), highlights the target, and on grip hands it to the pickup's `_pick_up_object()`, the same call XR Tools' own ranged grab makes. XR Tools' `ranged_enable` is off on both hands. Drop `GrabRay`'s targeting once upstream is fixed, or keep it for the line-of-sight check.
+
+## D-018: Doors move their physics body explicitly (2026-09-27)
+
+An `AnimatableBody3D` under a rotating hinge kept its old physics transform: the door looked open while its collision stayed shut (an invisible wall), and doors that had to be pushed couldn't open because the hand hit the still-closed collision. Door bodies are now `KinematicFollower`s: `top_level`, copying the leaf's transform onto themselves every physics frame, which is how `AnimatableBody3D` expects to be moved. Verified with capsule sweeps through all four doorways, closed and open. Any future moving interactable with collision (drawers, lids, fridge doors) uses the same pattern.
+
+## D-019: Steam Frame controller profile and named actions (2026-09-27)
+
+Without a binding for the Frame controller (`/interaction_profiles/valve/frame_controller_valve`, extension `XR_VALVE_frame_controller_interaction`, supported by Godot 4.7), SteamVR emulated a Touch controller: A/B/X/Y all sit on the Frame's right controller, and Touch's left X/Y landed on the left D-pad. The action map now has a Frame profile, and gameplay uses named actions (`jump`, `crouch`, `interact`, `recenter`) bound per controller: Frame right A/B/X/Y, Touch right A/B + left X/Y, Index right A/B + left A/B. Add new gameplay buttons as named actions, never as raw `ax_button`/`by_button`.
+
+## D-020: Skyline window anti-aliasing tuned by measurement (2026-09-27)
+
+The first AA attempt (1 px edge smoothing, fade to average at 0.35–0.9 cells per pixel) shimmered more than no AA at all. Measured as the share of city pixels changing by more than 0.1 luminance under a half-pixel head rotation: no AA 8.9%, first attempt 12.4%. Now: 2 px edge smoothing, fade at 0.2–0.5 cells per pixel, far average at 50% brightness (the tonemapper compresses bright windows, so the true average reads too bright): 5.5%, keeping mid-distance windows. Softer settings go down to 1.7% but turn most towers into flat slabs. The real fix is M2's prefiltered, mipmapped panorama and impostor layers.

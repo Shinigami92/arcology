@@ -41,7 +41,7 @@ setx BLENDER_MCP_PATH "D:\path\to\blender_mcp\mcp"
 2. Open `project.godot` in Godot 4.7.
 3. Press **F5**.
 
-Controls: left stick moves (push fully forward to sprint), right stick turns, grip grabs (point at farther objects and grip to pull them in), **A** jumps, **B** toggles crouch, **X** sits down on the sofa or bed and gets up again, hold **Y** for a second to recenter and recalibrate your eye height (works seated).
+Controls (Steam Frame; other controllers in [CLAUDE.md](./CLAUDE.md#controls)): left stick moves (push fully forward to sprint), right stick turns, grip grabs (point at farther objects and grip to pull them in), right **A** jumps, **B** toggles crouch, **X** sits down on the sofa or bed and gets up again, hold **Y** for a second to recenter and recalibrate your eye height (works seated).
 
 ### Performance test
 

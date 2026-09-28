@@ -7,6 +7,7 @@
 [ext_resource type="Material" path="res://assets/materials/door_panel.tres" id="5_panel"]
 [ext_resource type="Material" path="res://assets/materials/brushed_steel.tres" id="6_steel"]
 [ext_resource type="Script" path="res://core/interaction/hinge_body_blocker.gd" id="7_blocker"]
+[ext_resource type="Script" path="res://core/interaction/kinematic_follower.gd" id="8_follower"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_leaf"]
 size = Vector3(0.88, 2.08, 0.04)
@@ -42,6 +43,7 @@ hinge_limit_max = 100.0
 rotation_degrees = Vector3(0, 0, -90)
 
 [node name="DoorBody" type="AnimatableBody3D" parent="HingeOrigin/InteractableHinge/Leaf"]
+script = ExtResource("8_follower")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody"]
 position = Vector3(0.45, 1.04, 0)
