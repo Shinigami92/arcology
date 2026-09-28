@@ -162,6 +162,22 @@ def fridge_hum() -> list[float]:
     return out
 
 
+def pillow_thud() -> list[float]:
+    """Throw pillow landing: soft, muffled whump with a short fabric rustle."""
+    rng = random.Random(8)
+    n = int(RATE * 0.3)
+    low = lowpass([rng.uniform(-1, 1) for _ in range(n)], 0.03)
+    hiss = lowpass([rng.uniform(-1, 1) for _ in range(n)], 0.35)
+    out = []
+    for i in range(n):
+        t = i / RATE
+        s = 0.6 * math.sin(2 * math.pi * (55 + 40 * math.exp(-t / 0.02)) * t) * env(t, 0.006, 0.05)
+        s += 2.5 * low[i] * env(t, 0.004, 0.06)
+        s += 0.12 * hiss[i] * env(t, 0.01, 0.07)
+        out.append(s)
+    return out
+
+
 if __name__ == "__main__":
     write_wav("ball_bounce", ball_bounce())
     write_wav("can_hit", can_hit())
@@ -170,3 +186,4 @@ if __name__ == "__main__":
     write_wav("fridge_seal", fridge_seal())
     write_wav("fridge_close", fridge_close())
     write_wav("fridge_hum", fridge_hum())
+    write_wav("pillow_thud", pillow_thud())

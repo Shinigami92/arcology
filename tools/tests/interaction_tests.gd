@@ -37,6 +37,8 @@ func _ready() -> void:
 	await _test_swing("DoorLiving", 20.0, 120.0)
 	await _test_flick_shut("Fridge")
 	await _test_fridge_door_bin()
+	for sofa: String in ["SofaA", "SofaB"]:
+		await _test_sofa(sofa)
 	print("TEST DONE: %d failure(s)" % _failures)
 	get_tree().quit(_failures)
 
@@ -366,3 +368,28 @@ func _test_fridge_door_bin() -> void:
 	await _frames(2)
 	_check("Fridge_can_in_door_bin", local.y > 0.86 and local.y < 1.0 and local.z < 0.0 and local.z > -0.09,
 			"can at door-local %s (bin floor 0.866, bin z -0.09..0)" % local.snappedf(0.01))
+
+
+## A can dropped on the middle seat rests on the seat surface (0.44 m), and the
+## sofa's throw pillows have settled on the sofa, not on the floor.
+func _test_sofa(sofa: String) -> void:
+	var root: Node3D = _main.get_node("Zones/Apartment/Props/" + sofa)
+	var can: RigidBody3D = (load(CAN_SCENE) as PackedScene).instantiate()
+	_main.add_child(can)
+	can.global_position = root.to_global(Vector3(0, 0.7, 0.15))
+	await _frames(120)
+	var local := root.to_local(can.global_position)
+	can.queue_free()
+	_check(sofa + "_can_on_seat", absf(local.y - 0.50) < 0.05,
+			"can center at local y %.2f (seat 0.44 + half can)" % local.y)
+
+	var letter := sofa.substr(4)
+	var settled: Array[String] = []
+	var ok := true
+	for i in [1, 2]:
+		var pillow: RigidBody3D = _main.get_node("Zones/Apartment/Props/Pillow%s%d" % [letter, i])
+		var p := root.to_local(pillow.global_position)
+		var on_sofa := p.y > 0.45 and absf(p.x) < 1.05 and absf(p.z) < 0.5
+		ok = ok and on_sofa and pillow.linear_velocity.length() < 0.05
+		settled.append("%s at %s" % [pillow.name, p.snappedf(0.01)])
+	_check(sofa + "_pillows_settled", ok, ", ".join(settled))

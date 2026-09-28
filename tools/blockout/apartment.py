@@ -39,6 +39,11 @@ SCENES = {
     "can": "res://assets/props/beverage_can/beverage_can.tscn",
     "trash": "res://assets/props/trash_can/trash_can.tscn",
     "fridge": "res://assets/props/fridge/fridge.tscn",
+    # Sofa A/B (blind model comparison); keep one after the headset test.
+    "sofa_a": "res://assets/props/sofa/sofa__opus-high.tscn",
+    "sofa_b": "res://assets/props/sofa/sofa__fable-high.tscn",
+    "pillow_a": "res://assets/props/sofa/sofa_pillow__opus-high.tscn",
+    "pillow_b": "res://assets/props/sofa/sofa_pillow__fable-high.tscn",
 }
 SEAT_SCRIPT = "res://core/interaction/seat.gd"
 
@@ -138,10 +143,6 @@ box("Vestibule", "VestSign", (8.19, 2.2, 2.9), (0.02, 0.12, 0.6), "cyan", False)
 box("Living", "TableTop", (1.1, 0.73, -1.3), (1.0, 0.04, 0.6), "dark", ((1.1, 0.375, -1.3), (1.0, 0.75, 0.6)))
 box("Living", "TablePedestal", (1.1, 0.36, -1.3), (0.1, 0.7, 0.1), "steel", False)
 box("Living", "TableBase", (1.1, 0.01, -1.3), (0.5, 0.02, 0.4), "steel", False)
-box("Living", "SofaSeat", (-1.6, 0.22, 0.9), (2.0, 0.44, 0.85), "sofa")
-box("Living", "SofaBack", (-1.6, 0.65, 1.25), (2.0, 0.42, 0.18), "sofa")
-box("Living", "SofaArmWest", (-2.65, 0.32, 0.9), (0.14, 0.64, 0.85), "sofa")
-box("Living", "SofaArmEast", (-0.55, 0.32, 0.9), (0.14, 0.64, 0.85), "sofa")
 box("Living", "Shelf", (-2.86, 1.1, -1.5), (0.28, 0.03, 1.2), "gunmetal")
 box("Living", "ShelfLip", (-2.73, 1.14, -1.5), (0.02, 0.05, 1.2), "gunmetal")
 box("Living", "NeonStrip", (-2.99, 2.2, -0.2), (0.02, 0.03, 1.6), "magenta", False)
@@ -191,6 +192,14 @@ INSTANCES = [
     ("TrashCan", "trash", (6.15, 0, 1.6), (0, 0, 0)),
     # Origin bottom center of the cabinet, front +Z, hinge on local -X: NE corner, faces west, hinge north.
     ("Fridge", "fridge", (6.055, 0, -2.53), (0, -90, 0)),
+    # Sofas: origin bottom center, front +Z. A: living room, faces the window. B: west wall, faces east.
+    ("SofaA", "sofa_a", (-1.6, 0, 0.9), (0, 180, 0)),
+    ("SofaB", "sofa_b", (-2.54, 0, -1.15), (0, 90, 0)),
+    # Throw pillows leaning on the back cushions (pickable; they settle when the game starts).
+    ("PillowA1", "pillow_a", (-0.88, 0.68, 0.9), (74, 170, 0)),
+    ("PillowA2", "pillow_a", (-2.30, 0.68, 0.9), (74, 190, 0)),
+    ("PillowB1", "pillow_b", (-2.54, 0.68, -0.43), (74, 80, 0)),
+    ("PillowB2", "pillow_b", (-2.54, 0.68, -1.85), (74, 100, 0)),
     ("Ball", "ball", (-2.84, 1.22, -1.8), (0, 0, 0)),
     ("CanLivingTable", "can", (1.25, 0.812, -1.25), (0, 0, 0)),
     ("CanWindowLedge", "can", (-1.2, 0.502, -2.94), (0, 0, 0)),
@@ -203,6 +212,7 @@ INSTANCES = [
 # Seats: name, area center, area size, sit eye point, sit yaw, stand point, stand yaw, prompt pos
 SEATS = [
     ("SofaSeat", (-1.6, 1.0, 0.15), (2.2, 2.0, 1.2), (-1.6, 1.15, 0.85), 0, (-1.6, 0, 0.1), 0, (-1.6, 0.9, 0.9)),
+    ("SofaBSeat", (-1.75, 1.0, -1.15), (1.2, 2.0, 1.4), (-2.39, 1.15, -1.15), -90, (-1.79, 0, -1.15), -90, (-2.24, 0.9, -1.15)),
     ("BedSeat", (-5.3, 1.0, -2.25), (1.6, 2.0, 1.3), (-5.3, 1.2, -1.5), 0, (-5.3, 0, -2.3), 0, (-5.3, 0.85, -1.6)),
 ]
 

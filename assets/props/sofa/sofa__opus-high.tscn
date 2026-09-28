@@ -1,0 +1,8 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/props/sofa/sofa__opus-high.glb" id="1_model"]
+
+[node name="Sofa" type="Node3D"]
+metadata/_doc = "Three-seat sofa, about 2.1 x 0.9 m, seat surface 0.44 m. Origin = bottom center, front faces +Z. Static; collision boxes come from the glb (-convcolonly): seat block, back, arms. Sit with the Seat area in the zone."
+
+[node name="Model" parent="." instance=ExtResource("1_model")]
