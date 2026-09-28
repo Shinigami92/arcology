@@ -30,7 +30,7 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [M1] A beverage can.
 - [M1] A trash can that accepts objects tagged "trash".
 - [M1] XR Tools setup: pickables, throwing, hinges, sliders, buttons, snap zones, impact sounds, tags.
-- [later] Drawers and cabinets (sliders); wardrobe doors.
+- [later] Drawers and cabinets (sliders); wardrobe doors. The fridge's crisper drawer is a separate object ready to slide; first lower its front panel, which reaches 6 mm into the cover trim when closed (see `blender/props/fridge/fridge_common.py`).
 - [later] Use the Frame's left D-pad and bumpers (free for now): e.g. quick comfort toggles.
 - [later] Bathroom: working tap/shower.
 - [later] Working bathroom mirror. Makes most sense once there's a player avatar. Godot 4.7 has no hardware ray tracing, so the options to measure against the 90 FPS budget are: planar reflection via a SubViewport (renders the room again for both eyes, the expensive but correct one), a box-projected ReflectionProbe updated in real time, or SSR (can't show what's off screen). Good stress test for the budget.

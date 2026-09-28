@@ -16,10 +16,11 @@ Before starting, read `CLAUDE.md` (budgets, conventions, asset recipe) and `docs
 - **Real-world scale**, meters, Blender Z-up (the glTF exporter converts to Godot's Y-up). Apply all transforms before export.
 - **Origin placement:** props at the bottom center of their footprint; doors at the hinge axis; handles at the grip point.
 - **Budgets from `CLAUDE.md`** (triangles per prop, texture sizes, material count). State the final triangle count and texture sizes in your report.
-- **Sources:** save `.blend` files to `blender/<category>/<name>.blend`; export to `assets/<category>/<name>.glb`. Pack or reference textures from `assets/textures/` only; no absolute paths.
-- **Materials:** Principled BSDF only, metal/roughness workflow, so glTF export is lossless. Reuse the shared materials listed in `CLAUDE.md` where one fits.
-- **Collision:** add simplified collision meshes as separate objects with the `-col` suffix (Godot import hint) or `-colonly` for invisible collision; never use the render mesh as a trimesh collider for dynamic objects.
+- **Sources:** save `.blend` files to `blender/<category>/<name>.blend` with images packed; export to `assets/<category>/<name>/` as glb with textures embedded (Godot extracts them on import). No absolute paths; build paths with `arcology_blender.scene.output_path`.
+- **Materials:** Principled BSDF only, metal/roughness workflow, so glTF export is lossless. Procedural `src_*` materials get baked into one albedo/normal/ORM atlas set per exported part (`arcology_blender.bake`).
+- **Collision:** simplified boxes with the `-convcolonly` suffix (`arcology_blender.geo.collision_box`); never use the render mesh as a trimesh collider. Moving parts (doors, drawers) get their collision authored in the Godot scene instead: report the sizes.
 - **LODs:** anything visible from farther than ~10 m gets LODs via Godot's automatic mesh LOD; don't hand-model LODs unless told to.
+- **Scripted builds on the shared toolkit (D-026, D-028):** write the asset as stage scripts in `blender/<category>/<name>/` (`build.py`, `bake.py`, `export.py`, `render.py`, `verify.py`, plus a `<name>_common.py` with dimensions and paths) that import `blender/lib/arcology_blender` (read its `__init__.py` first). Use `blender/props/fridge/` as the worked example. Use the library's geometry, `Graph`, `wear`, `materials`, `bake`, `export`, `studio` and `checks` instead of writing your own. When you need something generic that's missing, add it to the library (asset-agnostic, documented) rather than to the asset; never change the behavior of existing library functions without saying so in your report, since other assets depend on them.
 - Inspect the scene before changing it; never delete objects you didn't create in this task without asking.
 - Never run git write commands or delete files outside your task's output. Report what should be committed instead.
 

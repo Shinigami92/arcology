@@ -1,41 +1,41 @@
-"""Shared constants and helpers for the fridge build pipeline (Fable 5.1 won the A/B, D-026).
+"""Fridge dimensions, paths and parts (Fable 5.1 won the A/B, D-026). Built on blender/lib (D-028).
 
-Run the stages with Blender 5.2 in background mode:
+Run the stages with Blender 5.2 in background mode, from the repo root:
 
-  blender -b --factory-startup --python build.py
-  blender -b --factory-startup <blend> --python bake.py
-  blender -b --factory-startup <blend> --python export.py
-  blender -b --factory-startup <blend> --python render.py
-  blender -b --factory-startup --python verify.py
+  blender -b --factory-startup --python blender/props/fridge/build.py
+  blender -b --factory-startup blender/props/fridge.blend --python blender/props/fridge/bake.py
+  blender -b --factory-startup blender/props/fridge.blend --python blender/props/fridge/export.py
+  blender -b --factory-startup blender/props/fridge.blend --python blender/props/fridge/render.py -- [--quick]
+  blender -b --factory-startup --python blender/props/fridge/verify.py
 
 Coordinates: Blender Z up, meters, fridge front faces -Y. Body objects are
 built in world coordinates (identity transforms). Door objects are built in
 door-local coordinates (hinge axis at the local origin, door extends along
-+X, front face toward -Y) and parented to the `Door` object which sits at the
-hinge (-0.30, -0.325, 0).
++X, front face toward -Y) and parented to the `Door` object, which sits at
+the hinge (-0.30, -0.325, 0).
 """
 
-import math
 import os
-import tempfile
+import sys
 
-import bmesh
-import bpy
-from mathutils import Matrix, Vector
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "lib"))
 
-VARIANT = "fridge"  # prefix for renders
-ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."))
-BLEND = os.path.join(ROOT, "blender", "props", "fridge.blend")
-GLB_BODY = os.path.join(ROOT, "assets", "props", "fridge", "fridge_body.glb")
-GLB_DOOR = os.path.join(ROOT, "assets", "props", "fridge", "fridge_door.glb")
-# Thumbnails and bake intermediates (outside the repo).
-SCRATCH = os.environ.get("ARCOLOGY_RENDER_DIR", os.path.join(tempfile.gettempdir(), "arcology", "fridge"))
+from mathutils import Vector  # noqa: E402
 
-# --- Fixed contract -------------------------------------------------------
+from arcology_blender.scene import output_path, part_objects, scratch_dir  # noqa: E402
+
+NAME = "fridge"
+BLEND = output_path("blender", "props", "fridge.blend")
+GLB_BODY = output_path("assets", "props", "fridge", "fridge_body.glb")
+GLB_DOOR = output_path("assets", "props", "fridge", "fridge_door.glb")
+SCRATCH = scratch_dir(NAME)  # thumbnails, texture dumps
+
+# --- Fixed contract (the Godot scene depends on these) ---------------------------
 CAB_W, CAB_D, CAB_H = 0.60, 0.65, 1.85
 CAB_X = CAB_W / 2  # 0.30
 CAB_Y = CAB_D / 2  # 0.325
 HINGE = Vector((-CAB_X, -CAB_Y, 0.0))
+OPEN_DEG = 100.0  # swing checked in Blender; Godot limits it to 92 for the kitchen wall
 
 # Cabinet shell
 WALL_SIDE = 0.045
@@ -57,6 +57,7 @@ DOOR_SKIN_Y0, DOOR_SKIN_Y1 = -DOOR_T, -0.012
 DOOR_LINER_Y0, DOOR_LINER_Y1 = -0.012, -0.003
 GASKET_Y0, GASKET_Y1 = -0.012, -0.001  # 1 mm clearance to the cabinet front
 BIN_Y1 = 0.09  # how far the door bins reach into the cavity
+BINS = ((0.42, 0.12), (0.86, 0.12), (1.36, 0.10))  # bottom z, front wall height
 
 # Handle
 HANDLE_X = 0.555
@@ -73,208 +74,28 @@ CRISPER_COVER_TOP = 0.35
 CRISPER_Y0 = -0.22
 CRISPER_W, CRISPER_D, CRISPER_H = 0.49, 0.44, 0.20
 CRISPER_TRAVEL = 0.30
+# Known: closed, the drawer front panel and grip lip reach 6 mm into the crisper cover's
+# front trim (verify.py reports it at 0 m; clear from 3 cm out). Hidden behind the trim;
+# lower them (CRISPER_H + 0.012) when the drawer becomes a slider.
 
 BODY_MAT = "FridgeBody"
 DOOR_MAT = "FridgeDoor"
 GLASS_MAT = "FridgeGlass"
 DISPLAY_MAT = "FridgeDisplay"
-LIGHT_MAT = "FridgeLight"
+LIGHT_MAT = "FridgeLight"  # Godot's HingeLight switches this one by name
 
 TEX_SIZE = 2048
 
 
-# --- Scene helpers ----------------------------------------------------------
-def clear_scene():
-    for ob in list(bpy.data.objects):
-        bpy.data.objects.remove(ob, do_unlink=True)
-    for coll in (bpy.data.meshes, bpy.data.materials, bpy.data.images, bpy.data.lights,
-                 bpy.data.cameras, bpy.data.node_groups):
-        for block in list(coll):
-            if block.users == 0:
-                coll.remove(block)
-
-
-def get_collection(name):
-    coll = bpy.data.collections.get(name)
-    if coll is None:
-        coll = bpy.data.collections.new(name)
-        bpy.context.scene.collection.children.link(coll)
-    return coll
-
-
-def bm_box(bm, lo, hi):
-    lo, hi = Vector(lo), Vector(hi)
-    size = hi - lo
-    center = (lo + hi) / 2
-    mat = Matrix.Translation(center) @ Matrix.Diagonal((size.x, size.y, size.z, 1.0))
-    return bmesh.ops.create_cube(bm, size=1.0, matrix=mat)["verts"]
-
-
-def bm_cyl(bm, radius, depth, matrix, segments=24):
-    return bmesh.ops.create_cone(
-        bm, cap_ends=True, cap_tris=False, segments=segments,
-        radius1=radius, radius2=radius, depth=depth, matrix=matrix,
-    )["verts"]
-
-
-def cyl_matrix_z(center, ):
-    return Matrix.Translation(Vector(center))
-
-
-def cyl_matrix_y(center):
-    """Cylinder axis along Y."""
-    return Matrix.Translation(Vector(center)) @ Matrix.Rotation(math.radians(90), 4, "X")
-
-
-def cyl_matrix_x(center):
-    return Matrix.Translation(Vector(center)) @ Matrix.Rotation(math.radians(90), 4, "Y")
-
-
-def new_object(name, bm, collection, origin=(0, 0, 0), material=None, parent=None):
-    me = bpy.data.meshes.new(name)
-    bm.to_mesh(me)
-    bm.free()
-    ob = bpy.data.objects.new(name, me)
-    ob.location = origin
-    collection.objects.link(ob)
-    if material is not None:
-        me.materials.append(material)
-    if parent is not None:
-        ob.parent = parent
-    return ob
-
-
-def apply_modifiers(ob):
-    """Replace the object's mesh with its evaluated mesh (modifiers applied)."""
-    dg = bpy.context.evaluated_depsgraph_get()
-    ev = ob.evaluated_get(dg)
-    me = bpy.data.meshes.new_from_object(ev)
-    old = ob.data
-    originals = [m for m in old.materials if m is not None]
-    ob.modifiers.clear()
-    ob.data = me
-    me.name = old.name + "_applied"
-    bpy.data.meshes.remove(old)
-    me.name = ob.name
-    # A boolean cutter without material adds empty slots; keep the object's own material.
-    if originals and any(m is None for m in me.materials):
-        me.materials.clear()
-        me.materials.append(originals[0])
-        for p in me.polygons:
-            p.material_index = 0
-
-
-def bevel(ob, width, segments=2, angle=30.0):
-    mod = ob.modifiers.new("Bevel", "BEVEL")
-    mod.width = width
-    mod.segments = segments
-    mod.limit_method = "ANGLE"
-    mod.angle_limit = math.radians(angle)
-    mod.miter_outer = "MITER_ARC"
-    return mod
-
-
-def boolean_cut(ob, cutter):
-    mod = ob.modifiers.new("Cut", "BOOLEAN")
-    mod.operation = "DIFFERENCE"
-    mod.object = cutter
-    mod.solver = "EXACT"
-    return mod
-
-
-def shade(ob, sharp_angle=30.0):
-    """Smooth shading with sharp edges marked by angle (exported as split normals)."""
-    me = ob.data
-    bm = bmesh.new()
-    bm.from_mesh(me)
-    bm.normal_update()
-    limit = math.radians(sharp_angle)
-    for e in bm.edges:
-        if e.is_boundary or not e.is_manifold:
-            e.smooth = False
-            continue
-        e.smooth = e.calc_face_angle(0.0) < limit
-    for f in bm.faces:
-        f.smooth = True
-    bm.to_mesh(me)
-    bm.free()
-
-
-def finish(ob, bevel_width=None, segments=2, angle=30.0, sharp_angle=30.0):
-    if bevel_width:
-        bevel(ob, bevel_width, segments, angle)
-    if ob.modifiers:
-        apply_modifiers(ob)
-    shade(ob, sharp_angle)
-
-
-def assign_by_region(ob, regions, default):
-    """Assign materials per polygon by the polygon center (object-local coordinates).
-
-    regions: list of ((lo, hi), material) checked in order.
-    """
-    me = ob.data
-    me.materials.clear()
-    mats = [default] + [m for _, m in regions]
-    uniq = []
-    for m in mats:
-        if m not in uniq:
-            uniq.append(m)
-    for m in uniq:
-        me.materials.append(m)
-    for p in me.polygons:
-        c = p.center
-        idx = 0
-        for (lo, hi), m in regions:
-            if lo[0] <= c.x <= hi[0] and lo[1] <= c.y <= hi[1] and lo[2] <= c.z <= hi[2]:
-                idx = uniq.index(m)
-                break
-        p.material_index = idx
-
-
-def tri_count(ob):
-    me = ob.data
-    if me is None or ob.type != "MESH":
-        return 0
-    me.calc_loop_triangles()
-    return len(me.loop_triangles)
-
-
-def group_objects(prefix_names):
-    return [bpy.data.objects[n] for n in prefix_names if n in bpy.data.objects]
-
-
+# --- Parts (tagged in build.py) -------------------------------------------------
 def body_objects():
     """Render meshes of the body glb (no collision)."""
-    return [ob for ob in bpy.data.objects
-            if ob.get("fridge_part") == "body" and ob.type == "MESH"]
+    return part_objects("body", mesh_only=True)
 
 
 def body_collision_objects():
-    return [ob for ob in bpy.data.objects if ob.get("fridge_part") == "body_col"]
+    return part_objects("body_col")
 
 
 def door_objects():
-    return [ob for ob in bpy.data.objects if ob.get("fridge_part") == "door"]
-
-
-def setup_gpu(scene):
-    scene.render.engine = "CYCLES"
-    prefs = bpy.context.preferences.addons["cycles"].preferences
-    try:
-        prefs.compute_device_type = "OPTIX"
-        prefs.get_devices()
-        for d in prefs.devices:
-            d.use = d.type != "CPU"
-        scene.cycles.device = "GPU"
-    except Exception as exc:  # fall back to CPU
-        print("GPU setup failed, using CPU:", exc)
-        scene.cycles.device = "CPU"
-
-
-def set_colorspace(image, name):
-    try:
-        image.colorspace_settings.name = name
-    except TypeError:
-        alt = {"Non-Color": "Non-Color", "sRGB": "sRGB"}.get(name, name)
-        image.colorspace_settings.name = alt
+    return part_objects("door")

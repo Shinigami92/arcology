@@ -30,6 +30,8 @@ assets/
   props/<name>/           reusable prop and interactable scenes (door, fridge, ball, beverage_can, trash_can)
   shaders/                shared .gdshader
 blender/                  .blend sources (LFS) + their build scripts, exported to assets/ as .glb (.gdignore: Godot doesn't import them)
+  lib/arcology_blender/   shared toolkit for build scripts: geometry, materials, wear, bake, export, studio, checks (D-028)
+  props/<name>/           one asset's build/bake/export/render/verify scripts (e.g. fridge)
 core/
   player/                 ArcologyPlayer rig (player.tscn), StickSprint, GrabRay, player_physics.tres (jump height)
   interaction/            ImpactSound, TrashReceiver, HingeStopSound, HingeBodyBlocker, HingeSwing, HingeLight, KinematicFollower, GrabPassThrough, Seat, GrabHighlight
@@ -182,7 +184,7 @@ After an accepted change, copy the new result over `tools/perf/baselines/<zone>-
 
 ### Add a prop
 
-1. Model it with the `blender-artist` subagent (source `blender/<category>/<name>.blend`, export `assets/<category>/<name>.glb`), or block it out with primitive meshes first.
+1. Model it with the `blender-artist` subagent: stage scripts in `blender/<category>/<name>/` on the shared toolkit `blender/lib/arcology_blender/` (D-028; `blender/props/fridge/` is the worked example), source `blender/<category>/<name>.blend`, export into `assets/props/<name>/`. Or block it out with primitive meshes first.
 2. Wrap it in `assets/props/<name>/<name>.tscn`: origin at the bottom center (or the hinge axis), simplified collision shapes, shared materials from `assets/materials/`.
 3. Put a one-line `metadata/_doc` on the root: size, origin, behavior.
 
