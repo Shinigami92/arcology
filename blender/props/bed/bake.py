@@ -5,7 +5,7 @@
 Everything is static, so all parts bake with each other visible (contact AO
 between duvet, pillows, throw and frame). Faces that are barely visible (the
 platform underside, the headboard back against the wall, cloth undersides at
-the hems) get less texture space (lib_candidates.bake_part_weighted).
+the hems) get less texture space (bake.bake_part with a weight).
 """
 
 import os
@@ -16,7 +16,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
 
 import bed_common as C  # noqa: E402
-import lib_candidates as L  # noqa: E402
 from arcology_blender import bake, geo, soft  # noqa: E402
 from arcology_blender.scene import save_blend  # noqa: E402
 
@@ -41,14 +40,13 @@ def main():
     bake.setup(bpy.context.scene)
     for ob in C.collision_objects():
         ob.hide_render = True
-    L.bake_part_weighted(C.frame_objects(), "bed_frame", C.FRAME_MAT, frame_weight, size=C.FRAME_TEX)
-    L.bake_part_weighted(C.linen_objects(), "bed_linen", C.LINEN_MAT, cloth_weight, size=C.LINEN_TEX)
-    L.bake_part_weighted(C.throw_objects(), "bed_throw", C.THROW_MAT, cloth_weight, size=C.THROW_TEX)
+    bake.bake_part(C.frame_objects(), "bed_frame", C.FRAME_MAT, size=C.FRAME_TEX, weight=frame_weight)
+    bake.bake_part(C.linen_objects(), "bed_linen", C.LINEN_MAT, size=C.LINEN_TEX, weight=cloth_weight)
+    bake.bake_part(C.throw_objects(), "bed_throw", C.THROW_MAT, size=C.THROW_TEX, weight=cloth_weight)
     bake.remove_source_materials()
     for ob in C.bed_objects():
         geo.remove_attribute(ob, soft.SEAM_ATTR)  # the hem mask is baked; keep it out of the glb
-    for img in bpy.data.images:
-        print(f"IMAGE {img.name} {img.size[0]}x{img.size[1]} packed={img.packed_file is not None}")
+    bake.report_images()
     save_blend(C.BLEND)
 
 

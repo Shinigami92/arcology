@@ -104,15 +104,47 @@ class Graph:
         self.links.new(vector if vector is not None else self.geo.outputs["Position"], n.inputs["Vector"])
         return n.outputs["Fac"]
 
-    def wave(self, scale, distortion, detail=2.0, direction="X"):
+    def wave(self, scale, distortion, detail=2.0, direction="X", wave_type="BANDS", vector=None):
+        """Wave texture Fac. wave_type "BANDS" (stripes across `direction`) or
+        "RINGS" (concentric around the `direction` axis: 3D wood growth rings
+        that stay consistent across every face); vector defaults to the world
+        position (see `offset`, `vec`)."""
         n = self.nodes.new("ShaderNodeTexWave")
-        n.wave_type = "BANDS"
-        n.bands_direction = direction
+        n.wave_type = wave_type
+        if wave_type == "RINGS":
+            n.rings_direction = direction
+        else:
+            n.bands_direction = direction
         n.inputs["Scale"].default_value = scale
         n.inputs["Distortion"].default_value = distortion
         n.inputs["Detail"].default_value = detail
-        self.links.new(self.geo.outputs["Position"], n.inputs["Vector"])
+        self.links.new(vector if vector is not None else self.geo.outputs["Position"], n.inputs["Vector"])
         return n.outputs["Fac"]
+
+    def combine(self, x, y, z):
+        """Vector socket from three floats or sockets (e.g. a remapped coordinate frame)."""
+        n = self.nodes.new("ShaderNodeCombineXYZ")
+        for i, v in enumerate((x, y, z)):
+            self._set(n.inputs[i], v)
+        return n.outputs[0]
+
+    def vscale(self, vector, sx, sy, sz, offset=(0.0, 0.0, 0.0)):
+        """vector * (sx, sy, sz) + offset (constants), e.g. to stretch noise in a custom frame."""
+        m = self.nodes.new("ShaderNodeVectorMath")
+        m.operation = "MULTIPLY_ADD"
+        self.links.new(vector, m.inputs[0])
+        m.inputs[1].default_value = (sx, sy, sz)
+        m.inputs[2].default_value = offset
+        return m.outputs[0]
+
+    def offset(self, offset):
+        """World position shifted by a constant `offset`, for textures whose axis
+        should sit elsewhere (e.g. a log's core a meter behind a panel)."""
+        n = self.nodes.new("ShaderNodeVectorMath")
+        n.operation = "ADD"
+        self.links.new(self.geo.outputs["Position"], n.inputs[0])
+        n.inputs[1].default_value = offset
+        return n.outputs[0]
 
     def pointiness(self):
         return self.geo.outputs["Pointiness"]
@@ -182,6 +214,12 @@ class Graph:
         if normal is not None:
             self.links.new(normal, self.bsdf.inputs["Normal"])
         return self.mat
+
+    def finish_height(self, base, rough, metal, height):
+        """`finish` with the normal from an accumulated height in meters (Bump
+        distance 1.0, so each layer's depth is physical). Layer functions in
+        `wood`, `metal`, `fabric` and `wear` return such heights."""
+        return self.finish(base, rough, metal, self.bump(height, 1.0, 1.0))
 
 
 def solid_mat(name, base, rough, metal=0.0, emission=None, emission_strength=0.0):

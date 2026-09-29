@@ -34,8 +34,7 @@ def main():
     bake.remove_source_materials()
     for ob in sofa_objects() + pillows:
         geo.remove_attribute(ob, soft.SEAM_ATTR)  # the welt mask is baked; keep it out of the glb
-    for img in bpy.data.images:
-        print(f"IMAGE {img.name} {img.size[0]}x{img.size[1]} packed={img.packed_file is not None}")
+    bake.report_images()
     save_blend(BLEND)
 
 

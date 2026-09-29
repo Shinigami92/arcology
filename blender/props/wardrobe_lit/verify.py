@@ -14,29 +14,13 @@ import bpy  # noqa: E402
 from mathutils import Vector  # noqa: E402
 
 import wardrobe_common as C  # noqa: E402
-from arcology_blender.checks import hinge_clearance, import_report, slide_clearance  # noqa: E402
-from arcology_blender.scene import part_objects, tri_count  # noqa: E402
-
-
-def world_bounds(objs):
-    pts = [o.matrix_world @ v.co for o in objs if o.type == "MESH" for v in o.data.vertices]
-    return (Vector([min(p[i] for p in pts) for i in range(3)]),
-            Vector([max(p[i] for p in pts) for i in range(3)]))
-
-
-def local_bounds(ob):
-    pts = [v.co for v in ob.data.vertices]
-    return (Vector([min(p[i] for p in pts) for i in range(3)]),
-            Vector([max(p[i] for p in pts) for i in range(3)]))
-
-
-def godot(v):
-    """Blender (x, y, z) -> Godot (x, z, -y)."""
-    return (v[0], v[2], -v[1])
+from arcology_blender import checks  # noqa: E402
+from arcology_blender.checks import godot, hinge_clearance, import_report, local_bounds, slide_clearance, world_bounds  # noqa: E402
+from arcology_blender.scene import meshes, part_objects, tri_count  # noqa: E402
 
 
 def fmt(t):
-    return "(" + ", ".join(f"{c:.4f}" for c in t) + ")"
+    return checks.fmt(t, 4)
 
 
 def box_line(name, lo, hi):
@@ -44,10 +28,6 @@ def box_line(name, lo, hi):
     lo, hi = Vector(lo), Vector(hi)
     size = hi - lo
     return f"    {name:12s} godot size {fmt((size.x, size.z, size.y))} center {fmt(godot((lo + hi) / 2))}"
-
-
-def meshes(objs):
-    return [o for o in objs if o.type == "MESH"]
 
 
 def main():

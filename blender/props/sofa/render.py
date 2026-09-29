@@ -12,11 +12,9 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bpy  # noqa: E402
-from mathutils import Vector  # noqa: E402
 
 from sofa_common import NAME, SCRATCH, collision_objects, pillow_objects  # noqa: E402
-from arcology_blender.scene import script_args  # noqa: E402
-from arcology_blender.studio import render_still, studio  # noqa: E402
+from arcology_blender.studio import aim, render_options, render_still, studio  # noqa: E402
 
 # (location, rotation in degrees XYZ): one upright in the left corner, one slumped on the right
 PILLOW_POSES = [
@@ -39,24 +37,17 @@ def place_pillows(scene):
         ob.rotation_euler = [math.radians(a) for a in rot]
 
 
-def aim(cam, camera, target, lens):
-    cam.location = Vector(camera)
-    cam.rotation_euler = (Vector(target) - cam.location).to_track_quat("-Z", "Y").to_euler()
-    cam.data.lens = lens
-
-
 def main():
-    args = script_args()
-    samples = 16 if "--quick" in args else 64
-    suffix = args[args.index("--suffix") + 1] if "--suffix" in args else ""
+    opt = render_options(SCRATCH)
+    samples, out, suffix = opt.samples, opt.out, opt.suffix
     scene = bpy.context.scene
     cam = studio(scene, **FRONT)
     for ob in collision_objects():
         ob.hide_render = True
     place_pillows(scene)
-    render_still(scene, os.path.join(SCRATCH, f"{NAME}_front{suffix}.png"), samples)
+    render_still(scene, os.path.join(out, f"{NAME}_front{suffix}.png"), samples)
     aim(cam, **DETAIL)
-    render_still(scene, os.path.join(SCRATCH, f"{NAME}_detail{suffix}.png"), samples)
+    render_still(scene, os.path.join(out, f"{NAME}_detail{suffix}.png"), samples)
 
 
 if __name__ == "__main__":

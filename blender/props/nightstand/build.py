@@ -19,11 +19,8 @@ from nightstand_common import (  # noqa: E402
     PULL_LEN, PULL_R, PULL_Y, PULL_Z, RUN_BODY_X0, RUN_DRAWER_X1, RUN_Z0, RUN_Z1, SHADE_R0, SHADE_R1,
     SHADE_Z0, SHADE_Z1, SOCKET_R, SOCKET_Z0, SOCKET_Z1, STEM_R, T_BACK, TOP_Z0, WASHER_R, WASHER_Z,
 )
-from lib_candidates import (  # noqa: E402
-    braided_cord, brushed_metal, bm_lathe, bm_tube, convex_edges, cup_ring, set_grain, smooth_path,
-    wood_veneer,
-)
-from arcology_blender import fabric, materials, wear  # noqa: E402
+from arcology_blender import curves, fabric, materials, metal, wear, wood  # noqa: E402
+from arcology_blender.wood import board, set_grain  # noqa: E402
 from arcology_blender.geo import (  # noqa: E402
     assign_by_region, bm_box, bm_cyl, collision_box, cyl_x, cyl_y, finish, join, new_empty, new_object,
     shade,
@@ -46,8 +43,8 @@ WARM_2700K = (1.0, 0.40, 0.095)          # 2700 K, linear sRGB
 # Materials
 # ---------------------------------------------------------------------------
 def walnut_common(g, rough_base=0.44):
-    base, rough, h = wood_veneer(g, WALNUT_MID, WALNUT_DARK, WALNUT_LIGHT, rough=rough_base)
-    edge = convex_edges(g, radius=0.0025)
+    base, rough, h = wood.veneer(g, WALNUT_MID, WALNUT_DARK, WALNUT_LIGHT, rough=rough_base)
+    edge = wear.convex_edges(g, radius=0.0025)
     return base, rough, h, edge
 
 
@@ -61,7 +58,7 @@ def mat_walnut_body():
     e = g.mul(edge, g.add(0.35, g.mul(front, 0.45)))
     base = g.mixc(g.mul(e, 0.55), base, WALNUT_WORN)
     rough = g.add(rough, g.mul(e, 0.10))
-    base, rough = cup_ring(g, base, rough, (-0.105, -0.080), 0.037, width=0.003, z_band=(H - 0.002, H + 0.002),
+    base, rough = wear.cup_ring(g, base, rough, (-0.105, -0.080), 0.037, width=0.003, z_band=(H - 0.002, H + 0.002),
                            strength=0.20, duller=0.16, broken=1.2)
     base, rough = wear.top_dust(g, base, rough, H - 0.004, H - 0.001, color=(0.16, 0.15, 0.14),
                                 amount=0.05, rougher=0.08)
@@ -99,9 +96,9 @@ def mat_gunmetal(name, axis="Z", center=None, grip=None, floor=False):
     edges; `grip` = (x0, x1, z0, z1) world region rubbed bright (a pull's
     center); `floor` adds scuffs and grime at the bottom (legs)."""
     g = Graph(new_mat(f"src_{name}"))
-    rough, h = brushed_metal(g, 0.34, axis=axis, center=center)
+    rough, h = metal.brushed(g, 0.34, axis=axis, center=center)
     base = GUNMETAL
-    edge = convex_edges(g, radius=0.0015)
+    edge = wear.convex_edges(g, radius=0.0015)
     base = g.mixc(g.mul(edge, 0.30), base, STEEL_BARE)
     rough = g.sub(rough, g.mul(edge, 0.08))
     if grip is not None:
@@ -126,13 +123,13 @@ def mat_runner():
 def mat_cap():
     """Aluminium E27 bulb cap."""
     g = Graph(new_mat("src_cap"))
-    r, h = brushed_metal(g, 0.30, axis="Z", streak=0.04)
+    r, h = metal.brushed(g, 0.30, axis="Z", streak=0.04)
     return g.finish((0.62, 0.62, 0.63), r, 1.0, g.bump(h, 1.0, 1.0))
 
 
 def mat_cord():
     g = Graph(new_mat("src_cord"))
-    base, rough, h = braided_cord(g, (0.028, 0.027, 0.026))
+    base, rough, h = fabric.braided_cord(g, (0.028, 0.027, 0.026))
     return g.finish(base, rough, 0.0, g.bump(h, 1.0, 1.0))
 
 
@@ -198,31 +195,6 @@ def build_materials():
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-AXIS = {"x": 0, "y": 1, "z": 2}
-
-
-def board(name, lo, hi, coll, mat, grain, thick, seed, bevel=0.0018, parent=None, face=1):
-    """A veneered board: beveled box with its grain frame as attributes.
-
-    grain/thick: axis the grain runs along / through the thickness. face:
-    +1/-1 = the side of the thickness axis that shows most (the log axis
-    of the growth rings sits behind it)."""
-    bm = bmesh.new()
-    bm_box(bm, lo, hi)
-    ob = new_object(name, bm, coll, material=mat, parent=parent)
-    finish(ob, bevel, 2)
-    u, b = AXIS[grain], AXIS[thick]
-    a = 3 - u - b
-    # frame positions in world meters (parents only translate)
-    off = parent.location if parent is not None else Vector((0, 0, 0))
-    lo_w, hi_w = Vector(lo) + off, Vector(hi) + off
-    size_a = hi_w[a] - lo_w[a]
-    a0 = (lo_w[a] + hi_w[a]) / 2 + (seed - 0.5) * 0.5 * size_a
-    b0 = (lo_w[b] + hi_w[b]) / 2 - face * 0.045
-    set_grain(ob, u, b, seed, a0, b0)
-    return ob
-
-
 def mesh(name, bm, coll, mat, bevel=None, segs=2, parent=None, sharp=30.0):
     ob = new_object(name, bm, coll, material=mat, parent=parent)
     if bevel:
@@ -381,7 +353,7 @@ def build_lamp(coll, mats):
             (BASE_R, 0.0132), (0.0697, 0.0152), (0.0688, 0.0166), (0.0672, 0.0176), (0.0648, 0.0181),
             (0.036, 0.0186), (0.0, BASE_H + 0.0008)]
     bm = bmesh.new()
-    bm_lathe(bm, prof, 56)
+    curves.lathe(bm, prof, 56)
     root = new_object("TableLamp", bm, coll, material=mats["lamp_base"])
     root.location = LAMP_POS
     shade(root, 40.0)
@@ -396,7 +368,7 @@ def build_lamp(coll, mats):
             (0.0134, SOCKET_Z1 + 0.005), (0.0130, SOCKET_Z1 + 0.007), (0.0134, SOCKET_Z1 + 0.009),
             (0.0130, SOCKET_Z1 + 0.011), (0.0126, SOCKET_Z1 + 0.014), (0.0, SOCKET_Z1 + 0.014)]
     bm = bmesh.new()
-    bm_lathe(bm, prof, 24)
+    curves.lathe(bm, prof, 24)
     stem = new_object("Stem", bm, coll, material=mats["lamp_stem"], parent=root)
     shade(stem, 40.0)
     assign_by_region(stem, [(((-1, -1, SOCKET_Z1 + 0.0005), (1, 1, 1)), mats["cap"])], mats["lamp_stem"])
@@ -404,28 +376,28 @@ def build_lamp(coll, mats):
 
     # Shade fitter: washer and the threaded ring that clamps it, three wire spokes
     bm = bmesh.new()
-    bm_lathe(bm, [(SOCKET_R + 0.0002, WASHER_Z - 0.001), (WASHER_R, WASHER_Z - 0.001), (WASHER_R, WASHER_Z + 0.001),
+    curves.lathe(bm, [(SOCKET_R + 0.0002, WASHER_Z - 0.001), (WASHER_R, WASHER_Z - 0.001), (WASHER_R, WASHER_Z + 0.001),
                   (SOCKET_R + 0.0002, WASHER_Z + 0.001)], 32, closed=True)
-    bm_lathe(bm, [(SOCKET_R + 0.0002, WASHER_Z + 0.001), (0.0205, WASHER_Z + 0.001), (0.0212, WASHER_Z + 0.0025),
+    curves.lathe(bm, [(SOCKET_R + 0.0002, WASHER_Z + 0.001), (0.0205, WASHER_Z + 0.001), (0.0212, WASHER_Z + 0.0025),
                   (0.0205, WASHER_Z + 0.006), (SOCKET_R + 0.0002, WASHER_Z + 0.006)], 24, closed=True)
     for a in (30.0, 150.0, 270.0):
         t = math.radians(a)
         d = Vector((math.cos(t), math.sin(t), 0.0))
         p0 = d * (WASHER_R - 0.002) + Vector((0, 0, WASHER_Z))
         p1 = d * (SHADE_R0 - 0.0035) + Vector((0, 0, SHADE_Z0 + 0.0026))
-        bm_tube(bm, [p0, p0.lerp(p1, 0.5), p1], 0.0012, 6, along_attr=None, around_attrs=None)
+        curves.tube(bm, [p0, p0.lerp(p1, 0.5), p1], 0.0012, 6, along_attr=None, around_attrs=None)
     parts.append(mesh("Fitter", bm, coll, mats["lamp_stem"], parent=root, sharp=40.0))
 
     # Push switch on the base, front
     bm = bmesh.new()
-    bm_lathe(bm, [(0.0, 0.0180), (0.0078, 0.0180), (0.0078, 0.0196), (0.0060, 0.0198), (0.0058, 0.0212),
+    curves.lathe(bm, [(0.0, 0.0180), (0.0078, 0.0180), (0.0078, 0.0196), (0.0060, 0.0198), (0.0058, 0.0212),
                   (0.0050, 0.0222), (0.0, 0.0225)], 20, center=(0.0, -0.043, 0.0))
     parts.append(mesh("Switch", bm, coll, mats["dark"], parent=root, sharp=40.0))
 
     # Cord: strain relief grommet at the back of the base, braided cord over the back edge
     edge_y = HY - LAMP_POS.y                  # the top's back edge in lamp coordinates
     bm = bmesh.new()
-    bm_lathe(bm, [(0.0, -0.004), (0.0045, -0.004), (0.0045, 0.004), (0.0038, 0.009), (0.0032, 0.012),
+    curves.lathe(bm, [(0.0, -0.004), (0.0045, -0.004), (0.0045, 0.004), (0.0038, 0.009), (0.0032, 0.012),
                   (0.0, 0.012)], 16)
     bmesh.ops.transform(bm, verts=bm.verts, matrix=Matrix.Translation((0.0, BASE_R - 0.002, 0.0085))
                         @ Matrix.Rotation(math.radians(-90), 4, "X"))
@@ -440,9 +412,9 @@ def build_lamp(coll, mats):
     hang_y = edge_y + r + 0.0006
     ctrl += [(0.007, hang_y, -0.03), (0.004, hang_y + 0.0004, -0.12), (-0.002, hang_y + 0.001, -0.25),
              (-0.010, hang_y + 0.002, -0.38), (-0.020, hang_y + 0.004, -0.50)]
-    path = smooth_path(ctrl, 5)
+    path = curves.catmull_rom(ctrl, 5)
     bm = bmesh.new()
-    bm_tube(bm, path, r, 8)
+    curves.tube(bm, path, r, 8)
     parts.append(mesh("Cord", bm, coll, mats["cord"], parent=root, sharp=50.0))
 
     lamp = join(parts, "TableLamp")
@@ -451,7 +423,7 @@ def build_lamp(coll, mats):
     # Shade and bulb: the LampLight part
     pts, glow = shade_profile()
     bm = bmesh.new()
-    bm_lathe(bm, pts, 64, closed=True, attrs={"glow": glow}, start_angle=math.radians(90.0))
+    curves.lathe(bm, pts, 64, closed=True, attrs={"glow": glow}, start_angle=math.radians(90.0))
     shade_ob = new_object("LampShade", bm, coll, material=mats["shade"], parent=lamp)
     shade(shade_ob, 70.0)
     # G45 globe on a short neck into the cap
@@ -462,7 +434,7 @@ def build_lamp(coll, mats):
         prof.append((BULB_R * math.cos(t), zc + BULB_R * math.sin(t)))
     prof[-1] = (0.0, zc + BULB_R)
     bm = bmesh.new()
-    bm_lathe(bm, prof, 24)
+    curves.lathe(bm, prof, 24)
     bulb = new_object("Bulb", bm, coll, material=mats["bulb"], parent=lamp)
     shade(bulb, 50.0)
     light = join([shade_ob, bulb], "LampShade")

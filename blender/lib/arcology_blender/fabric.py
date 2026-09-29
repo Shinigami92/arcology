@@ -5,8 +5,15 @@ become one normal in `fabric_finish` (Bump distance 1.0), so each layer's
 depth is physical. Typical order: fabric_base, welt, creases, rub, pilling,
 stain, fabric_finish. Keep detail at medium scale and low contrast: a fine,
 high-contrast weave shimmers in VR, and ~512 px/m can't hold it anyway.
+
+Also: `quilting` (stitched baffle channels, e.g. a duvet) and `wool_knit`
+(a chunky-knit throw) from the padded bed, `braided_cord` (textile cable on
+a `curves.tube`) from the nightstand.
 """
 
+import math
+
+from .shading import Graph, new_mat
 from .soft import SEAM_ATTR
 
 
@@ -88,3 +95,58 @@ def stain(g, base, rough, center, radius, z_band=0.03, strength=0.12, ring=0.18,
 def fabric_finish(g, base, rough, height):
     """Normal from the accumulated height (meters) and connect the BSDF."""
     return g.finish(base, rough, 0.0, g.bump(height, 1.0, 1.0))
+
+
+def quilting(g, base, height, spacing, mask, width=0.010, depth=0.0012, darker=0.03, puff=0.003, axes="XY"):
+    """Stitched quilt channels every `spacing` meters along the world axes in
+    `axes` (a duvet's baffle boxes), inside a 0..1 mask: a soft valley of
+    `depth` with a slightly darker stitch line, and each box puffed up by
+    `puff` meters at its center. Lines along an axis only show on faces
+    roughly perpendicular to it, so they don't smear down the sides.
+    Returns (base, height)."""
+    hw = width / spacing / 2
+    lines, bulge = 0.0, 1.0
+    for ax in axes:
+        coord, ncomp = {"X": (g.x, g.nx), "Y": (g.y, g.ny)}[ax]
+        t = g.math("FRACT", g.mul(coord, 1.0 / spacing))
+        facing = g.maprange(g.math("ABSOLUTE", ncomp), 0.7, 0.3)
+        lines = g.add(lines, g.mul(g.band(t, 0.5 - hw, 0.5 + hw, hw), facing))
+        # 1 at the box center, 0 at the seams (t = 0.5); flat where the axis' lines don't show
+        arch = g.math("SINE", g.mul(g.sub(t, 0.5), math.pi))
+        arch = g.math("ABSOLUTE", arch)
+        bulge = g.mul(bulge, g.mixf(facing, 1.0, arch))
+    lines = g.mul(g.maprange(lines, 0.0, 1.0), mask)
+    height = g.add(g.sub(height, g.mul(lines, depth)), g.mul(g.mul(bulge, mask), puff))
+    base = g.scale_color(base, g.sub(1.0, g.mul(lines, darker)))
+    return base, height
+
+
+def wool_knit(name, color, rough=0.95, rib_period=0.013, rib_height=0.0005, rib_direction="Y", fuzz=0.35):
+    """Chunky-knit wool (throws, blankets) as a new `src_<name>` graph:
+    heathered yarn color, soft knit ribs running perpendicular to
+    `rib_direction` (bands vary along that world axis), fuzz pills, very
+    rough. Returns (g, base, rough, height): add wear, then `fabric_finish`."""
+    g = Graph(new_mat(f"src_{name}"))
+    base, r, h = fabric_base(g, color, rough=rough, heather=0.07, slub=0.03, mottle=0.06, weave=0.00010)
+    ribs = g.wave(0.314 / rib_period, 1.2, 1.0, rib_direction)
+    h = g.add(h, g.mul(ribs, rib_height))
+    base = g.scale_color(base, g.add(0.95, g.mul(ribs, 0.10)))
+    base, h = pilling(g, base, h, fuzz, scale=110.0, amount=0.0004, lighter=0.06)
+    return g, base, r, h
+
+
+def braided_cord(g, color, pitch=0.007, strands=4, depth=0.00025, contrast=0.18,
+                 along_attr="along", around_attrs=("around_c", "around_s")):
+    """Textile braid on a `curves.tube` (reads its along/around attributes): two
+    counter-rotating sets of `strands` helices with `pitch` meters per turn.
+    Returns (base, rough, height in meters)."""
+    s = g.attribute(along_attr)
+    ang = g.math("ARCTAN2", g.attribute(around_attrs[1]), g.attribute(around_attrs[0]))
+    k = 2.0 * math.pi / pitch
+    p1 = g.math("SINE", g.add(g.mul(s, k), g.mul(ang, strands)))
+    p2 = g.math("SINE", g.sub(g.mul(s, k), g.mul(ang, strands)))
+    weave = g.mul(g.add(g.mul(p1, p2), 1.0), 0.5)
+    fuzz = g.noise(400.0, 2.0)
+    base = g.scale_color(color, g.add(1.0 - contrast, g.mul(weave, 2 * contrast)))
+    rough = g.add(0.78, g.mul(g.sub(fuzz, 0.5), 0.1))
+    return base, rough, g.mul(weave, depth)

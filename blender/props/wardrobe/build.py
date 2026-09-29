@@ -24,10 +24,10 @@ from wardrobe_common import (  # noqa: E402
     RAIL_Z, RIGHT_SHELVES, SHELF_Y0, TOP_SHELF, handle_grip,
 )
 import lib_candidates as cand  # noqa: E402
-from arcology_blender import fabric, soft, wear  # noqa: E402
+from arcology_blender import cloth, fabric, soft, wear  # noqa: E402
 from arcology_blender.geo import (  # noqa: E402
-    assign_by_region, bm_box, bm_cyl, bm_quad, collision_box, cut, cyl_x, cyl_y, finish, new_empty,
-    new_object, remove_attribute, set_uvs, shade,
+    assign_by_region, bm_box, bm_cone, bm_cyl, bm_open_box, bm_quad, collision_box, cut, cyl_x, cyl_y, finish,
+    instance, new_empty, new_object, remove_attribute, set_uvs, shade,
 )
 from arcology_blender.scene import clear_scene, get_collection, part_tris, save_blend, tag  # noqa: E402
 from arcology_blender.shading import Graph, new_mat  # noqa: E402
@@ -67,7 +67,7 @@ def mat_walnut():
     g = Graph(new_mat("src_walnut"))
     base, rough, h = cand.wood_veneer(g, WALNUT_GROUND, WALNUT_LINE)
     base, rough = wear.edge_highlight(g, base, rough, smoother=-0.06, brighter=0.14)
-    base, rough = cand.fixture_wear(g, base, rough, handle_standoffs(), r_in=0.018, r_out=0.055)
+    base, rough = wear.fixture_wear(g, base, rough, handle_standoffs(), r_in=0.018, r_out=0.055)
     base, rough = wear.smudges(g, base, rough, handle_region(g), rougher=0.09, darker=0.03)
     base, rough = cand.scratch(g, base, rough, (0.215, 1.025), (0.275, 0.985), color=(0.22, 0.15, 0.09))
     base, rough = wear.bottom_scuffs(g, base, rough, z_clean=0.30, z_full=0.10, rougher=0.15, darker=0.12)
@@ -185,7 +185,7 @@ def build_body(coll, col_coll, mats):
     # Legs
     bm = bmesh.new()
     for x, y in LEGS:
-        cand.bm_tapered_cyl(bm, LEG_R_BOT, LEG_R_TOP, LEG_H + 0.002, Matrix.Translation((x, y, LEG_H / 2)), 24)
+        bm_cone(bm, LEG_R_BOT, LEG_R_TOP, LEG_H + 0.002, Matrix.Translation((x, y, LEG_H / 2)), 24)
     legs = new_object("Legs", bm, coll, material=metal)
     finish(legs, 0.0015, 1)
     body(legs)
@@ -286,9 +286,9 @@ def build_drawers(coll, mats):
 
     bm = bmesh.new()
     bm_box(bm, (-hw, 0.0, 0.0), (hw, DRAWER_FRONT_T, DRAWER_H))
-    cand.bm_open_box(bm, (-DRAWER_BOX_HW, DRAWER_BOX_Y0, DRAWER_FLOOR_Z0),
-                     (DRAWER_BOX_HW, DRAWER_BOX_Y1, DRAWER_BOX_Z1), DRAWER_WALL,
-                     floor=DRAWER_FLOOR_Z1 - DRAWER_FLOOR_Z0)
+    bm_open_box(bm, (-DRAWER_BOX_HW, DRAWER_BOX_Y0, DRAWER_FLOOR_Z0),
+                (DRAWER_BOX_HW, DRAWER_BOX_Y1, DRAWER_BOX_Z1), DRAWER_WALL,
+                floor=DRAWER_FLOOR_Z1 - DRAWER_FLOOR_Z0)
     drawer = new_object("DrawerLower", bm, coll, origin=origin, material=walnut)
     bm = bmesh.new()  # routed finger pull along the top edge of the front
     bm_box(bm, (-0.06, -0.01, DRAWER_H - 0.028), (0.06, 0.010, DRAWER_H + 0.01))
@@ -305,9 +305,9 @@ def build_drawers(coll, mats):
     tag(runners, "drawer_lower")
     tag(new_empty("HandleGrip", coll, DRAWER_GRIP, parent=drawer), "drawer_lower")
 
-    upper = cand.linked_copy(drawer, "DrawerUpper", coll, (BAY_XC, DRAWER_FRONT_Y, DRAWER_Z0S[1]))
+    upper = instance(drawer, "DrawerUpper", (BAY_XC, DRAWER_FRONT_Y, DRAWER_Z0S[1]), collection=coll)
     tag(upper, "drawer_upper")
-    tag(cand.linked_copy(runners, "DrawerRunners.upper", coll, (0, 0, 0), parent=upper), "drawer_upper")
+    tag(instance(runners, "DrawerRunners.upper", (0, 0, 0), collection=coll, parent=upper), "drawer_upper")
     tag(new_empty("HandleGrip.upper", coll, DRAWER_GRIP, parent=upper), "drawer_upper")
 
 
@@ -316,7 +316,7 @@ def build_box(coll, mats):
     gunmetal label holder on the front; origin at its bottom center."""
     linen, metal, laminate = mats["linen"], mats["metal"], mats["laminate"]
     bm = bmesh.new()
-    cand.bm_open_box(bm, (-BOX_HW, -BOX_HD, 0.0), (BOX_HW, BOX_HD, BOX_H), BOX_WALL)
+    bm_open_box(bm, (-BOX_HW, -BOX_HD, 0.0), (BOX_HW, BOX_HD, BOX_H), BOX_WALL)
     box = new_object("StorageBox", bm, coll, origin=BOX_POS, material=linen)
     finish(box, 0.003, 2)
     tag(box, "box")
@@ -343,7 +343,7 @@ def build_box(coll, mats):
 def build_lid(coll, mats):
     """Lift-off lid: top panel over a skirt that drops over the box; origin at the skirt's bottom."""
     bm = bmesh.new()
-    cand.bm_open_box(bm, (-LID_HW, -LID_HD, 0.0), (LID_HW, LID_HD, LID_SKIRT + LID_TOP), BOX_WALL, floor=LID_TOP)
+    bm_open_box(bm, (-LID_HW, -LID_HD, 0.0), (LID_HW, LID_HD, LID_SKIRT + LID_TOP), BOX_WALL, floor=LID_TOP)
     bmesh.ops.scale(bm, vec=(1.0, 1.0, -1.0), verts=bm.verts)  # open side down
     bmesh.ops.translate(bm, vec=(0.0, 0.0, LID_SKIRT + LID_TOP), verts=bm.verts)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
@@ -364,7 +364,7 @@ def build_hangers(coll, mats):
         part = f"hanger{i + 1}"
         pos = (x, RAIL_Y, HANGER_REST_Z)
         if garment is None and bare is not None:
-            tag(cand.linked_copy(bare, f"Hanger{i + 1}", coll, pos, rot), part)
+            tag(instance(bare, f"Hanger{i + 1}", pos, rot, collection=coll), part)
             continue
         bm = bmesh.new()
         neck_z = cand.wire_hanger(bm, RAIL_R, HANGER_WIRE)
@@ -375,7 +375,7 @@ def build_hangers(coll, mats):
         if garment is None:
             bare = hanger
             continue
-        bm = cand.hanging_garment(seed=float(i))
+        bm = cloth.hanging_garment(seed=float(i))
         bmesh.ops.translate(bm, verts=bm.verts, vec=(0.0, 0.0, neck_z + 0.004))
         ob = new_object(f"Garment{i + 1}", bm, coll, material=mats[garment], parent=hanger)
         remove_attribute(ob, soft.SEAM_ATTR)

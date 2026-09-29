@@ -119,7 +119,7 @@ picked_up_layer = 0
 shape = SubResource("SphereShape3D_grab")
 
 [node name="StopSound" type="AudioStreamPlayer3D" parent="DoorLeft/HingeOrigin/InteractableHinge" node_paths=PackedStringArray("hinge")]
-position = Vector3(-1.2, 0.5, 0)
+position = Vector3(-1.2, 0.6935, 0.053)
 stream = ExtResource("bump")
 volume_db = -8.0
 script = ExtResource("stop")
@@ -185,7 +185,7 @@ picked_up_layer = 0
 shape = SubResource("SphereShape3D_grab")
 
 [node name="StopSound" type="AudioStreamPlayer3D" parent="DoorRight/HingeOrigin/InteractableHinge" node_paths=PackedStringArray("hinge")]
-position = Vector3(-1.2, -0.5, 0)
+position = Vector3(1.2, 0.6935, 0.053)
 stream = ExtResource("bump")
 volume_db = -8.0
 script = ExtResource("stop")

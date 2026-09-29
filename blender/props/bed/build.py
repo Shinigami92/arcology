@@ -13,13 +13,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bmesh  # noqa: E402
 from mathutils import Matrix, Vector  # noqa: E402
-from mathutils.bvhtree import BVHTree  # noqa: E402
 
 import bed_common as C  # noqa: E402
 import collision  # noqa: E402
 import lib_candidates as L  # noqa: E402
-from arcology_blender import fabric, geo, soft, wear  # noqa: E402
-from arcology_blender.geo import bm_box, finish, new_object, shade  # noqa: E402
+from arcology_blender import cloth, fabric, geo, soft, wear  # noqa: E402
+from arcology_blender.cloth import S_ATTR, U_ATTR  # noqa: E402
+from arcology_blender.geo import bm_box, bvh, finish, new_object, set_float_attr, shade, trim_hidden  # noqa: E402
 from arcology_blender.scene import clear_scene, get_collection, part_tris, save_blend, tag  # noqa: E402
 from arcology_blender.shading import Graph, new_mat  # noqa: E402
 
@@ -203,15 +203,8 @@ def build_mattress(coll, mats):
     return ob
 
 
-def _bvh(ob):
-    me = ob.data
-    me.calc_loop_triangles()
-    mw = ob.matrix_world
-    return BVHTree.FromPolygons([mw @ v.co for v in me.vertices], [t.vertices for t in me.loop_triangles])
-
-
 def build_pillows(coll, mats, mattress):
-    tree = _bvh(mattress)
+    tree = bvh([mattress])
     out = []
     for i, (px, yaw, dent) in enumerate(C.PILLOWS):
         bm = soft.pillow(size=C.PILLOW_SIZE, thickness=C.PILLOW_T, res=22, cord=0.004, pinch=0.08,
@@ -228,9 +221,9 @@ def build_pillows(coll, mats, mattress):
         maxy = max(v.co.y for v in bm.verts)
         minz = min(v.co.z for v in bm.verts)
         bmesh.ops.translate(bm, verts=bm.verts, vec=Vector((px, C.HB_Y0 + 0.014 - maxy, mtop - 0.030 - minz)))
-        L.flatten_against(bm, (0, 0, mtop), (0, 0, 1), falloff=0.018,
-                          region=lambda co: co.y < C.MAT_Y1 - 0.02)
-        L.flatten_against(bm, (0, C.HB_Y0, 0), (0, -1, 0), falloff=0.016)
+        soft.flatten_against(bm, (0, 0, mtop), (0, 0, 1), falloff=0.018,
+                             region=lambda co: co.y < C.MAT_Y1 - 0.02)
+        soft.flatten_against(bm, (0, C.HB_Y0, 0), (0, -1, 0), falloff=0.016)
         ob = new_object(f"Pillow{i}", bm, coll, material=mats["pillow"])
         shade(ob, SOFT)
         out.append(ob)
@@ -242,16 +235,16 @@ def duvet_place():
     a slightly diagonal line, with low bumps so it settles rumpled."""
     r = 0.025
     z0 = C.MAT_Z1 + 0.008 + C.DUVET_T + 0.010
-    path = L.fold_path(C.DUVET_FOOT_Y, z0, C.FOLD_Y, r)
+    path = cloth.fold_path(C.DUVET_FOOT_Y, z0, C.FOLD_Y, r)
     rot = Matrix.Rotation(math.radians(1.2), 3, "Z")
 
     def place(u, s):
         fy = C.FOLD_Y + C.FOLD_SKEW * u
         y, z, layer = path(s, fy)
         if layer == 0:
-            z += L.bumps(u, y, 0.035, 1.9, seed=1.0)
+            z += cloth.bumps(u, y, 0.035, 1.9, seed=1.0)
         elif layer == 2:
-            z += L.bumps(u, y, 0.02, 2.5, seed=2.0)
+            z += cloth.bumps(u, y, 0.02, 2.5, seed=2.0)
         p = rot @ Vector((u, y, 0.0))
         return (p.x - 0.006, p.y, z)
 
@@ -261,7 +254,7 @@ def duvet_place():
 
 def build_duvet(coll, mats, colliders):
     place, length, r = duvet_place()
-    bm = L.cloth_grid(C.DUVET_W, length, C.DUVET_SPACING, place, corner_radius=0.40)
+    bm = cloth.cloth_grid(C.DUVET_W, length, C.DUVET_SPACING, place, corner_radius=0.40)
     ob = new_object("Duvet", bm, coll, material=mats["duvet"])
     # slack where it was slept in and kicked about: buckles into wrinkles in place
     def slack(co, a):
@@ -269,13 +262,13 @@ def build_duvet(coll, mats, colliders):
         for (cx, cy, rx, ry, amt) in C.DUVET_SLACK:
             w += amt * math.exp(-(((co.x - cx) / rx) ** 2 + ((co.y - cy) / ry) ** 2))
         # the hanging sides and foot get a little slack too: soft vertical ripples
-        u, s_ = abs(a[L.U_ATTR]), a[L.S_ATTR]
+        u, s_ = abs(a[U_ATTR]), a[S_ATTR]
         w += 0.32 * max(min(1.0, (u - 0.78) / 0.12), min(1.0, (0.24 - s_) / 0.12), 0.0)
-        return min(1.0, w) if s_ < C.FOLD_Y - C.DUVET_FOOT_Y + C.FOLD_SKEW * a[L.U_ATTR] else 0.0
+        return min(1.0, w) if s_ < C.FOLD_Y - C.DUVET_FOOT_Y + C.FOLD_SKEW * a[U_ATTR] else 0.0
 
-    L.set_float_attr(ob, "_slack", slack)
+    set_float_attr(ob, "_slack", slack)
     t0 = time.time()
-    L.cloth_settle(ob, colliders, frames=130, quality=10, mass=0.02, tension=40.0, compression=40.0, shear=10.0,
+    cloth.cloth_settle(ob, colliders, frames=130, quality=10, mass=0.02, tension=40.0, compression=40.0, shear=10.0,
                    bending=0.5, air_damping=2.0, friction=10.0, distance=0.004, collision_quality=4,
                    self_collision=True, self_distance=0.004, self_friction=8.0, shrink=-0.015,
                    shrink_attr="_slack", shrink_max=-0.12)
@@ -283,22 +276,22 @@ def build_duvet(coll, mats, colliders):
     s_fold = C.FOLD_Y - C.DUVET_FOOT_Y
 
     def keep(co, a):
-        s_f = s_fold + C.FOLD_SKEW * a[L.U_ATTR]
-        hanging = abs(a[L.U_ATTR]) > C.DUVET_W / 2 - 0.30 or a[L.S_ATTR] < 0.30
-        return 1.0 if (a[L.S_ATTR] > s_f - 0.06 or a[soft.SEAM_ATTR] < 0.075 or hanging) else 0.0
+        s_f = s_fold + C.FOLD_SKEW * a[U_ATTR]
+        hanging = abs(a[U_ATTR]) > C.DUVET_W / 2 - 0.30 or a[S_ATTR] < 0.30
+        return 1.0 if (a[S_ATTR] > s_f - 0.06 or a[soft.SEAM_ATTR] < 0.075 or hanging) else 0.0
 
     def drop(co, a):
-        s_f = s_fold + C.FOLD_SKEW * a[L.U_ATTR]
-        return 1.0 if a[L.S_ATTR] > s_f + math.pi * r + 0.05 else 0.0
+        s_f = s_fold + C.FOLD_SKEW * a[U_ATTR]
+        return 1.0 if a[S_ATTR] > s_f + math.pi * r + 0.05 else 0.0
 
-    L.set_float_attr(ob, "_keep", keep)
-    L.set_float_attr(ob, "_drop", drop)
+    set_float_attr(ob, "_keep", keep)
+    set_float_attr(ob, "_drop", drop)
     # loft thins out toward the hem seam
-    L.set_float_attr(ob, "_taper", lambda co, a: min(1.0, a[soft.SEAM_ATTR] / 0.09) ** 0.6)
+    set_float_attr(ob, "_taper", lambda co, a: min(1.0, a[soft.SEAM_ATTR] / 0.09) ** 0.6)
     lumps(ob, 0.008, 2.6, seed=8.0)
-    L.thicken(ob, C.DUVET_T, keep_under_attr="_keep", drop_front_attr="_drop", taper_attr="_taper",
+    cloth.thicken(ob, C.DUVET_T, keep_under_attr="_keep", drop_front_attr="_drop", taper_attr="_taper",
               taper_min=0.25)
-    for a in ("_keep", "_drop", "_taper", "_slack", L.U_ATTR, L.S_ATTR):
+    for a in ("_keep", "_drop", "_taper", "_slack", U_ATTR, S_ATTR):
         geo.remove_attribute(ob, a)
     shade(ob, SOFT)
     return ob
@@ -313,18 +306,18 @@ def build_throw(coll, mats, colliders):
     def place(u, s):
         p = rot @ Vector((u, s - d / 2, 0.0))
         x, y = p.x + cx, p.y + cy
-        return (x, y, z0 + L.bumps(x, y, 0.05, 3.2, seed=5.0))
+        return (x, y, z0 + cloth.bumps(x, y, 0.05, 3.2, seed=5.0))
 
-    bm = L.cloth_grid(w, d, C.THROW_SPACING, place, corner_radius=0.03)
+    bm = cloth.cloth_grid(w, d, C.THROW_SPACING, place, corner_radius=0.03)
     ob = new_object("Throw", bm, coll, material=mats["throw"])
     t0 = time.time()
-    L.cloth_settle(ob, colliders, frames=90, quality=6, mass=0.15, tension=10.0, compression=4.0, shear=5.0,
+    cloth.cloth_settle(ob, colliders, frames=90, quality=6, mass=0.15, tension=10.0, compression=4.0, shear=5.0,
                    bending=0.6, air_damping=2.0, friction=12.0, distance=0.003, collision_quality=3,
                    shrink=-0.03)
     print(f"SIM throw {time.time() - t0:.1f}s")
-    L.set_float_attr(ob, "_keep", lambda co, a: 1.0 if a[soft.SEAM_ATTR] < 0.05 else 0.0)
-    L.thicken(ob, C.THROW_T, keep_under_attr="_keep")
-    for a in ("_keep", L.U_ATTR, L.S_ATTR):
+    set_float_attr(ob, "_keep", lambda co, a: 1.0 if a[soft.SEAM_ATTR] < 0.05 else 0.0)
+    cloth.thicken(ob, C.THROW_T, keep_under_attr="_keep")
+    for a in ("_keep", U_ATTR, S_ATTR):
         geo.remove_attribute(ob, a)
     shade(ob, SOFT)
     return ob
@@ -348,31 +341,6 @@ def lumps(ob, amount, scale, seed):
     bm.free()
 
 
-def trim_hidden(ob, covers, reach=0.08, dilate=0.09, min_nz=0.7):
-    """Delete upward faces of `ob` (normal z > min_nz) hidden under `covers`:
-    rays along the face normal from the center and four dilated points all
-    hit a cover within `reach`. Side faces stay: the gap behind a hanging
-    hem is visible from low angles."""
-    trees = [_bvh(c) for c in covers]
-    bm = bmesh.new()
-    bm.from_mesh(ob.data)
-    kill = []
-    for f in bm.faces:
-        n = f.normal
-        if n.z < min_nz:
-            continue
-        c = f.calc_center_median()
-        t1 = n.orthogonal().normalized()
-        t2 = n.cross(t1)
-        pts = [c] + [c + t * dilate * s for t in (t1, t2) for s in (-1, 1)]
-        if all(any(t.ray_cast(p + n * 0.001, n, reach)[0] is not None for t in trees) for p in pts):
-            kill.append(f)
-    bmesh.ops.delete(bm, geom=kill, context="FACES")
-    bm.to_mesh(ob.data)
-    bm.free()
-    print(f"TRIM {ob.name}: {len(kill)} hidden faces removed")
-
-
 def main():
     t0 = time.time()
     clear_scene()
@@ -384,7 +352,7 @@ def main():
     duvet = build_duvet(coll, mats, [(mattress, C.DUVET_T), (frame, C.DUVET_T)] + [(p, 0.006) for p in pillows])
     throw = build_throw(coll, mats, [(duvet, C.THROW_T + 0.002, 20.0), (mattress, C.THROW_T), (frame, C.THROW_T)])
     # hanging hems and corners flare a little: keep them inside the footprint
-    L.soft_bounds([duvet, throw], lo=(-C.HALF_W - 0.005, C.FOOT_Y + 0.004, None),
+    cloth.soft_bounds([duvet, throw], lo=(-C.HALF_W - 0.005, C.FOOT_Y + 0.004, None),
                   hi=(C.HALF_W + 0.005, None, None), knee=0.022)
     trim_hidden(mattress, [duvet])
     linen = geo.join([mattress, duvet] + pillows, "BedLinen")

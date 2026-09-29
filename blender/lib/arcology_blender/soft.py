@@ -1,4 +1,4 @@
-"""Soft goods: upholstered blocks, dents, lumps and throw pillows (D-028).
+"""Soft goods: upholstered blocks, dents, lumps, throw pillows, contact flattening (D-028).
 
 Promoted from the sofa A/B (Opus 5.5 won). Shapes are built as bmeshes in
 world coordinates; `soft_box` and `pillow` also write a per-vertex seam
@@ -262,3 +262,20 @@ def pillow(size=(0.45, 0.45), thickness=0.15, res=30, cord=0.004, pinch=0.07, fu
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     bm.normal_update()
     return bm
+
+
+def flatten_against(bm, point, normal, falloff=0.02, region=None):
+    """Squash a soft object against a plane (a pillow on a mattress or against
+    a headboard): vertices closer than `falloff` to the plane, or behind it,
+    are pushed out so their signed distance becomes falloff * exp(d/falloff - 1)
+    (smooth: untouched beyond `falloff`, a flat contact patch where the
+    object pressed through). region(v.co) -> bool limits it to some vertices.
+    Promoted from the bed (Opus 5.5)."""
+    p, n = Vector(point), Vector(normal).normalized()
+    for v in bm.verts:
+        if region is not None and not region(v.co):
+            continue
+        d = (v.co - p).dot(n)
+        if d < falloff:
+            v.co += n * (falloff * math.exp(d / falloff - 1.0) - d)
+    bm.normal_update()

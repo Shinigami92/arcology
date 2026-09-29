@@ -15,15 +15,10 @@ from nightstand_common import (  # noqa: E402
     body_collision_objects, body_objects, drawer_objects, lamp_light_objects, lamp_metal_objects,
     lamp_objects,
 )
-from lib_candidates import emissive_from_albedo  # noqa: E402
 from arcology_blender import bake  # noqa: E402
-from arcology_blender.scene import save_blend  # noqa: E402
+from arcology_blender.scene import meshes, save_blend  # noqa: E402
 
 WARM_2700K = (1.0, 0.64, 0.36)  # linear; the shade's linen modulates it
-
-
-def meshes(objs):
-    return [o for o in objs if o.type == "MESH"]
 
 
 def main():
@@ -38,10 +33,9 @@ def main():
     bake.bake_part(lamp_metal_objects(), "table_lamp", LAMP_MAT, hide=body + drawer, size=TEX_LAMP)
     light = bake.bake_part(meshes(lamp_light_objects()), "table_lamp_light", LIGHT_MAT, hide=body + drawer,
                            size=TEX_LIGHT)
-    emissive_from_albedo(light, bpy.data.images["table_lamp_light_albedo"], WARM_2700K, strength=1.0)
+    bake.emissive_from_albedo(light, bpy.data.images["table_lamp_light_albedo"], WARM_2700K, strength=1.0)
     bake.remove_source_materials()
-    for img in bpy.data.images:
-        print(f"IMAGE {img.name} {img.size[0]}x{img.size[1]} packed={img.packed_file is not None}")
+    bake.report_images()
     save_blend(BLEND)
 
 

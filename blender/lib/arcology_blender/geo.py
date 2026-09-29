@@ -1,10 +1,13 @@
-"""Geometry: bmesh primitives, objects, bevel/boolean/shading, per-region materials."""
+"""Geometry: bmesh primitives, objects, instances, attributes, bevel/boolean/shading, per-region materials, BVH."""
 
 import math
 
 import bmesh
 import bpy
 from mathutils import Matrix, Vector
+from mathutils.bvhtree import BVHTree
+
+from .scene import PART_KEY
 
 
 # --- bmesh primitives (add to an existing bmesh) ------------------------------
@@ -42,6 +45,61 @@ def bm_quad(bm, points):
     return bm.faces.new([bm.verts.new(p) for p in points])
 
 
+def bm_cone(bm, r_bottom, r_top, depth, matrix, segments=24):
+    """Capped cone frustum along the matrix's Z axis (tapered legs, feet, spikes)."""
+    return bmesh.ops.create_cone(
+        bm, cap_ends=True, cap_tris=False, segments=segments,
+        radius1=r_bottom, radius2=r_top, depth=depth, matrix=matrix,
+    )["verts"]
+
+
+def bm_square_taper(bm, x, y, z0, z1, top, bottom):
+    """Square furniture leg from z0 (`bottom` wide) to z1 (`top` wide), axis-aligned
+    (a 4-sided cone turned 45 degrees)."""
+    s2 = math.sqrt(2.0)
+    mat = Matrix.Translation((x, y, (z0 + z1) / 2)) @ Matrix.Rotation(math.radians(45.0), 4, "Z")
+    return bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=4,
+                                 radius1=bottom / 2 * s2, radius2=top / 2 * s2, depth=z1 - z0,
+                                 matrix=mat)["verts"]
+
+
+def bm_open_box(bm, lo, hi, wall, floor=None, open_axis=2):
+    """Open-top box (drawer, tray, bin) as five slabs: a floor `floor` thick
+    (default `wall`) and four walls `wall` thick, between corners `lo` and
+    `hi`; the open face is the +side of `open_axis`. Watertight slabs that
+    share faces, meant for `finish` (bevel) afterwards. Flip it for a lid
+    (scale z by -1, translate, recalc normals)."""
+    lo, hi = Vector(lo), Vector(hi)
+    f = wall if floor is None else floor
+    a, b = [i for i in range(3) if i != open_axis]
+    up = open_axis
+    flo, fhi = lo.copy(), hi.copy()
+    fhi[up] = lo[up] + f
+    bm_box(bm, flo, fhi)
+    for axis in (a, b):
+        for side in (0, 1):
+            wlo, whi = lo.copy(), hi.copy()
+            wlo[up] = lo[up] + f
+            if side == 0:
+                whi[axis] = lo[axis] + wall
+            else:
+                wlo[axis] = hi[axis] - wall
+            if axis == b:  # shorten so the corners don't double up
+                wlo[a] += wall
+                whi[a] -= wall
+            bm_box(bm, wlo, whi)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-6)
+
+
+def bm_merge(bm, other):
+    """Append bmesh `other` into `bm` (frees `other`), e.g. several soft shapes in one object."""
+    me = bpy.data.meshes.new("tmp_merge")
+    other.to_mesh(me)
+    other.free()
+    bm.from_mesh(me)
+    bpy.data.meshes.remove(me)
+
+
 # --- objects -------------------------------------------------------------------
 def new_object(name, bm, collection, origin=(0, 0, 0), material=None, parent=None):
     """Mesh object from a bmesh (freed). Geometry is in object-local coordinates."""
@@ -67,6 +125,52 @@ def new_empty(name, collection, location, parent=None, display="SPHERE", size=0.
     ob.parent = parent
     collection.objects.link(ob)
     return ob
+
+
+def instance(src, name, location, rotation=(0.0, 0.0, 0.0), collection=None, parent=None, part=None):
+    """Linked duplicate sharing `src`'s mesh (same UVs and baked material), e.g.
+    the second of two identical drawers: bake and export the original once,
+    instance its glb twice in Godot. Linked into `collection` (default: the
+    source's first collection) and tagged `part` if given."""
+    ob = bpy.data.objects.new(name, src.data)
+    ob.location = location
+    ob.rotation_euler = rotation
+    ob.parent = parent
+    (collection or src.users_collection[0]).objects.link(ob)
+    if part is not None:
+        ob[PART_KEY] = part
+    return ob
+
+
+def smooth_object(name, bm, collection, material, angle=80.0, parent=None):
+    """Mesh object from a bmesh, smooth shaded up to `angle` (80: soft goods,
+    smooth everywhere)."""
+    ob = new_object(name, bm, collection, material=material, parent=parent)
+    shade(ob, angle)
+    return ob
+
+
+def set_point_attr(ob, name, value):
+    """Constant float point attribute on a mesh object (e.g. a per-board grain
+    frame the material reads with `Graph.attribute`). Survives `join`.
+    Remove it before export with `remove_attribute`."""
+    me = ob.data
+    a = me.attributes.get(name) or me.attributes.new(name, "FLOAT", "POINT")
+    a.data.foreach_set("value", [float(value)] * len(me.vertices))
+    return a
+
+
+def set_float_attr(ob, name, fn):
+    """Write a float point attribute from fn(vertex world position, attrs dict)
+    where attrs holds the vertex's existing float point attributes by name
+    (masks computed after a simulation from the flat cloth coordinates, etc.)."""
+    me = ob.data
+    names = [a.name for a in me.attributes if a.domain == "POINT" and a.data_type == "FLOAT"]
+    vals = {n: [d.value for d in me.attributes[n].data] for n in names}
+    a = me.attributes.get(name) or me.attributes.new(name, "FLOAT", "POINT")
+    mw = ob.matrix_world
+    for i, v in enumerate(me.vertices):
+        a.data[i].value = fn(mw @ v.co, {n: vals[n][i] for n in names})
 
 
 def set_uvs(ob, uvs):
@@ -202,3 +306,42 @@ def remove_attribute(ob, name):
     a = ob.data.attributes.get(name)
     if a is not None:
         ob.data.attributes.remove(a)
+
+
+def bvh(objs):
+    """One world-space BVH over mesh objects (ray casts, nearest points).
+    Call `bpy.context.view_layer.update()` first if transforms just changed."""
+    verts, tris = [], []
+    for ob in objs:
+        me = ob.data
+        me.calc_loop_triangles()
+        off = len(verts)
+        mw = ob.matrix_world
+        verts += [mw @ v.co for v in me.vertices]
+        tris += [tuple(off + i for i in t.vertices) for t in me.loop_triangles]
+    return BVHTree.FromPolygons(verts, tris)
+
+
+def trim_hidden(ob, covers, reach=0.08, dilate=0.09, min_nz=0.7):
+    """Delete upward faces of `ob` (normal z > min_nz) hidden under `covers`
+    (a mattress top under a duvet): rays along the face normal from the
+    center and four dilated points all hit a cover within `reach`. Side faces
+    stay: the gap behind a hanging hem is visible from low angles."""
+    trees = [bvh([c]) for c in covers]
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    kill = []
+    for f in bm.faces:
+        n = f.normal
+        if n.z < min_nz:
+            continue
+        c = f.calc_center_median()
+        t1 = n.orthogonal().normalized()
+        t2 = n.cross(t1)
+        pts = [c] + [c + t * dilate * s for t in (t1, t2) for s in (-1, 1)]
+        if all(any(t.ray_cast(p + n * 0.001, n, reach)[0] is not None for t in trees) for p in pts):
+            kill.append(f)
+    bmesh.ops.delete(bm, geom=kill, context="FACES")
+    bm.to_mesh(ob.data)
+    bm.free()
+    print(f"TRIM {ob.name}: {len(kill)} hidden faces removed")

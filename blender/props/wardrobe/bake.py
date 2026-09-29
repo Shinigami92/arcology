@@ -36,15 +36,11 @@ def main():
     # box meanwhile so the box interior isn't shadowed.
     originals = [o for p in ("drawer_lower", "box", "lid", "hanger1", "hanger2", "hanger3") for o in prop_meshes(p)]
     instances = [o for o in props if o not in originals]
-    lid = prop_root("lid")
-    lid.location.z += 0.30
-    bpy.context.view_layer.update()
-    bake.bake_part(originals, "wardrobe_props", PROPS_MAT, hide=body + left + right + instances,
-                   size=TEX_SIZE_PROPS)
-    lid.location.z -= 0.30
+    with bake.Spread([(prop_root("lid"), 0.30)], axis=2):
+        bake.bake_part(originals, "wardrobe_props", PROPS_MAT, hide=body + left + right + instances,
+                       size=TEX_SIZE_PROPS)
     bake.remove_source_materials()
-    for img in bpy.data.images:
-        print(f"IMAGE {img.name} {img.size[0]}x{img.size[1]} packed={img.packed_file is not None}")
+    bake.report_images()
     save_blend(BLEND)
 
 

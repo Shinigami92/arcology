@@ -9,24 +9,12 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bpy  # noqa: E402
-from mathutils import Vector  # noqa: E402
 
 from sofa_common import (  # noqa: E402
     BLEND, GLB_PILLOW, GLB_SOFA, HX, HY, PILLOW_MASS, SEAT_TOP, pillow_objects, sofa_collision_objects,
     sofa_objects,
 )
-from arcology_blender.checks import import_report  # noqa: E402
-
-
-def bounds(objs):
-    lo = Vector((1e9, 1e9, 1e9))
-    hi = Vector((-1e9, -1e9, -1e9))
-    for ob in objs:
-        for v in ob.data.vertices:
-            p = ob.matrix_world @ v.co
-            lo = Vector(map(min, lo, p))
-            hi = Vector(map(max, hi, p))
-    return lo, hi
+from arcology_blender.checks import import_report, world_bounds as bounds  # noqa: E402
 
 
 def main():

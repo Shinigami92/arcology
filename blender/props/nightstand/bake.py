@@ -20,13 +20,8 @@ from nightstand_common import (  # noqa: E402
     BLEND, BODY_MAT, BUILD_ATTRS, DRAWER_MAT, LAMP_MAT, LIGHT_MAT, LIGHT_STRENGTH, TEX_BODY, TEX_DRAWER,
     TEX_LAMP, TEX_SHADE, body_collision_objects, body_objects, drawer_objects, lamp_light_objects, lamp_objects,
 )
-from lib_candidates import bake_part_emissive  # noqa: E402
 from arcology_blender import bake, geo  # noqa: E402
-from arcology_blender.scene import save_blend  # noqa: E402
-
-
-def meshes(objs):
-    return [o for o in objs if o.type == "MESH"]
+from arcology_blender.scene import meshes, save_blend  # noqa: E402
 
 
 def main():
@@ -38,13 +33,12 @@ def main():
     bake.bake_part(body, "nightstand_body", BODY_MAT, hide=drawer + lamp + light, size=TEX_BODY)
     bake.bake_part(drawer, "nightstand_drawer", DRAWER_MAT, hide=body + lamp + light, size=TEX_DRAWER)
     bake.bake_part(lamp, "table_lamp", LAMP_MAT, hide=drawer, size=TEX_LAMP)
-    bake_part_emissive(light, "table_lamp_shade", LIGHT_MAT, LIGHT_STRENGTH, hide=drawer, size=TEX_SHADE)
+    bake.bake_part(light, "table_lamp_shade", LIGHT_MAT, hide=drawer, size=TEX_SHADE, emission=LIGHT_STRENGTH)
     bake.remove_source_materials()
     for ob in body + drawer + lamp + light:
         for name in BUILD_ATTRS:
             geo.remove_attribute(ob, name)
-    for img in bpy.data.images:
-        print(f"IMAGE {img.name} {img.size[0]}x{img.size[1]} packed={img.packed_file is not None}")
+    bake.report_images()
     save_blend(BLEND)
 
 

@@ -19,10 +19,9 @@ from nightstand_common import (  # noqa: E402
     SHADE_R1, SHADE_T, SHADE_Z0, SHADE_Z1, SOCKET_R, SOCKET_Z0, SOCKET_Z1, STEM_R, STEM_Z1, TOP_Z0,
 )
 from lib_candidates import (  # noqa: E402
-    bm_drum_shell, bm_tube, brushed_metal_layers, cup_ring, rubbed_finish, smooth_polyline,
-    wood_veneer, wood_veneer_layers,
+    bm_tube, brushed_metal_layers, cup_ring, smooth_polyline, wood_veneer, wood_veneer_layers,
 )
-from arcology_blender import fabric, materials, wear  # noqa: E402
+from arcology_blender import curves, fabric, materials, wear  # noqa: E402
 from arcology_blender.geo import (  # noqa: E402
     bm_box, bm_cyl, collision_box, cut, cyl_x, cyl_y, cyl_z, finish, new_empty, new_object,
 )
@@ -52,7 +51,7 @@ def mat_walnut_x():
     front = g.maprange(g.y, -0.190, -0.198)  # the drawer front's face (world y = -0.20)
     zc = DRAWER_ORIGIN.z + PULL_Z
     rub = g.mul(g.rect_xz((-0.11, zc - 0.035), (0.11, zc + 0.035), soft=0.045), front)
-    base, rough = rubbed_finish(g, base, rough, rub, lighter=0.12, rougher=0.30)
+    base, rough = wear.rubbed_finish(g, base, rough, rub, lighter=0.12, rougher=0.30)
     grease = g.mul(g.rect_xz((-0.10, zc - 0.018), (0.10, zc + 0.022), soft=0.02), front)
     base, rough = wear.smudges(g, base, rough, grease, rougher=-0.10, darker=0.10)
     base, rough = cup_ring(g, base, rough, CUP_RING, 0.041, width=0.006, amount=0.6)
@@ -229,7 +228,7 @@ def build_lamp(coll, mats):
 
     # Drum shade: thin linen shell open at both ends
     bm = bmesh.new()
-    bm_drum_shell(bm, SHADE_R0, SHADE_R1, SHADE_Z0, SHADE_Z1, SHADE_T, 48)
+    curves.drum_shell(bm, SHADE_R0, SHADE_R1, SHADE_Z0, SHADE_Z1, SHADE_T, 48)
     child("LampShade", bm, linen, None)
 
     # Spider: collar ring on the socket, three spokes, top ring inside the shade's rim

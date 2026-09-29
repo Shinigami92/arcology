@@ -4,14 +4,24 @@
 color, roughness, metallic (via emission), a tangent-space normal map and AO,
 packs roughness/metallic/AO into a glTF ORM image, and replaces the source
 materials with one final material that the glTF exporter writes losslessly
-(baseColor, metallicRoughness + occlusion, normal).
+(baseColor, metallicRoughness + occlusion, normal). Options: `weight` gives
+barely visible faces less texture space (`uv_unwrap_weighted`), `emission`
+bakes an extra emission atlas for switchable lights (exported as
+emissiveTexture + KHR_materials_emissive_strength).
+
+AO sees every object that renders: bake a part alone (`hide` the others)
+when they move apart in the game (doors, drawers, a lid), or `Spread` parts
+that share one atlas apart while baking. Parts that never move (cushions on
+a frame, bedding on a bed) bake together for contact shadows.
 """
 
 import math
 import time
 
+import bmesh
 import bpy
 import numpy as np
+from mathutils import Vector
 
 from .scene import set_colorspace, setup_gpu
 
@@ -59,6 +69,68 @@ def uv_unwrap(objs, angle_limit=66.0, island_margin=0.002, pack_margin=0.004):
                                 scale=True, merge_overlap=False, shape_method="CONCAVE")
     except Exception as exc:
         print("pack_islands failed:", exc)
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+def _islands(bm, uv):
+    parent = list(range(len(bm.faces)))
+
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    bm.faces.index_update()
+    for e in bm.edges:
+        if len(e.link_faces) != 2:
+            continue
+        f1, f2 = e.link_faces
+        m1 = {l.vert: l[uv].uv for l in f1.loops}
+        m2 = {l.vert: l[uv].uv for l in f2.loops}
+        if all((m1[v] - m2[v]).length < 1e-5 for v in e.verts):
+            a, b = find(f1.index), find(f2.index)
+            if a != b:
+                parent[a] = b
+    groups = {}
+    for f in bm.faces:
+        groups.setdefault(find(f.index), []).append(f)
+    return list(groups.values())
+
+
+def uv_unwrap_weighted(objs, weight, angle_limit=66.0, island_margin=0.002, pack_margin=0.004):
+    """Like uv_unwrap, but islands get a relative texel density:
+    weight(ob, face_center_world, face_normal_world) -> factor (1 = normal,
+    0.2 for faces that are barely visible, like the underside of a bed).
+    An island takes the largest weight among its faces."""
+    select_only(objs)
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.uv.smart_project(angle_limit=math.radians(angle_limit), island_margin=island_margin,
+                             area_weight=0.0, correct_aspect=True, scale_to_bounds=False)
+    bpy.ops.object.mode_set(mode="OBJECT")
+    for ob in objs:
+        bm = bmesh.new()
+        bm.from_mesh(ob.data)
+        uv = bm.loops.layers.uv.active
+        mw = ob.matrix_world
+        nm = mw.to_3x3().inverted().transposed()
+        for isl in _islands(bm, uv):
+            w = max(weight(ob, mw @ f.calc_center_median(), (nm @ f.normal).normalized()) for f in isl)
+            if abs(w - 1.0) < 1e-6:
+                continue
+            loops = [lp for f in isl for lp in f.loops]
+            c = sum((lp[uv].uv for lp in loops), Vector((0.0, 0.0))) / len(loops)
+            for lp in loops:
+                lp[uv].uv = c + (lp[uv].uv - c) * w
+        bm.to_mesh(ob.data)
+        bm.free()
+    select_only(objs)
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.uv.select_all(action="SELECT")
+    bpy.ops.uv.pack_islands(rotate=True, margin_method="FRACTION", margin=pack_margin,
+                            scale=True, merge_overlap=False, shape_method="CONCAVE")
     bpy.ops.object.mode_set(mode="OBJECT")
 
 
@@ -239,27 +311,123 @@ def assign_single(objs, mat):
             p.material_index = 0
 
 
-def bake_part(objs, prefix, material_name, hide=(), size=2048):
+def _link_emission(mat, image, strength):
+    """Connect an emission image to a final material's Emission Color with `strength`."""
+    nt = mat.node_tree
+    bsdf = [n for n in nt.nodes if n.type == "BSDF_PRINCIPLED"][0]
+    te = nt.nodes.new("ShaderNodeTexImage")
+    te.image = image
+    te.location = (-400, -600)
+    nt.links.new(te.outputs["Color"], bsdf.inputs["Emission Color"])
+    bsdf.inputs["Emission Strength"].default_value = strength
+
+
+def bake_part(objs, prefix, material_name, hide=(), size=2048, weight=None, emission=None):
     """Unwrap, bake and assign the final material for one exported part.
 
     objs: the part's objects (non-src_ materials such as glass or lights are
     skipped and keep their material). hide: other objects to hide while
     baking, so they don't shadow the AO (e.g. the door while baking the body).
+    weight: optional weight(ob, center, normal) -> texel density factor for
+    `uv_unwrap_weighted` (less space for hidden undersides).
+    emission: optional strength; the src_ materials' "Emission Color" (a
+    glow pattern: a lamp shade, a lit bulb) is baked into <prefix>_emission
+    (sRGB) and linked with that strength, so the glTF exporter writes
+    emissiveTexture + KHR_materials_emissive_strength and Godot can switch
+    the light by the material's emission energy.
     """
     targets = bakeable(objs)
-    print(f"BAKE {prefix}: {[o.name for o in targets]}")
-    uv_unwrap(targets)
+    label = " (emissive)" if emission is not None else ""
+    print(f"BAKE {prefix}{label}: {[o.name for o in targets]}")
+    if weight is None:
+        uv_unwrap(targets)
+    else:
+        uv_unwrap_weighted(targets, weight)
     for ob in hide:
         ob.hide_render = True
     albedo, normal, orm = bake_atlas(targets, prefix, size)
+    emission_img = None
+    if emission is not None:
+        mats = src_materials(targets)
+        emission_img = new_image(f"{prefix}_emission", size, "sRGB")
+        set_bake_target(mats, emission_img)
+        with EmitOverride(mats, "Emission Color"):
+            bake(targets, "EMIT")
+        emission_img.pack()
     mat = final_material(material_name, albedo, normal, orm)
+    if emission_img is not None:
+        _link_emission(mat, emission_img, emission)
     assign_single(targets, mat)
     for ob in hide:
         ob.hide_render = False
     return mat
 
 
+def _srgb_to_linear(c):
+    return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+
+
+def _linear_to_srgb(c):
+    c = np.clip(c, 0.0, 1.0)
+    return np.where(c <= 0.0031308, c * 12.92, 1.055 * np.power(c, 1.0 / 2.4) - 0.055)
+
+
+def emissive_from_albedo(mat, albedo, tint, strength=1.0, name=None):
+    """Give a baked material an emissive texture derived from its albedo
+    (linear albedo times `tint`, e.g. a warm 2700 K color), so the surface
+    glows with its own texture (a lamp shade's weave) without a second bake.
+    `strength` becomes the glTF emissive strength; Godot scales it with
+    `emission_energy_multiplier`. Returns the packed image."""
+    name = name or albedo.name.replace("_albedo", "") + "_emissive"
+    old = bpy.data.images.get(name)
+    if old is not None:
+        bpy.data.images.remove(old)
+    src = pixels(albedo)
+    out = np.ones_like(src)
+    out[..., :3] = _linear_to_srgb(_srgb_to_linear(src[..., :3]) * np.asarray(tint, dtype=np.float32))
+    img = bpy.data.images.new(name, albedo.size[0], albedo.size[1], alpha=False)
+    set_colorspace(img, "sRGB")
+    img.pixels.foreach_set(out.ravel())
+    img.pack()
+    _link_emission(mat, img, strength)
+    return img
+
+
+class Spread:
+    """Context manager: temporarily move groups of objects apart along one world
+    axis, so separate parts baked into one shared atlas (bake_part with all
+    of them) don't darken each other's AO, e.g. a lid resting on its box, or
+    garments hanging side by side that are picked up separately.
+
+    groups: [(root_object, offset_m), ...]; children follow their root. The
+    procedural materials must not depend on the world position along `axis`
+    (0 = X, 2 = Z) for the moved parts, or the offsets must keep them in the
+    same mask regions; keep offset 0 for parts whose masks do.
+    """
+
+    def __init__(self, groups, axis=0):
+        self.groups = groups
+        self.axis = axis
+
+    def __enter__(self):
+        for ob, off in self.groups:
+            ob.location[self.axis] += off
+        bpy.context.view_layer.update()
+        return self
+
+    def __exit__(self, *args):
+        for ob, off in self.groups:
+            ob.location[self.axis] -= off
+        bpy.context.view_layer.update()
+
+
 def remove_source_materials():
     for m in list(bpy.data.materials):
         if m.name.startswith("src_"):
             bpy.data.materials.remove(m)
+
+
+def report_images():
+    """Print every image with its size and whether it is packed (end of a bake stage)."""
+    for img in bpy.data.images:
+        print(f"IMAGE {img.name} {img.size[0]}x{img.size[1]} packed={img.packed_file is not None}")

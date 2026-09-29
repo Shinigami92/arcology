@@ -20,8 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
 
 import bed_common as C  # noqa: E402
-import lib_candidates as L  # noqa: E402
-from arcology_blender.geo import collision_box  # noqa: E402
+from arcology_blender.collision import collision_box, heightfield, heightfield_collider  # noqa: E402
 from arcology_blender.scene import get_collection, save_blend, tag, tri_count  # noqa: E402
 
 
@@ -41,7 +40,7 @@ def build_collision():
     coll = get_collection("BedCollision")
     tops = []
     for name, (y0, y1, spacing, tris) in C.COL_PIECES.items():
-        ob = L.heightfield_collider(name, soft_objects(), (C.COL_TOP_LO[0], y0), (C.COL_TOP_HI[0], y1), spacing,
+        ob = heightfield_collider(name, soft_objects(), (C.COL_TOP_LO[0], y0), (C.COL_TOP_HI[0], y1), spacing,
                                     tris, C.COL_SKIRT_Z, coll)
         tops.append(tag(ob, "bed_col"))
 
@@ -49,7 +48,7 @@ def build_collision():
     ins = C.COL_BLOCK_INSET
     lo = (-C.MAT_HALF_W + ins, C.MAT_Y0 + ins)
     hi = (C.MAT_HALF_W - ins, C.MAT_Y1 - ins)
-    _, _, zs = L.heightfield(tops, lo, hi, 0.01, 0.0)
+    _, _, zs = heightfield(tops, lo, hi, 0.01, 0.0)
     zmin = min(min(r) for r in zs)
     block_top = zmin - C.COL_BLOCK_CLEAR
     tag(collision_box("BedMattress", (lo[0], lo[1], C.PLAT_Z1 - 0.01), (hi[0], hi[1], block_top), coll), "bed_col")

@@ -12,18 +12,16 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
 
 from wardrobe_common import MOVING_PARTS, NAME, SCRATCH, door_objects, prop_root  # noqa: E402
-from arcology_blender.scene import part_objects, script_args  # noqa: E402
-from arcology_blender.studio import render_still, studio  # noqa: E402
+from arcology_blender.scene import part_objects  # noqa: E402
+from arcology_blender.studio import render_options, render_still, studio  # noqa: E402
 
 RENDER_OPEN_DEG = 100.0
 RENDER_DRAWER_OUT = 0.25
 
 
 def main():
-    args = script_args()
-    samples = 16 if "--quick" in args else 64
-    out = args[args.index("--out") + 1] if "--out" in args else SCRATCH
-    os.makedirs(out, exist_ok=True)
+    opt = render_options(SCRATCH)
+    samples, out = opt.samples, opt.out
 
     scene = bpy.context.scene
     studio(scene, camera=(2.7, -3.7, 1.7), target=(0.0, -0.45, 1.05), lens=42.0)

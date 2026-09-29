@@ -12,8 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
 
 from sofa_common import NAME, SCRATCH, pillow_objects, sofa_collision_objects  # noqa: E402
-from arcology_blender.scene import script_args  # noqa: E402
-from arcology_blender.studio import _look_at, render_still, studio  # noqa: E402
+from arcology_blender.studio import aim, render_options, render_still, studio  # noqa: E402
 
 # Where the two pillows sit for the thumbnail: leaning on the outer back cushions.
 PILLOW_POSES = (((-0.72, 0.045, 0.655), (76.0, 4.0, -9.0)),
@@ -32,10 +31,8 @@ def place_pillows():
 
 
 def main():
-    args = script_args()
-    samples = 16 if "--quick" in args else 64
-    out = args[args.index("--out") + 1] if "--out" in args else SCRATCH
-    os.makedirs(out, exist_ok=True)
+    opt = render_options(SCRATCH)
+    samples, out = opt.samples, opt.out
 
     scene = bpy.context.scene
     for ob in sofa_collision_objects():
@@ -46,9 +43,7 @@ def main():
     scene.view_settings.exposure = -0.8
     render_still(scene, os.path.join(out, f"{NAME}_front.png"), samples)
 
-    cam.location = (1.42, -1.30, 0.98)
-    cam.data.lens = 50.0
-    _look_at(cam, (0.72, -0.12, 0.47))
+    aim(cam, (1.42, -1.30, 0.98), (0.72, -0.12, 0.47), 50.0)
     render_still(scene, os.path.join(out, f"{NAME}_detail.png"), samples)
 
 

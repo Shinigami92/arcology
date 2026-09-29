@@ -19,8 +19,10 @@ from bed_common import (  # noqa: E402
     PAD_Y1, PAD_Z0, PAD_Z1, PILLOW_SIZE, PILLOW_T, PILLOW_TILT, PILLOW_X, PILLOW_Y, PILLOW_YAW, RECESS_X,
     RECESS_Y0, RECESS_Y1, RECESS_Z, SHEET, SIT_DENT, THROW, THROW_OVERHANG, THROW_RECT, THROW_T, WALNUT,
 )
-from lib_candidates import brushed_metal, drape, lumps, quilting, ridge, smoothstep, wood_veneer, wool_knit  # noqa: E402
+from lib_candidates import brushed_metal, wood_veneer  # noqa: E402
 from arcology_blender import fabric, geo, soft, wear  # noqa: E402
+from arcology_blender.cloth import drape, lumps, ridge, smoothstep  # noqa: E402
+from arcology_blender.fabric import quilting, wool_knit  # noqa: E402
 from arcology_blender.geo import assign_by_region, bm_box, collision_box, cut, finish, new_object, shade  # noqa: E402
 from arcology_blender.scene import clear_scene, get_collection, part_tris, save_blend, tag  # noqa: E402
 from arcology_blender.shading import Graph, new_mat  # noqa: E402

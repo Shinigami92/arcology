@@ -1,13 +1,39 @@
 """Neutral studio setup and still renders for thumbnails (never saved into the .blend)."""
 
+import os
+from types import SimpleNamespace
+
 import bpy
 from mathutils import Vector
 
-from .scene import setup_gpu
+from .scene import script_args, setup_gpu
 
 
 def _look_at(ob, target):
     ob.rotation_euler = (Vector(target) - ob.location).to_track_quat("-Z", "Y").to_euler()
+
+
+def aim(cam, camera, target, lens=None):
+    """Move a camera to `camera`, look at `target`, optionally set the lens (mm)."""
+    cam.location = Vector(camera)
+    _look_at(cam, target)
+    if lens is not None:
+        cam.data.lens = lens
+
+
+def render_options(default_out, samples=64, quick_samples=16):
+    """Parse a render.py command line (after `--`): --quick (fewer samples),
+    --out DIR (default `default_out`, created), --suffix NAME. Returns a
+    namespace with samples, out, suffix, args, and has(flag) / value(flag, default)."""
+    args = script_args()
+
+    def value(flag, default=None):
+        return args[args.index(flag) + 1] if flag in args else default
+
+    out = value("--out", default_out)
+    os.makedirs(out, exist_ok=True)
+    return SimpleNamespace(samples=quick_samples if "--quick" in args else samples, out=out,
+                           suffix=value("--suffix", ""), args=args, value=value, has=lambda f: f in args)
 
 
 def studio(scene, camera=(2.05, -2.55, 1.45), target=(0.0, -0.1, 0.92), lens=40.0,

@@ -26,8 +26,7 @@ def main():
     bake.bake_part(body_objects(), "fridge_body", BODY_MAT, hide=door_meshes, size=TEX_SIZE)
     bake.bake_part(door_meshes, "fridge_door", DOOR_MAT, hide=body_objects(), size=TEX_SIZE)
     bake.remove_source_materials()
-    for img in bpy.data.images:
-        print(f"IMAGE {img.name} {img.size[0]}x{img.size[1]} packed={img.packed_file is not None}")
+    bake.report_images()
     save_blend(BLEND)
 
 

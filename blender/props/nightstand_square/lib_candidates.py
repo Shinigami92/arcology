@@ -1,29 +1,18 @@
-"""Generic helpers written for the nightstand and table lamp (Fable 5.1, A/B `fable-high`).
+"""Helpers of the square nightstand (Fable 5.1, runner-up of the bedroom A/B, D-032).
 
-Candidates for `arcology_blender`, asset-agnostic and documented like library
-code; nothing here knows the nightstand's dimensions. Where each would go:
-
-    geo        bm_tube (tube along a polyline: cords, wire rings, spokes),
-               smooth_polyline (Catmull-Rom subdivision for cord paths),
-               bm_drum_shell (thin open shell of a lamp shade)
-    materials  wood_veneer_layers / wood_veneer (flat-sawn grain with a
-               chosen grain axis, pores, satin finish),
-               brushed_metal_layers / brushed_metal (directional brushing)
-    wear       cup_ring (pale water mark on a top), rubbed_finish (finish
-               worn matte and lighter, e.g. around a pull)
-    bake       emissive_from_albedo (tinted emissive image from a baked
-               albedo, so a switchable emissive material keeps its texture)
+The library has its own versions of these (`curves.tube`, `curves.catmull_rom`,
+`wood.veneer_axis`, `metal.brushed`, `wear.cup_ring`), but they build slightly
+different geometry or node graphs, so this asset keeps its originals and
+rebuilds byte-identically. Prefer the library for new assets. Promoted from
+here: bm_drum_shell (`curves.drum_shell`), rubbed_finish (`wear.rubbed_finish`),
+emissive_from_albedo (`bake.emissive_from_albedo`).
 """
 
 import math
 
 import bmesh
-import bpy
-import numpy as np
 from mathutils import Vector
 
-from arcology_blender.bake import pixels
-from arcology_blender.scene import set_colorspace
 from arcology_blender.shading import Graph, new_mat
 
 
@@ -83,22 +72,6 @@ def bm_tube(bm, points, radius, segments=8, closed=False, cap=True):
     if not closed and cap:
         faces.append(bm.faces.new(list(reversed(rings[0]))))
         faces.append(bm.faces.new(rings[-1]))
-    bmesh.ops.recalc_face_normals(bm, faces=faces)
-    return faces
-
-
-def bm_drum_shell(bm, r_bottom, r_top, z0, z1, thickness, segments=48):
-    """Thin open shell of a (tapered) drum: outer wall, top rim, inner wall,
-    bottom rim, closed and manifold, added to `bm`. Returns the faces."""
-    rings = []
-    for r, z in ((r_bottom, z0), (r_top, z1), (r_top - thickness, z1), (r_bottom - thickness, z0)):
-        rings.append([bm.verts.new((r * math.cos(2 * math.pi * k / segments),
-                                    r * math.sin(2 * math.pi * k / segments), z)) for k in range(segments)])
-    faces = []
-    for i in range(4):
-        a, b = rings[i], rings[(i + 1) % 4]
-        for k in range(segments):
-            faces.append(bm.faces.new((a[k], a[(k + 1) % segments], b[(k + 1) % segments], b[k])))
     bmesh.ops.recalc_face_normals(bm, faces=faces)
     return faces
 
@@ -199,49 +172,3 @@ def cup_ring(g, base, rough, center, radius, width=0.005, color=(0.62, 0.58, 0.5
     base = g.mixc(g.mul(fac, amount), base, color)
     rough = g.add(rough, g.mul(fac, rougher))
     return base, rough
-
-
-def rubbed_finish(g, base, rough, mask, lighter=0.14, rougher=0.28):
-    """A finish worn through by hands inside a 0..1 mask (around a pull, a
-    chair's arm): the wood shows lighter and matte, with a mottled breakup."""
-    fac = g.mul(mask, g.maprange(g.noise(18.0, 3.0, 0.6), 0.35, 0.65))
-    base = g.scale_color(base, g.add(1.0, g.mul(fac, lighter)))
-    rough = g.add(rough, g.mul(fac, rougher))
-    return base, rough
-
-
-# --- bake --------------------------------------------------------------------------
-def _srgb_to_linear(c):
-    return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
-
-
-def _linear_to_srgb(c):
-    c = np.clip(c, 0.0, 1.0)
-    return np.where(c <= 0.0031308, c * 12.92, 1.055 * np.power(c, 1.0 / 2.4) - 0.055)
-
-
-def emissive_from_albedo(mat, albedo, tint, strength=1.0, name=None):
-    """Give a baked material an emissive texture derived from its albedo
-    (linear albedo times `tint`, e.g. a warm 2700 K color), so the surface
-    glows with its own texture (a lamp shade's weave). `strength` becomes
-    the glTF emissive strength; Godot scales it with
-    `emission_energy_multiplier`. Returns the packed image."""
-    name = name or albedo.name.replace("_albedo", "") + "_emissive"
-    old = bpy.data.images.get(name)
-    if old is not None:
-        bpy.data.images.remove(old)
-    src = pixels(albedo)
-    out = np.ones_like(src)
-    out[..., :3] = _linear_to_srgb(_srgb_to_linear(src[..., :3]) * np.asarray(tint, dtype=np.float32))
-    img = bpy.data.images.new(name, albedo.size[0], albedo.size[1], alpha=False)
-    set_colorspace(img, "sRGB")
-    img.pixels.foreach_set(out.ravel())
-    img.pack()
-    nt = mat.node_tree
-    bsdf = [n for n in nt.nodes if n.type == "BSDF_PRINCIPLED"][0]
-    tex = nt.nodes.new("ShaderNodeTexImage")
-    tex.image = img
-    tex.location = (-400, -600)
-    nt.links.new(tex.outputs["Color"], bsdf.inputs["Emission Color"])
-    bsdf.inputs["Emission Strength"].default_value = strength
-    return img

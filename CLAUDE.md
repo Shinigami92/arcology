@@ -30,7 +30,9 @@ assets/
   props/<name>/           reusable prop and interactable scenes (door, fridge, sofa, bed, wardrobe, nightstand, ball, beverage_can, trash_can; variants for other apartments: sofa_boucle, bed_padded, wardrobe_lit, nightstand_square)
   shaders/                shared .gdshader
 blender/                  .blend sources (LFS) + their build scripts, exported to assets/ as .glb (.gdignore: Godot doesn't import them)
-  lib/arcology_blender/   shared toolkit for build scripts: geometry, soft goods, materials, fabric, wear, bake, export, studio, checks (D-028)
+  lib/arcology_blender/   shared toolkit for build scripts: geometry, curves, materials, wood, metal, wear, soft goods, fabric, cloth, collision, bake, export, studio, checks (D-028)
+  lib/README.md           toolkit quick reference: every function in one line, conventions, Blender pitfalls
+  props/_template/        copyable skeleton of an asset's five stage scripts + <name>_common.py
   props/<name>/           one asset's build/bake/export/render/verify scripts (e.g. fridge)
 core/
   player/                 ArcologyPlayer rig (player.tscn), StickSprint, GrabRay, player_physics.tres (jump height), Fingertip press areas (D-031)
@@ -49,6 +51,7 @@ tools/
   shots/                  still renders from given views (--shots=...; results/ is gitignored)
   audio/synth_sfx.py      placeholder SFX generator
   blockout/apartment.py   apartment layout -> zones/apartment/apartment.tscn
+  props/                  prop .tscn generator: prop_scenes.py (doors, drawers, pickables, switches) + one definition per prop (--check)
   bake_gi.gd              VoxelGI bake script (currently unused, see D-012)
 ```
 
@@ -185,20 +188,24 @@ After an accepted change, copy the new result over `tools/perf/baselines/<zone>-
 
 ### Add a prop
 
-1. Model it with the `blender-artist` subagent: stage scripts in `blender/<category>/<name>/` on the shared toolkit `blender/lib/arcology_blender/` (D-028; `blender/props/fridge/` is the worked example), source `blender/<category>/<name>.blend`, export into `assets/props/<name>/`. Or block it out with primitive meshes first.
+1. Model it with the `blender-artist` subagent: copy `blender/props/_template/` to `blender/<category>/<name>/` (five stage scripts on the shared toolkit `blender/lib/arcology_blender/`, D-028; quick reference `blender/lib/README.md`), source `blender/<category>/<name>.blend`, export into `assets/props/<name>/`. Or block it out with primitive meshes first.
 2. Wrap it in `assets/props/<name>/<name>.tscn`: origin at the bottom center (or the hinge axis), simplified collision shapes, shared materials from `assets/materials/`.
 3. Put a one-line `metadata/_doc` on the root: size, origin, behavior.
 
 ### Add a pickable
 
-Root `RigidBody3D` with `res://addons/godot-xr-tools/objects/pickable.gd`, `collision_layer = 4`, `collision_mask = 196615`, `freeze_mode = 1`, `continuous_cd = true` for small or fast objects, `ranged_grab_method = 2`, a realistic `mass`, a `PhysicsMaterial` for bounce and friction. See `assets/props/ball/ball.tscn`.
+Root `RigidBody3D` with `res://addons/godot-xr-tools/objects/pickable.gd`, `collision_layer = 4`, `collision_mask = 196615`, `freeze_mode = 1`, `continuous_cd = true` for small or fast objects, `ranged_grab_method = 2`, a realistic `mass`, a `PhysicsMaterial` for bounce and friction. See `assets/props/ball/ball.tscn`. Generate it with `pickable_scene()` (see "Generate a prop scene").
 
 - **Impact sounds:** add an `AudioStreamPlayer3D` child with `core/interaction/impact_sound.gd` and a stream; tune `min_speed`/`max_speed`.
 - **Tags:** add the body to a group from the Tags table (`groups=["trash"]`).
 
 ### Add a hinged interactable (door, lid, lever)
 
-Copy the structure of `assets/props/door/door.tscn`: `HingeOrigin` (rotated so its local X is the hinge axis) → `XRToolsInteractableHinge` (limits in degrees) → `Leaf` (rotated back, so children are authored in normal axes) → `AnimatableBody3D` with the visuals and collision, plus one `HandleOrigin/InteractableHandle` (layer 19, frozen, identity transform) per grip point. The `AnimatableBody3D` must use `core/interaction/kinematic_follower.gd` (D-018), or its collision won't move with the hinge. Add `HingeStopSound` for the bump at the limits, a `HingeBodyBlocker` (hinge + leaf) so the leaf can't swing through the player, and a `GrabPassThrough` (leaf body + handles root) so the holding hand can push the leaf (D-021). Optional: `HingeSwing` (momentum after release, friction, bounce, and a latch that pulls it shut near closed: fridge seal, door catch) and `HingeLight` (a light and an emissive material on while open). For a Blender-made door, export body and door as separate glb files, the door with its origin on the hinge axis and a `HandleGrip` empty; see `assets/props/fridge/`.
+Copy the structure of `assets/props/door/door.tscn`: `HingeOrigin` (rotated so its local X is the hinge axis) → `XRToolsInteractableHinge` (limits in degrees) → `Leaf` (rotated back, so children are authored in normal axes) → `AnimatableBody3D` with the visuals and collision, plus one `HandleOrigin/InteractableHandle` (layer 19, frozen, identity transform) per grip point. The `AnimatableBody3D` must use `core/interaction/kinematic_follower.gd` (D-018), or its collision won't move with the hinge. Add `HingeStopSound` for the bump at the limits, a `HingeBodyBlocker` (hinge + leaf) so the leaf can't swing through the player, and a `GrabPassThrough` (leaf body + handles root) so the holding hand can push the leaf (D-021). Optional: `HingeSwing` (momentum after release, friction, bounce, and a latch that pulls it shut near closed: fridge seal, door catch) and `HingeLight` (a light and an emissive material on while open). For a Blender-made door, export body and door as separate glb files, the door with its origin on the hinge axis and a `HandleGrip` empty; see `assets/props/fridge/`. Generate it with `Scene.hinged_door()` (drawers: `Scene.sliding_drawer()`), see below.
+
+### Generate a prop scene
+
+Don't hand-write prop `.tscn` files: add `tools/props/<prop>.py` with the prop's numbers (glb paths, collision boxes, hinge/slider origin, grip, limits, lights, sounds) calling `tools/props/prop_scenes.py` (static glb, hinged door, sliding drawer, pickable with optional `RailHanger`, `HangingRail`, `LightSwitch`, light, child instances; API in its docstring; `tools/props/wardrobe.py` uses most of it). Run `python tools/props/<prop>.py` to write, `--check` to compare with the committed scene; `python tools/props/prop_scenes.py --check` checks every prop. Edit the definition, never the generated `.tscn`. Then `filesystem_manage(op="scan")`, reopen the scene with `force_reload=true` if it's open, and screenshot.
 
 ### Add a button or switch
 
@@ -240,3 +247,13 @@ Defined in `.claude/agents/` (frontmatter `model` and `effort`):
 ## Headset testing
 
 When asking the user to test, give a short checklist: what to do, what should happen, what to report (feel, comfort, anything that looked or sounded wrong, frame drops). Their comfort and locomotion preferences are in D-009.
+
+## Pitfalls (learned the hard way)
+
+- **Imports are async.** After adding or copying big glbs, wait until every `<file>.glb.import` exists before running tests ("No loader found" otherwise); reimport copied or renamed glbs (stale UID warnings). Don't scan while a Blender agent is still writing files.
+- **GDScript tests:** type loop variables over untyped arrays (`for p: Vector3 in [...]`) and annotate values read from Variants, or the suite doesn't parse (`main.gd` then exits with 2).
+- **Hands press with fingertips.** XR Tools' collision hand collides with its palm only; buttons are pressed by the rig's `Fingertip` areas (D-031). Test presses with a small Area3D on layer 131072.
+- **Hangers hang across the rail** (`RailHanger`); pickables that snap need `release_mode = UNFROZEN`.
+- **Before blaming collision,** sweep a shape (`cast_motion`) or ray-cast it: a can that ends up low on a pillow rolled off the slope; it didn't fall through.
+- **Byte-identical rebuilds:** the glTF exporter's tangent rounding and `create_uvsphere` face order can vary between runs; use `blender -t 1` for old-vs-new checks (see `blender/lib/README.md`).
+- **Shell scripts:** for anything longer than a few lines of Python, write a scratchpad file and run it; long heredocs with quotes break in the Bash tool.

@@ -26,8 +26,7 @@ def main():
     bake.bake_part(sofa_objects(), "sofa", SOFA_MAT, hide=pillow_objects(), size=TEX_SIZE)
     bake.bake_part(pillow_objects(), "sofa_pillow", PILLOW_MAT, hide=sofa_objects(), size=PILLOW_TEX_SIZE)
     bake.remove_source_materials()
-    for img in bpy.data.images:
-        print(f"IMAGE {img.name} {img.size[0]}x{img.size[1]} packed={img.packed_file is not None}")
+    bake.report_images()
     save_blend(BLEND)
 
 

@@ -65,6 +65,11 @@ def part_objects(part, mesh_only=False):
             if ob.get(PART_KEY) == part and (ob.type == "MESH" or not mesh_only)]
 
 
+def meshes(objs):
+    """Only the mesh objects (drops empties such as HandleGrip)."""
+    return [o for o in objs if o.type == "MESH"]
+
+
 def tri_count(ob):
     if ob.type != "MESH" or ob.data is None:
         return 0

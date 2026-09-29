@@ -18,7 +18,7 @@ from sofa_common import (  # noqa: E402
     SEAT_SAG_Y, SEAT_W, SEAT_YAW, SEAT_X, SEAT_Y0, SEAT_Y1, SEAT_Z0, SEAT_Z1, SOFA_COLOR,
 )
 from arcology_blender import fabric, geo, materials, soft, wear  # noqa: E402
-from arcology_blender.geo import collision_box, finish, new_object, shade  # noqa: E402
+from arcology_blender.geo import bm_cone, collision_box, finish, new_object, smooth_object  # noqa: E402
 from arcology_blender.scene import clear_scene, get_collection, part_tris, save_blend, tag  # noqa: E402
 from arcology_blender.shading import Graph, new_mat  # noqa: E402
 
@@ -120,9 +120,7 @@ def build_materials():
 # Geometry
 # ---------------------------------------------------------------------------
 def soft_object(name, bm, coll, mat):
-    ob = new_object(name, bm, coll, material=mat)
-    shade(ob, SOFT)
-    return ob
+    return smooth_object(name, bm, coll, mat, SOFT)
 
 
 def build_frame(coll, mats):
@@ -161,8 +159,7 @@ def build_frame(coll, mats):
     bm = bmesh.new()
     depth = LEG_H + 0.01
     for x, y in LEGS:
-        bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=16, radius1=LEG_R_BOTTOM,
-                              radius2=LEG_R_TOP, depth=depth, matrix=Matrix.Translation((x, y, depth / 2)))
+        bm_cone(bm, LEG_R_BOTTOM, LEG_R_TOP, depth, Matrix.Translation((x, y, depth / 2)), 16)
     legs = new_object("Legs", bm, coll, material=mats["legs"])
     finish(legs, 0.0015, 1)
     parts.append(legs)

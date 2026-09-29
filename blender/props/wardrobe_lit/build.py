@@ -14,9 +14,10 @@ from mathutils import Matrix, Vector  # noqa: E402
 
 import lib_candidates as lc  # noqa: E402
 import wardrobe_common as C  # noqa: E402
-from arcology_blender import fabric, soft, wear  # noqa: E402
+from arcology_blender import curves, fabric, soft, wear, wood  # noqa: E402
 from arcology_blender.geo import (  # noqa: E402
-    bm_box, bm_cyl, bm_quad, collision_box, cut, cyl_x, cyl_y, finish, new_empty, new_object, set_uvs, shade,
+    bm_box, bm_cyl, bm_merge, bm_quad, bm_square_taper, collision_box, cut, cyl_x, cyl_y, finish, new_empty,
+    new_object, set_uvs, shade,
 )
 from arcology_blender.scene import clear_scene, get_collection, part_tris, save_blend, tag  # noqa: E402
 from arcology_blender.shading import Graph, new_mat, solid_mat  # noqa: E402
@@ -25,19 +26,24 @@ WORN_WALNUT = (0.100, 0.062, 0.036)   # lacquer rubbed thin: lighter, a little g
 DUST = (0.55, 0.53, 0.50)
 
 
+def edges(g, radius):
+    """This asset's edge mask (softer and fewer Bevel samples than the library defaults)."""
+    return wear.bevel_edges(g, radius, 0.02, 0.20, samples=8)
+
+
 # ---------------------------------------------------------------------------
 # Materials
 # ---------------------------------------------------------------------------
 def walnut(axis, extra=None, rough=0.42, seed=0.0):
     """Dark walnut veneer, satin lacquer, grain along `axis`, worn edges, dust on top."""
     g = Graph(new_mat(f"src_walnut_{axis.lower()}"))
-    base, r, h = lc.wood_veneer(g, axis, C.WALNUT_MID, C.WALNUT_LIGHT, C.WALNUT_DARK, rough=rough, seed=seed)
-    edge = lc.bevel_edges(g, 0.003)
-    base, r = lc.edge_wear(g, base, r, edge, 1.0, WORN_WALNUT, amount=0.18, rough_delta=-0.04)
+    base, r, h = wood.veneer_axis(g, axis, C.WALNUT_MID, C.WALNUT_LIGHT, C.WALNUT_DARK, rough=rough, seed=seed)
+    edge = edges(g, 0.003)
+    base, r = wear.edge_wear(g, base, r, edge, 1.0, WORN_WALNUT, amount=0.18, rough_delta=-0.04)
     if extra is not None:
         base, r, h = extra(g, base, r, h, edge)
     base, r = wear.top_dust(g, base, r, 2.085, 2.096, color=DUST, amount=0.22, rougher=0.25)
-    return lc.bump_finish(g, base, r, 0.0, h)
+    return g.finish_height(base, r, 0.0, h)
 
 
 def walnut_z_wear(g, base, r, h, edge):
@@ -47,7 +53,7 @@ def walnut_z_wear(g, base, r, h, edge):
     front = g.maprange(g.y, -0.312, -0.318)        # door fronts (y = -0.321)
     # Meeting edges at pull height: lacquer rubbed thin and polished by hands
     grip = g.mul(g.mul(door, g.maprange(ax, 0.030, 0.006)), g.band(g.z, 0.88, 1.52, 0.16))
-    base, r = lc.edge_wear(g, base, r, edge, grip, WORN_WALNUT, amount=0.55, rough_delta=-0.10)
+    base, r = wear.edge_wear(g, base, r, edge, grip, WORN_WALNUT, amount=0.55, rough_delta=-0.10)
     oil = g.mul(g.mul(front, g.maprange(ax, 0.05, 0.004)), g.band(g.z, 0.95, 1.45, 0.15))
     base = g.scale_color(base, g.sub(1.0, g.mul(oil, 0.10)))
     r = g.sub(r, g.mul(oil, 0.06))
@@ -55,10 +61,10 @@ def walnut_z_wear(g, base, r, h, edge):
     near = g.mul(g.mul(front, g.band(ax, 0.012, 0.13, 0.04)), g.band(g.z, 0.98, 1.42, 0.14))
     base, r = wear.smudges(g, base, r, near, rougher=-0.035, darker=0.03)
     # A small scratch on the right door, with a shorter one beside it
-    base, r, h = lc.scratch_xz(g, base, r, h, (0.232, 1.058), (0.318, 1.026), width=0.0022, mask=front, wobble=0.2)
-    base, r, h = lc.scratch_xz(g, base, r, h, (0.258, 1.071), (0.292, 1.060), width=0.0015, mask=front,
-                               amount=0.55, wobble=0.2)
-    base, r = lc.masked_scuffs(g, base, r, front, z_clean=0.32, z_full=0.14, rougher=0.10, darker=0.14)
+    base, r, h = wear.scratch(g, base, r, h, (0.232, 1.058), (0.318, 1.026), width=0.0022, mask=front, wobble=0.2)
+    base, r, h = wear.scratch(g, base, r, h, (0.258, 1.071), (0.292, 1.060), width=0.0015, mask=front,
+                              amount=0.55, wobble=0.2)
+    base, r = wear.bottom_scuffs(g, base, r, z_clean=0.32, z_full=0.14, rougher=0.10, darker=0.14, mask=front)
     # 32 mm shelf pin holes on the inner sides
     inner = g.mul(g.band(ax, C.IN_X - 0.0015, C.IN_X + 0.0015, 0.0005),
                   g.maprange(g.math("ABSOLUTE", g.nx), 0.8, 0.95))
@@ -87,11 +93,11 @@ def walnut_x_wear(g, base, r, h, edge):
 def gunmetal(axis, extra=None):
     g = Graph(new_mat(f"src_gunmetal_{axis.lower()}"))
     base, r, h = lc.brushed_metal(g, axis, C.GUNMETAL, rough=0.30)
-    edge = lc.bevel_edges(g, 0.0015)
-    base, r = lc.edge_wear(g, base, r, edge, 1.0, (0.11, 0.12, 0.13), amount=0.35, rough_delta=-0.08)
+    edge = edges(g, 0.0015)
+    base, r = wear.edge_wear(g, base, r, edge, 1.0, (0.11, 0.12, 0.13), amount=0.35, rough_delta=-0.08)
     if extra is not None:
         base, r = extra(g, base, r)
-    return lc.bump_finish(g, base, r, 1.0, h)
+    return g.finish_height(base, r, 1.0, h)
 
 
 def gunmetal_z_wear(g, base, r):
@@ -174,7 +180,7 @@ def mat_box():
     """Fabric-covered storage box and lid: taupe linen, a little rubbed on the edges."""
     g = Graph(new_mat("src_box"))
     base, r, h = fabric.fabric_base(g, (0.36, 0.31, 0.24), rough=0.90, heather=0.05, slub=0.06, mottle=0.05)
-    edge = lc.bevel_edges(g, 0.003)
+    edge = edges(g, 0.003)
     base, r = fabric.rub(g, base, r, edge, shinier=0.10, tint=0.08)
     return fabric.fabric_finish(g, base, r, h)
 
@@ -245,7 +251,7 @@ def build_carcass(coll, mats):
     # Legs: tapered square tube with a mounting plate
     bm = bmesh.new()
     for x, y in C.LEGS:
-        lc.tapered_square_leg(bm, x, y, 0.0, C.LEG_H - 0.003, C.LEG_TOP, C.LEG_BOTTOM)
+        bm_square_taper(bm, x, y, 0.0, C.LEG_H - 0.003, C.LEG_TOP, C.LEG_BOTTOM)
         bm_box(bm, (x - 0.035, y - 0.035, C.LEG_H - 0.003), (x + 0.035, y + 0.035, C.LEG_H))
     ob = new_object("Legs", bm, coll, material=mats["gz"])
     finish(ob, 0.0015, 2)
@@ -300,26 +306,16 @@ def build_linen(coll, mats):
     for k, (sz, dx, dy, yaw) in enumerate((((0.34, 0.27, 0.056), 0.0, 0.0, 1.5),
                                            ((0.33, 0.26, 0.050), 0.008, -0.006, -2.5),
                                            ((0.34, 0.27, 0.052), -0.006, 0.004, 3.0))):
-        _merge(bm, folded((-0.43 + dx, -0.03 + dy, z + sz[2] / 2), sz, yaw, seed=11.0 + k))
+        bm_merge(bm, folded((-0.43 + dx, -0.03 + dy, z + sz[2] / 2), sz, yaw, seed=11.0 + k))
         z += sz[2] - 0.002
     z = top
     for k, (sz, dx, dy, yaw) in enumerate((((0.40, 0.30, 0.085), 0.0, 0.0, -1.0),
                                            ((0.32, 0.24, 0.048), 0.012, -0.01, 4.0))):
-        _merge(bm, folded((0.40 + dx, -0.02 + dy, z + sz[2] / 2), sz, yaw, seed=21.0 + k, crown=0.006))
+        bm_merge(bm, folded((0.40 + dx, -0.02 + dy, z + sz[2] / 2), sz, yaw, seed=21.0 + k, crown=0.006))
         z += sz[2] - 0.003
     ob = new_object("Linen", bm, coll, material=mats["linen"])
     shade(ob, 70.0)
     tag(ob, "body")
-
-
-def _merge(bm, other):
-    """Append bmesh `other` into `bm` (frees `other`)."""
-    import bpy
-    me = bpy.data.meshes.new("tmp_merge")
-    other.to_mesh(me)
-    other.free()
-    bm.from_mesh(me)
-    bpy.data.meshes.remove(me)
 
 
 def build_collision(coll):
@@ -418,18 +414,18 @@ def hanger_geometry(bm_wood, bm_wire):
     path.insert(0, (-(hw + 0.006), 0.0, arm_z(1.0) + 0.001))
     path.append((hw + 0.006, 0.0, arm_z(1.0) + 0.001))
     scales = [(0.42, 0.70)] + scales + [(0.42, 0.70)]
-    lc.sweep(bm_wood, path, lc.rounded_rect_profile(0.024, 0.011, 0.004, 1), up=(0, 1, 0), scales=scales)
+    curves.sweep(bm_wood, path, curves.rounded_rect_profile(0.024, 0.011, 0.004, 1), up=(0, 1, 0), scales=scales)
 
     zb = zt - 0.165
     coarse = [(-0.186, 0.0, arm_z(0.87)), (-0.180, 0.0, zt - 0.10), (-0.168, 0.0, zb),
               (0.168, 0.0, zb), (0.180, 0.0, zt - 0.10), (0.186, 0.0, arm_z(0.87))]
-    lc.sweep(bm_wire, lc.smooth_path(coarse, 2), lc.circle_profile(0.0022, 6), up=(0, 1, 0))
+    curves.sweep(bm_wire, curves.chaikin(coarse, 2), curves.circle_profile(0.0022, 6), up=(0, 1, 0))
     # hook: neck centered under the rest point, an S-bend forward, then around the rail
-    neck = lc.smooth_path([(0.0, 0.0, zt - 0.006), (0.0, 0.0, -0.055), (-C.HOOK_R, 0.0, -0.038),
+    neck = curves.chaikin([(0.0, 0.0, zt - 0.006), (0.0, 0.0, -0.055), (-C.HOOK_R, 0.0, -0.038),
                            (-C.HOOK_R, 0.0, C.HOOK_CENTER_Z)], 2)
-    arc = lc.arc_points((0.0, 0.0, C.HOOK_CENTER_Z), C.HOOK_R, 180.0, -40.0, 10,
+    arc = curves.arc_points((0.0, 0.0, C.HOOK_CENTER_Z), C.HOOK_R, 180.0, -40.0, 10,
                         u_axis=(1.0, 0.0, 0.0), v_axis=(0.0, 0.0, 1.0))
-    lc.sweep(bm_wire, neck + arc[1:], lc.circle_profile(C.HOOK_WIRE, 6), up=(0, 1, 0))
+    curves.sweep(bm_wire, neck + arc[1:], curves.circle_profile(C.HOOK_WIRE, 6), up=(0, 1, 0))
     bm_cyl(bm_wire, 0.0045, 0.010, Matrix.Translation((0.0, 0.0, zt + 0.003)), 10)  # ferrule
 
 
@@ -473,7 +469,7 @@ def shirt_geometry(length, seed):
             v.co.y *= 0.80 + 0.35 * tz
             v.co.z = min(v.co.z, shoulder(min(1.0, abs(v.co.x) / (w / 2))) - 0.003)
         soft.jitter(sl, 0.0015, 9.0, seed=seed + sgn * 3.0)
-        _merge(bm, sl)
+        bm_merge(bm, sl)
     return bm
 
 

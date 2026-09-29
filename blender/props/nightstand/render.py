@@ -16,8 +16,7 @@ from mathutils import Vector  # noqa: E402
 from nightstand_common import (  # noqa: E402
     BULB_CENTER_Z, LAMP_POS, LIGHT_MAT, NAME, SCRATCH, TAG, body_collision_objects,
 )
-from arcology_blender.scene import script_args  # noqa: E402
-from arcology_blender.studio import render_still, studio  # noqa: E402
+from arcology_blender.studio import aim, render_options, render_still, studio  # noqa: E402
 
 VIEW = dict(camera=(1.02, -1.38, 1.02), target=(0.03, 0.0, 0.45), lens=48.0)
 DETAIL = dict(camera=(0.30, -0.62, 0.78), target=(0.0, -0.10, 0.50), lens=45.0)
@@ -25,12 +24,6 @@ PULL = dict(camera=(0.16, -0.52, 0.56), target=(0.0, -0.22, 0.455), lens=60.0)
 SHADE = dict(camera=(0.36, -0.30, 1.22), target=(0.085, 0.045, 0.80), lens=45.0)
 BULB_COLOR = (1.0, 0.40, 0.095)  # 2700 K
 RENDER_EMISSION = 6.0             # a touch brighter than the glb: the studio is lit
-
-
-def aim(cam, camera, target, lens):
-    cam.location = Vector(camera)
-    cam.rotation_euler = (Vector(target) - cam.location).to_track_quat("-Z", "Y").to_euler()
-    cam.data.lens = lens
 
 
 def light_on(scene):
@@ -54,11 +47,8 @@ def light_on(scene):
 
 
 def main():
-    args = script_args()
-    samples = 16 if "--quick" in args else 64
-    out = args[args.index("--out") + 1] if "--out" in args else SCRATCH
-    suffix = args[args.index("--suffix") + 1] if "--suffix" in args else ""
-    os.makedirs(out, exist_ok=True)
+    opt = render_options(SCRATCH)
+    samples, out, suffix = opt.samples, opt.out, opt.suffix
     scene = bpy.context.scene
     cam = studio(scene, key=300.0, fill=110.0, rim=220.0, **VIEW)
     for ob in body_collision_objects():
@@ -70,7 +60,7 @@ def main():
     render_still(scene, os.path.join(out, f"{NAME}_closed{suffix}.png"), samples)
     drawer.location = closed + Vector((0.0, -0.2, 0.0))
     render_still(scene, os.path.join(out, f"{NAME}_open{suffix}.png"), samples)
-    if "--detail" in args:
+    if opt.has("--detail"):
         aim(cam, **DETAIL)
         render_still(scene, os.path.join(out, f"{NAME}_detail{suffix}.png"), samples)
         drawer.location = closed
