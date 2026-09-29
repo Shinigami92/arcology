@@ -33,8 +33,9 @@ blender/                  .blend sources (LFS) + their build scripts, exported t
   lib/arcology_blender/   shared toolkit for build scripts: geometry, soft goods, materials, fabric, wear, bake, export, studio, checks (D-028)
   props/<name>/           one asset's build/bake/export/render/verify scripts (e.g. fridge)
 core/
-  player/                 ArcologyPlayer rig (player.tscn), StickSprint, GrabRay, player_physics.tres (jump height)
-  interaction/            ImpactSound, TrashReceiver, HingeStopSound, HingeBodyBlocker, HingeSwing, HingeLight, KinematicFollower, GrabPassThrough, Seat, GrabHighlight
+  player/                 ArcologyPlayer rig (player.tscn), StickSprint, GrabRay, player_physics.tres (jump height), Fingertip press areas (D-031)
+  interaction/            ImpactSound, TrashReceiver, HingeStopSound, HingeBodyBlocker, HingeSwing, HingeLight, SliderSwing, KinematicFollower, GrabPassThrough, Seat, GrabHighlight, LightSwitch, EmissiveMaterials, OpenAlarm, HangingRail, RailHanger
+  debug/                  ABSwitch + ABPanel: blind A/B variants in one spot, flipped by a wall button (D-030)
   world_state/            (M2) time of day, weather, overrides
   weather/                (M2)
   zones/                  (M3) zone loader
@@ -144,7 +145,7 @@ Behavior checks that don't need the headset or the editor. Run `interaction` aft
 
 Each prints `TEST PASS/FAIL <name>: <details>` and exits with the failure count.
 
-Visual check without the headset or editor: `--shots` renders 1920×1080 stills to `tools/shots/results/shot-<n>.png` (views are `x,y,z,yaw,pitch[,fov]`, yaw 0 = -Z, 90 = -X; `--shot-hinge=<prop>:<deg>` opens hinged props first):
+Visual check without the headset or editor: `--shots` renders 1920×1080 stills to `tools/shots/results/shot-<n>.png` (views are `x,y,z,yaw,pitch[,fov]`, yaw 0 = -Z, 90 = -X; `--shot-hinge=<Props path>:<deg>` opens hinged props first, e.g. `Fridge:80` or `Wardrobe/A/DoorLeft:80`; `--shot-ab=B` shows every A/B pair's B variant):
 
 ```sh
 "$GODOT4_EDITOR" --path . --xr-mode off -- --shots="4.2,1.5,-2.0,-75,-8,60" --shot-hinge=Fridge:88
@@ -199,6 +200,10 @@ Root `RigidBody3D` with `res://addons/godot-xr-tools/objects/pickable.gd`, `coll
 
 Copy the structure of `assets/props/door/door.tscn`: `HingeOrigin` (rotated so its local X is the hinge axis) → `XRToolsInteractableHinge` (limits in degrees) → `Leaf` (rotated back, so children are authored in normal axes) → `AnimatableBody3D` with the visuals and collision, plus one `HandleOrigin/InteractableHandle` (layer 19, frozen, identity transform) per grip point. The `AnimatableBody3D` must use `core/interaction/kinematic_follower.gd` (D-018), or its collision won't move with the hinge. Add `HingeStopSound` for the bump at the limits, a `HingeBodyBlocker` (hinge + leaf) so the leaf can't swing through the player, and a `GrabPassThrough` (leaf body + handles root) so the holding hand can push the leaf (D-021). Optional: `HingeSwing` (momentum after release, friction, bounce, and a latch that pulls it shut near closed: fridge seal, door catch) and `HingeLight` (a light and an emissive material on while open). For a Blender-made door, export body and door as separate glb files, the door with its origin on the hinge axis and a `HandleGrip` empty; see `assets/props/fridge/`.
 
+### Add a button or switch
+
+Press targets are XR Tools area buttons (`interactable_area_button.gd`, `collision_layer = 0`, `collision_mask = 131072`), pressed by the hands' `Fingertip` areas (D-031); keep them at seated reach (1.1–1.6 m) where the object allows. For lights, add a `LightSwitch` (button, lights, emissive root + material name, click sound); see the nightstands. Test presses with a small Area3D on layer 131072, as the interaction tests do.
+
 ### Add a receiver for tagged objects
 
 `Area3D` with `core/interaction/trash_receiver.gd`, `collision_mask = 4`, `accept_tag` set to the tag, and optionally an `accept_sound`. See `assets/props/trash_can/trash_can.tscn`.
@@ -225,7 +230,7 @@ Defined in `.claude/agents/` (frontmatter `model` and `effort`):
 | `godot-dev` | `opus` / `high` | scenes, scripts, shaders, integration |
 | `perf-reviewer` | `opus` / `high` | budget reviews and perf test runs (read-only) |
 
-**A/B an asset:** run `blender-artist` twice on the same prompt, once with the Agent tool's `model` override (e.g. `opus` vs `fable`), and ask for A/B output names (`<name>__<model>-<effort>.glb`). Effort can't be overridden per call: edit `effort:` in the agent file between runs, and note which is which. Compare the thumbnails, triangle counts and time taken. Blind test: place the variants as "A" and "B" without saying which model made which; reveal after the pick. Artists must not change `blender/lib/` during an A/B (they work in parallel); new generic code goes into their `lib_candidates.py`, and the winner's gets promoted. A good runner-up can stay as a variant asset (e.g. `sofa_boucle`).
+**A/B an asset:** run `blender-artist` twice on the same prompt, once with the Agent tool's `model` override (e.g. `opus` vs `fable`), and ask for A/B output names (`<name>__<model>-<effort>.glb`). Effort can't be overridden per call: edit `effort:` in the agent file between runs, and note which is which. Compare the thumbnails, triangle counts and time taken. Blind test: place the variants as "A" and "B" without saying which model made which; reveal after the pick. Artists must not change `blender/lib/` during an A/B (they work in parallel); new generic code goes into their `lib_candidates.py`, and the winner's gets promoted. A good runner-up can stay as a variant asset (e.g. `sofa_boucle`). Place pairs with `AB_INSTANCES` in the apartment generator (one spot, flipped by the `ABPanel`, D-030).
 
 ## MCP servers
 

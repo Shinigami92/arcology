@@ -5,8 +5,9 @@ extends Node
 ##   "$GODOT4_EDITOR" --path . --xr-mode off -- --shots="4.6,1.6,-0.6,-60,-10;4.4,1.5,0.2,120,-8" --shot-hinge=Fridge:80
 ##
 ## Each view is x,y,z,yaw,pitch[,fov] (degrees; yaw 0 looks along -Z, 90
-## along -X). --shot-hinge opens hinged props (Props/<name>, degrees) in the
-## zone first. Writes tools/shots/results/shot-<n>.png (gitignored) at
+## along -X). --shot-hinge opens hinged props (Props/<path>:<degrees>, e.g.
+## Fridge:80 or Wardrobe/A/DoorLeft:80) and --shot-ab=B shows the B variant of
+## every ABSwitch first. Writes tools/shots/results/shot-<n>.png (gitignored) at
 ## [constant SIZE] and quits.
 
 const SIZE := Vector2i(1920, 1080)
@@ -17,6 +18,7 @@ const SETTLE_FRAMES := 30
 var zone: Node3D
 var views: PackedStringArray = []
 var hinges: PackedStringArray = []
+var ab := ""
 
 
 func _ready() -> void:
@@ -33,6 +35,8 @@ func _ready() -> void:
 	cam.current = true
 	get_viewport().disable_3d = true
 
+	if ab == "B":
+		ABSwitch.toggle_all(get_tree())
 	for spec in hinges:
 		var parts := spec.split(":")
 		var hinge := zone.get_node_or_null("Props/%s/HingeOrigin/InteractableHinge" % parts[0]) as XRToolsInteractableHinge

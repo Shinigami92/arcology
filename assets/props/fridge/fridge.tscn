@@ -13,6 +13,8 @@
 [ext_resource type="AudioStream" uid="uid://cxy7ek1m5pq5u" path="res://assets/audio/sfx/fridge_close.wav" id="11_close"]
 [ext_resource type="AudioStream" uid="uid://dittphyloa30b" path="res://assets/audio/sfx/fridge_seal.wav" id="12_seal"]
 [ext_resource type="AudioStream" uid="uid://0io2m5bthts6" path="res://assets/audio/sfx/fridge_hum.wav" id="13_hum"]
+[ext_resource type="Script" path="res://core/interaction/open_alarm.gd" id="14_alarm"]
+[ext_resource type="AudioStream" uid="uid://cbikfpoe3jxnw" path="res://assets/audio/sfx/fridge_alarm.wav" id="15_alarm_sound"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_door0"]
 size = Vector3(0.6, 1.755, 0.055)
@@ -57,7 +59,7 @@ size = Vector3(0.012, 0.1, 0.093)
 radius = 0.06
 
 [node name="Fridge" type="Node3D"]
-metadata/_doc = "Tall single-door fridge, cabinet 0.60 x 0.65 x 1.85 m. Origin = bottom center of the cabinet, front faces +Z, hinge on the left (-X) edge. Grab the handle to open (0..92 degrees); let go while moving and it swings on; within 15 degrees of closed the seal pulls it shut. Interior light while open; cans stand on the shelves and in the door bins. Built by blender/props/fridge/ (D-026)."
+metadata/_doc = "Tall single-door fridge, cabinet 0.60 x 0.65 x 1.85 m. Origin = bottom center of the cabinet, front faces +Z, hinge on the left (-X) edge. Grab the handle to open (0..92 degrees); let go while moving and it swings on; within 15 degrees of closed the seal pulls it shut. Beeps (door display) when left open for 30 s, until closed. Interior light while open; cans stand on the shelves and in the door bins. Built by blender/props/fridge/ (D-026)."
 
 [node name="Body" parent="." instance=ExtResource("1_body")]
 
@@ -191,3 +193,13 @@ leaf = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
 script = ExtResource("8_pass")
 body = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
 handles_root = NodePath("../HingeOrigin/InteractableHinge/Leaf")
+
+[node name="AlarmSound" type="AudioStreamPlayer3D" parent="."]
+position = Vector3(0.18, 1.63, 0.33)
+stream = ExtResource("15_alarm_sound")
+volume_db = -10.0
+
+[node name="OpenAlarm" type="Node" parent="." node_paths=PackedStringArray("hinge", "alarm")]
+script = ExtResource("14_alarm")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+alarm = NodePath("../AlarmSound")

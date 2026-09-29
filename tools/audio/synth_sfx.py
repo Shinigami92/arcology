@@ -178,6 +178,55 @@ def pillow_thud() -> list[float]:
     return out
 
 
+def button_click() -> list[float]:
+    """Small plastic push button: a short, bright double click."""
+    rng = random.Random(9)
+    n = int(RATE * 0.08)
+    noise = [rng.uniform(-1, 1) for _ in range(n)]
+    out = []
+    for i in range(n):
+        t = i / RATE
+        s = noise[i] * env(t, 0.0003, 0.003) + 0.6 * noise[i] * env(t - 0.03, 0.0003, 0.004) * (t > 0.03)
+        s += 0.4 * math.sin(2 * math.pi * 2400 * t) * env(t, 0.0003, 0.006)
+        out.append(s)
+    return out
+
+
+def drawer_bump() -> list[float]:
+    """Wooden drawer reaching its stop: short hollow knock with a rattle."""
+    rng = random.Random(10)
+    n = int(RATE * 0.25)
+    noise = lowpass([rng.uniform(-1, 1) for _ in range(n)], 0.25)
+    out = []
+    for i in range(n):
+        t = i / RATE
+        s = 0.6 * math.sin(2 * math.pi * 180 * t) * env(t, 0.001, 0.035)
+        s += 0.35 * math.sin(2 * math.pi * 410 * t) * env(t, 0.001, 0.02)
+        s += 0.5 * noise[i] * env(t, 0.0005, 0.012)
+        tr = t - 0.04
+        if tr > 0:
+            s += 0.15 * noise[i] * env(tr, 0.001, 0.02)
+        out.append(s)
+    return out
+
+
+def fridge_alarm() -> list[float]:
+    """Door-open alarm: three short 2.6 kHz beeps, then a pause; 2 s seamless loop
+    (import with loop mode Forward)."""
+    n = int(RATE * 2.0)
+    out = []
+    for i in range(n):
+        t = i / RATE
+        s = 0.0
+        for start in (0.0, 0.18, 0.36):
+            tb = t - start
+            if 0.0 <= tb < 0.1:
+                gate = min(1.0, tb / 0.004, (0.1 - tb) / 0.004)
+                s += gate * (math.sin(2 * math.pi * 2600 * t) + 0.25 * math.sin(2 * math.pi * 5200 * t))
+        out.append(s)
+    return out
+
+
 if __name__ == "__main__":
     write_wav("ball_bounce", ball_bounce())
     write_wav("can_hit", can_hit())
@@ -187,3 +236,6 @@ if __name__ == "__main__":
     write_wav("fridge_close", fridge_close())
     write_wav("fridge_hum", fridge_hum())
     write_wav("pillow_thud", pillow_thud())
+    write_wav("button_click", button_click())
+    write_wav("drawer_bump", drawer_bump())
+    write_wav("fridge_alarm", fridge_alarm())

@@ -1,0 +1,8 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/props/bed/bed__opus-high.glb" id="model"]
+
+[node name="Bed" type="Node3D"]
+metadata/_doc = "Double bed, about 1.70 x 2.15 m, sleeping surface 0.50 m. Origin = bottom center, head end at -Z. Static; collision comes from the glb (-convcolonly). Sit with the Seat area in the zone."
+
+[node name="Model" parent="." instance=ExtResource("model")]

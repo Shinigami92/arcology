@@ -1,0 +1,156 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/props/nightstand/nightstand_body__fable-high.glb" id="body"]
+[ext_resource type="PackedScene" path="res://assets/props/nightstand/nightstand_drawer__fable-high.glb" id="drawer"]
+[ext_resource type="PackedScene" path="res://assets/props/nightstand/table_lamp__fable-high.glb" id="lamp"]
+[ext_resource type="Script" uid="uid://c8gx2wc7hsxf5" path="res://addons/godot-xr-tools/interactables/interactable_hinge.gd" id="h_hinge"]
+[ext_resource type="Script" uid="uid://dlojnwxo25bky" path="res://addons/godot-xr-tools/interactables/interactable_handle.gd" id="h_handle"]
+[ext_resource type="Script" uid="uid://ccxwohhkuuyo1" path="res://core/interaction/kinematic_follower.gd" id="h_follower"]
+[ext_resource type="Script" uid="uid://dwnb8l1buro5f" path="res://core/interaction/grab_pass_through.gd" id="h_pass"]
+[ext_resource type="Script" uid="uid://cloxfr8r3b00u" path="res://addons/godot-xr-tools/interactables/interactable_slider.gd" id="slider"]
+[ext_resource type="Script" path="res://core/interaction/slider_swing.gd" id="swing"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/drawer_bump.wav" id="bump"]
+
+[ext_resource type="Script" uid="uid://dq042kibpfryy" path="res://addons/godot-xr-tools/interactables/interactable_area_button.gd" id="switch_button"]
+[ext_resource type="Script" path="res://core/interaction/light_switch.gd" id="switch_script"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/button_click.wav" id="switch_click"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_drawer0"]
+size = Vector3(0.408, 0.153, 0.018)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_drawer1"]
+size = Vector3(0.38, 0.008, 0.34)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_drawer2"]
+size = Vector3(0.012, 0.112, 0.34)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_drawer3"]
+size = Vector3(0.012, 0.112, 0.34)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_drawer4"]
+size = Vector3(0.38, 0.112, 0.012)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_drawer5"]
+size = Vector3(0.38, 0.112, 0.012)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_drawer6"]
+size = Vector3(0.16, 0.01, 0.035)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_grab"]
+radius = 0.05
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_switch"]
+radius = 0.025
+
+[node name="Nightstand" type="Node3D"]
+metadata/_doc = "Nightstand 0.45 x 0.40 x 0.55 m with a table lamp on top. Origin = bottom center, front faces +Z. The drawer slides out 0.28 m by its pull, slides on after release and soft-closes; small things fit inside. Press the inline rocker on the cord behind the lamp to switch the lamp."
+
+[node name="Body" parent="." instance=ExtResource("body")]
+
+[node name="Drawer" type="Node3D" parent="."]
+
+[node name="SliderOrigin" type="Node3D" parent="Drawer"]
+position = Vector3(0, 0.376, 0.2)
+rotation_degrees = Vector3(0, -90, 0)
+
+[node name="InteractableSlider" type="Node3D" parent="Drawer/SliderOrigin"]
+script = ExtResource("slider")
+slider_limit_max = 0.28
+
+[node name="Leaf" type="Node3D" parent="Drawer/SliderOrigin/InteractableSlider"]
+rotation_degrees = Vector3(0, 90, 0)
+
+[node name="DrawerBody" type="AnimatableBody3D" parent="Drawer/SliderOrigin/InteractableSlider/Leaf"]
+script = ExtResource("h_follower")
+
+[node name="FrontCollision" type="CollisionShape3D" parent="Drawer/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0, 0.0765, -0.009)
+shape = SubResource("BoxShape3D_drawer0")
+
+[node name="FloorCollision" type="CollisionShape3D" parent="Drawer/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0, 0.014, -0.188)
+shape = SubResource("BoxShape3D_drawer1")
+
+[node name="WallLeft" type="CollisionShape3D" parent="Drawer/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(-0.184, 0.074, -0.188)
+shape = SubResource("BoxShape3D_drawer2")
+
+[node name="WallRight" type="CollisionShape3D" parent="Drawer/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0.184, 0.074, -0.188)
+shape = SubResource("BoxShape3D_drawer3")
+
+[node name="WallFront" type="CollisionShape3D" parent="Drawer/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0, 0.074, -0.024)
+shape = SubResource("BoxShape3D_drawer4")
+
+[node name="WallBack" type="CollisionShape3D" parent="Drawer/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0, 0.074, -0.352)
+shape = SubResource("BoxShape3D_drawer5")
+
+[node name="PullCollision" type="CollisionShape3D" parent="Drawer/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0, 0.0765, 0.0175)
+shape = SubResource("BoxShape3D_drawer6")
+
+[node name="Model" parent="Drawer/SliderOrigin/InteractableSlider/Leaf/DrawerBody" instance=ExtResource("drawer")]
+
+[node name="HandleOrigin" type="Node3D" parent="Drawer/SliderOrigin/InteractableSlider/Leaf"]
+position = Vector3(0, 0.0765, 0.03)
+
+[node name="InteractableHandle" type="RigidBody3D" parent="Drawer/SliderOrigin/InteractableSlider/Leaf/HandleOrigin"]
+collision_layer = 262144
+collision_mask = 0
+freeze = true
+script = ExtResource("h_handle")
+picked_up_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Drawer/SliderOrigin/InteractableSlider/Leaf/HandleOrigin/InteractableHandle"]
+shape = SubResource("SphereShape3D_grab")
+
+[node name="StopSound" type="AudioStreamPlayer3D" parent="Drawer"]
+position = Vector3(0, 0.376, 0.2)
+stream = ExtResource("bump")
+
+[node name="Swing" type="Node" parent="Drawer" node_paths=PackedStringArray("slider", "stop_sound")]
+script = ExtResource("swing")
+slider = NodePath("../SliderOrigin/InteractableSlider")
+stop_sound = NodePath("../StopSound")
+
+[node name="GrabPassThrough" type="Node" parent="Drawer" node_paths=PackedStringArray("body", "handles_root")]
+script = ExtResource("h_pass")
+body = NodePath("../SliderOrigin/InteractableSlider/Leaf/DrawerBody")
+handles_root = NodePath("../SliderOrigin/InteractableSlider/Leaf")
+
+[node name="Lamp" parent="." instance=ExtResource("lamp")]
+position = Vector3(0, 0.55, -0.07)
+
+[node name="LampLight" type="OmniLight3D" parent="."]
+position = Vector3(0, 0.855, -0.07)
+light_color = Color(1, 0.72, 0.45, 1)
+light_energy = 0.45
+omni_range = 1.8
+
+[node name="LampSwitchButton" type="Area3D" parent="."]
+position = Vector3(0, 0.556, -0.175)
+collision_layer = 0
+collision_mask = 131072
+monitorable = false
+script = ExtResource("switch_button")
+button = NodePath("Cap")
+displacement = Vector3(0, -0.003, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LampSwitchButton"]
+shape = SubResource("SphereShape3D_switch")
+
+[node name="Cap" type="Node3D" parent="LampSwitchButton"]
+
+[node name="SwitchClick" type="AudioStreamPlayer3D" parent="."]
+position = Vector3(0, 0.556, -0.175)
+stream = ExtResource("switch_click")
+volume_db = -8.0
+
+[node name="LampSwitch" type="Node" parent="." node_paths=PackedStringArray("button", "lights", "emissive_root", "click")]
+script = ExtResource("switch_script")
+button = NodePath("../LampSwitchButton")
+lights = [NodePath("../LampLight")]
+emissive_root = NodePath("../Lamp")
+material_name = "LampLight"
+click = NodePath("../SwitchClick")

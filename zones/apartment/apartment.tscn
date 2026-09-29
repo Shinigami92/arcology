@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://dwpbb18mef1l2"]
+[gd_scene format=3 uid="uid://dkac1s7a4owf"]
 
 [ext_resource type="Material" path="res://assets/materials/blockout_floor.tres" id="1_floor"]
 [ext_resource type="Material" path="res://assets/materials/blockout_wall.tres" id="2_wall"]
@@ -12,7 +12,6 @@
 [ext_resource type="Material" path="res://assets/materials/ceiling_lamp.tres" id="11_lamp"]
 [ext_resource type="Material" path="res://assets/materials/bathroom_tile.tres" id="12_tile"]
 [ext_resource type="Material" path="res://assets/materials/mirror.tres" id="13_mirror"]
-[ext_resource type="Material" path="res://assets/materials/bed_linen.tres" id="14_linen"]
 [ext_resource type="Material" path="res://assets/materials/wood_dark.tres" id="15_wood"]
 [ext_resource type="Material" path="res://assets/materials/ceramic.tres" id="16_ceramic"]
 [ext_resource type="PackedScene" uid="uid://cko2r73ubjat5" path="res://assets/props/door/door.tscn" id="17_door"]
@@ -22,7 +21,15 @@
 [ext_resource type="PackedScene" path="res://assets/props/fridge/fridge.tscn" id="21_fridge"]
 [ext_resource type="PackedScene" path="res://assets/props/sofa/sofa_pillow.tscn" id="22_pillow"]
 [ext_resource type="PackedScene" path="res://assets/props/sofa/sofa.tscn" id="22_sofa"]
-[ext_resource type="Script" uid="uid://h1k7crqn2imv" path="res://core/interaction/seat.gd" id="23_seat"]
+[ext_resource type="PackedScene" path="res://assets/props/ab_panel/ab_panel.tscn" id="23_ab_panel"]
+[ext_resource type="PackedScene" path="res://assets/props/bed/bed__fable-high.tscn" id="24_bed_a"]
+[ext_resource type="PackedScene" path="res://assets/props/bed/bed__opus-high.tscn" id="25_bed_b"]
+[ext_resource type="PackedScene" path="res://assets/props/wardrobe/wardrobe__opus-high.tscn" id="26_wardrobe_a"]
+[ext_resource type="PackedScene" path="res://assets/props/wardrobe/wardrobe__fable-high.tscn" id="27_wardrobe_b"]
+[ext_resource type="PackedScene" path="res://assets/props/nightstand/nightstand__fable-high.tscn" id="28_nightstand_a"]
+[ext_resource type="PackedScene" path="res://assets/props/nightstand/nightstand__opus-high.tscn" id="29_nightstand_b"]
+[ext_resource type="Script" uid="uid://h1k7crqn2imv" path="res://core/interaction/seat.gd" id="30_seat"]
+[ext_resource type="Script" uid="uid://s3c5o3wqn1ao" path="res://core/debug/ab_switch.gd" id="31_ab"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_s0"]
 size = Vector3(13.6, 0.2, 7)
@@ -276,7 +283,7 @@ size = Vector3(0.02, 0.12, 0.6)
 [sub_resource type="BoxMesh" id="BoxMesh_s42"]
 size = Vector3(1, 0.04, 0.6)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_s72"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_s66"]
 size = Vector3(1, 0.75, 0.6)
 
 [sub_resource type="BoxMesh" id="BoxMesh_s43"]
@@ -324,7 +331,7 @@ size = Vector3(0.02, 0.02, 3.2)
 [sub_resource type="BoxMesh" id="BoxMesh_s53"]
 size = Vector3(0.9, 0.04, 0.9)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_s73"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_s67"]
 size = Vector3(0.9, 0.75, 0.9)
 
 [sub_resource type="BoxMesh" id="BoxMesh_s54"]
@@ -334,84 +341,48 @@ size = Vector3(0.5, 0.02, 0.5)
 size = Vector3(0.5, 0.03, 0.5)
 
 [sub_resource type="BoxMesh" id="BoxMesh_s56"]
-size = Vector3(2.1, 0.3, 1.6)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_s56"]
-size = Vector3(2.1, 0.3, 1.6)
-
-[sub_resource type="BoxMesh" id="BoxMesh_s57"]
-size = Vector3(2, 0.2, 1.5)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_s57"]
-size = Vector3(2, 0.2, 1.5)
-
-[sub_resource type="BoxMesh" id="BoxMesh_s58"]
-size = Vector3(0.35, 0.12, 1.2)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_s58"]
-size = Vector3(0.35, 0.12, 1.2)
-
-[sub_resource type="BoxMesh" id="BoxMesh_s59"]
-size = Vector3(0.08, 1.1, 1.6)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_s59"]
-size = Vector3(0.08, 1.1, 1.6)
-
-[sub_resource type="BoxMesh" id="BoxMesh_s60"]
-size = Vector3(0.45, 0.5, 0.4)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_s60"]
-size = Vector3(0.45, 0.5, 0.4)
-
-[sub_resource type="BoxMesh" id="BoxMesh_s61"]
-size = Vector3(1.5, 2.1, 0.6)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_s61"]
-size = Vector3(1.5, 2.1, 0.6)
-
-[sub_resource type="BoxMesh" id="BoxMesh_s62"]
 size = Vector3(0.02, 0.03, 1.4)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s63"]
+[sub_resource type="BoxMesh" id="BoxMesh_s57"]
 size = Vector3(0.5, 0.85, 0.8)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_s63"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_s57"]
 size = Vector3(0.5, 0.85, 0.8)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s64"]
+[sub_resource type="BoxMesh" id="BoxMesh_s58"]
 size = Vector3(0.02, 0.7, 0.6)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s65"]
+[sub_resource type="BoxMesh" id="BoxMesh_s59"]
 size = Vector3(0.4, 0.42, 0.55)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_s65"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_s59"]
 size = Vector3(0.4, 0.42, 0.55)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s66"]
+[sub_resource type="BoxMesh" id="BoxMesh_s60"]
 size = Vector3(0.4, 0.4, 0.18)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_s66"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_s60"]
 size = Vector3(0.4, 0.4, 0.18)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s67"]
+[sub_resource type="BoxMesh" id="BoxMesh_s61"]
 size = Vector3(0.9, 0.06, 0.9)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_s67"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_s61"]
 size = Vector3(0.9, 0.06, 0.9)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s68"]
+[sub_resource type="BoxMesh" id="BoxMesh_s62"]
 size = Vector3(0.15, 0.03, 0.15)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s69"]
+[sub_resource type="BoxMesh" id="BoxMesh_s63"]
 size = Vector3(0.4, 0.03, 0.4)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s70"]
+[sub_resource type="BoxMesh" id="BoxMesh_s64"]
 size = Vector3(0.9, 0.45, 0.35)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_s70"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_s64"]
 size = Vector3(0.9, 0.45, 0.35)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s71"]
+[sub_resource type="BoxMesh" id="BoxMesh_s65"]
 size = Vector3(0.3, 0.03, 0.3)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_seat0"]
@@ -420,775 +391,748 @@ size = Vector3(2.2, 2, 1.2)
 [sub_resource type="BoxShape3D" id="BoxShape3D_seat1"]
 size = Vector3(1.6, 2, 1.3)
 
-[node name="Apartment" type="Node3D" unique_id=1544486766]
+[node name="Apartment" type="Node3D" unique_id=137430539]
 metadata/_doc = "Zone: apartment (bedroom, living room, kitchen, hallway, bathroom). GENERATED by tools/blockout/apartment.py; edit that, not this file. Floor y 0, ceiling 2.6 m, window facade faces -Z."
 
-[node name="Shell" type="StaticBody3D" parent="." unique_id=1002306866]
+[node name="Shell" type="StaticBody3D" parent="." unique_id=555900508]
 
-[node name="Floor" type="MeshInstance3D" parent="Shell" unique_id=1859416002]
+[node name="Floor" type="MeshInstance3D" parent="Shell" unique_id=1587757889]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, -0.1, 0.3)
 mesh = SubResource("BoxMesh_s0")
 surface_material_override/0 = ExtResource("1_floor")
 
-[node name="FloorCollision" type="CollisionShape3D" parent="Shell" unique_id=1599769905]
+[node name="FloorCollision" type="CollisionShape3D" parent="Shell" unique_id=109442544]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, -0.1, 0.3)
 shape = SubResource("BoxShape3D_s0")
 
-[node name="Ceiling" type="MeshInstance3D" parent="Shell" unique_id=1715779131]
+[node name="Ceiling" type="MeshInstance3D" parent="Shell" unique_id=1907111978]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 2.7, 0.3)
 mesh = SubResource("BoxMesh_s0")
 surface_material_override/0 = ExtResource("3_ceiling")
 
-[node name="CeilingCollision" type="CollisionShape3D" parent="Shell" unique_id=1758973650]
+[node name="CeilingCollision" type="CollisionShape3D" parent="Shell" unique_id=299331465]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 2.7, 0.3)
 shape = SubResource("BoxShape3D_s0")
 
-[node name="BathFloor" type="MeshInstance3D" parent="Shell" unique_id=1775706681]
+[node name="BathFloor" type="MeshInstance3D" parent="Shell" unique_id=1120407442]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, -0.1, 5.1)
 mesh = SubResource("BoxMesh_s1")
 surface_material_override/0 = ExtResource("12_tile")
 
-[node name="BathFloorCollision" type="CollisionShape3D" parent="Shell" unique_id=1875857908]
+[node name="BathFloorCollision" type="CollisionShape3D" parent="Shell" unique_id=1023399777]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, -0.1, 5.1)
 shape = SubResource("BoxShape3D_s1")
 
-[node name="BathCeiling" type="MeshInstance3D" parent="Shell" unique_id=1953016874]
+[node name="BathCeiling" type="MeshInstance3D" parent="Shell" unique_id=939760987]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 2.7, 5.1)
 mesh = SubResource("BoxMesh_s1")
 surface_material_override/0 = ExtResource("3_ceiling")
 
-[node name="BathCeilingCollision" type="CollisionShape3D" parent="Shell" unique_id=1510860119]
+[node name="BathCeilingCollision" type="CollisionShape3D" parent="Shell" unique_id=66998905]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 2.7, 5.1)
 shape = SubResource("BoxShape3D_s1")
 
-[node name="North0" type="MeshInstance3D" parent="Shell" unique_id=328152282]
+[node name="North0" type="MeshInstance3D" parent="Shell" unique_id=1927887149]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.65, 1.3, -3.1)
 mesh = SubResource("BoxMesh_s2")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="North0Collision" type="CollisionShape3D" parent="Shell" unique_id=871704157]
+[node name="North0Collision" type="CollisionShape3D" parent="Shell" unique_id=138480709]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.65, 1.3, -3.1)
 shape = SubResource("BoxShape3D_s2")
 
-[node name="North0Below" type="MeshInstance3D" parent="Shell" unique_id=1041817688]
+[node name="North0Below" type="MeshInstance3D" parent="Shell" unique_id=599123328]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0.2, -3.1)
 mesh = SubResource("BoxMesh_s3")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="North0BelowCollision" type="CollisionShape3D" parent="Shell" unique_id=457656474]
+[node name="North0BelowCollision" type="CollisionShape3D" parent="Shell" unique_id=1985499571]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0.2, -3.1)
 shape = SubResource("BoxShape3D_s3")
 
-[node name="North0Above" type="MeshInstance3D" parent="Shell" unique_id=1085036757]
+[node name="North0Above" type="MeshInstance3D" parent="Shell" unique_id=1641484452]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 2.5, -3.1)
 mesh = SubResource("BoxMesh_s4")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="North0AboveCollision" type="CollisionShape3D" parent="Shell" unique_id=972479423]
+[node name="North0AboveCollision" type="CollisionShape3D" parent="Shell" unique_id=1934676657]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 2.5, -3.1)
 shape = SubResource("BoxShape3D_s4")
 
-[node name="North1" type="MeshInstance3D" parent="Shell" unique_id=18963873]
+[node name="North1" type="MeshInstance3D" parent="Shell" unique_id=1609270544]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.1, 1.3, -3.1)
 mesh = SubResource("BoxMesh_s5")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="North1Collision" type="CollisionShape3D" parent="Shell" unique_id=1037607522]
+[node name="North1Collision" type="CollisionShape3D" parent="Shell" unique_id=1808978045]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.1, 1.3, -3.1)
 shape = SubResource("BoxShape3D_s5")
 
-[node name="North1Below" type="MeshInstance3D" parent="Shell" unique_id=1053519340]
+[node name="North1Below" type="MeshInstance3D" parent="Shell" unique_id=118709447]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, -3.1)
 mesh = SubResource("BoxMesh_s6")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="North1BelowCollision" type="CollisionShape3D" parent="Shell" unique_id=619842338]
+[node name="North1BelowCollision" type="CollisionShape3D" parent="Shell" unique_id=1643349290]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, -3.1)
 shape = SubResource("BoxShape3D_s6")
 
-[node name="North1Above" type="MeshInstance3D" parent="Shell" unique_id=262689885]
+[node name="North1Above" type="MeshInstance3D" parent="Shell" unique_id=1177280977]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -3.1)
 mesh = SubResource("BoxMesh_s7")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="North1AboveCollision" type="CollisionShape3D" parent="Shell" unique_id=246979386]
+[node name="North1AboveCollision" type="CollisionShape3D" parent="Shell" unique_id=880937525]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -3.1)
 shape = SubResource("BoxShape3D_s7")
 
-[node name="North2" type="MeshInstance3D" parent="Shell" unique_id=1291460614]
+[node name="North2" type="MeshInstance3D" parent="Shell" unique_id=1090676389]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.05, 1.3, -3.1)
 mesh = SubResource("BoxMesh_s8")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="North2Collision" type="CollisionShape3D" parent="Shell" unique_id=112246081]
+[node name="North2Collision" type="CollisionShape3D" parent="Shell" unique_id=1505347425]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.05, 1.3, -3.1)
 shape = SubResource("BoxShape3D_s8")
 
-[node name="North2Below" type="MeshInstance3D" parent="Shell" unique_id=563249803]
+[node name="North2Below" type="MeshInstance3D" parent="Shell" unique_id=1217028423]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.55, 0.2, -3.1)
 mesh = SubResource("BoxMesh_s9")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="North2BelowCollision" type="CollisionShape3D" parent="Shell" unique_id=786376694]
+[node name="North2BelowCollision" type="CollisionShape3D" parent="Shell" unique_id=2055738602]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.55, 0.2, -3.1)
 shape = SubResource("BoxShape3D_s9")
 
-[node name="North2Above" type="MeshInstance3D" parent="Shell" unique_id=937502631]
+[node name="North2Above" type="MeshInstance3D" parent="Shell" unique_id=453320463]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.55, 2.5, -3.1)
 mesh = SubResource("BoxMesh_s10")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="North2AboveCollision" type="CollisionShape3D" parent="Shell" unique_id=3867580]
+[node name="North2AboveCollision" type="CollisionShape3D" parent="Shell" unique_id=2116063435]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.55, 2.5, -3.1)
 shape = SubResource("BoxShape3D_s10")
 
-[node name="North3" type="MeshInstance3D" parent="Shell" unique_id=2134969347]
+[node name="North3" type="MeshInstance3D" parent="Shell" unique_id=1087607894]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.05, 1.3, -3.1)
 mesh = SubResource("BoxMesh_s11")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="North3Collision" type="CollisionShape3D" parent="Shell" unique_id=135717058]
+[node name="North3Collision" type="CollisionShape3D" parent="Shell" unique_id=2021542361]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.05, 1.3, -3.1)
 shape = SubResource("BoxShape3D_s11")
 
-[node name="BedroomWindowGlass" type="MeshInstance3D" parent="Shell" unique_id=1011388751]
+[node name="BedroomWindowGlass" type="MeshInstance3D" parent="Shell" unique_id=1077814322]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 1.4, -3.1)
 cast_shadow = 0
 mesh = SubResource("BoxMesh_s12")
 surface_material_override/0 = ExtResource("8_glass")
 
-[node name="BedroomWindowGlassCollision" type="CollisionShape3D" parent="Shell" unique_id=1379321669]
+[node name="BedroomWindowGlassCollision" type="CollisionShape3D" parent="Shell" unique_id=1508976200]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 1.4, -3.1)
 shape = SubResource("BoxShape3D_s12")
 
-[node name="BedroomWindowLedge" type="MeshInstance3D" parent="Shell" unique_id=776309700]
+[node name="BedroomWindowLedge" type="MeshInstance3D" parent="Shell" unique_id=1081357183]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0.42, -2.94)
 mesh = SubResource("BoxMesh_s13")
 surface_material_override/0 = ExtResource("4_gunmetal")
 
-[node name="BedroomWindowLedgeCollision" type="CollisionShape3D" parent="Shell" unique_id=182176922]
+[node name="BedroomWindowLedgeCollision" type="CollisionShape3D" parent="Shell" unique_id=521976237]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0.42, -2.94)
 shape = SubResource("BoxShape3D_s13")
 
-[node name="LivingWindowGlass" type="MeshInstance3D" parent="Shell" unique_id=408933584]
+[node name="LivingWindowGlass" type="MeshInstance3D" parent="Shell" unique_id=515051042]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -3.1)
 cast_shadow = 0
 mesh = SubResource("BoxMesh_s14")
 surface_material_override/0 = ExtResource("8_glass")
 
-[node name="LivingWindowGlassCollision" type="CollisionShape3D" parent="Shell" unique_id=1432741648]
+[node name="LivingWindowGlassCollision" type="CollisionShape3D" parent="Shell" unique_id=1853082710]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -3.1)
 shape = SubResource("BoxShape3D_s14")
 
-[node name="LivingWindowLedge" type="MeshInstance3D" parent="Shell" unique_id=1876054366]
+[node name="LivingWindowLedge" type="MeshInstance3D" parent="Shell" unique_id=491923482]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, -2.94)
 mesh = SubResource("BoxMesh_s15")
 surface_material_override/0 = ExtResource("4_gunmetal")
 
-[node name="LivingWindowLedgeCollision" type="CollisionShape3D" parent="Shell" unique_id=2132187069]
+[node name="LivingWindowLedgeCollision" type="CollisionShape3D" parent="Shell" unique_id=1611606402]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, -2.94)
 shape = SubResource("BoxShape3D_s15")
 
-[node name="LivingWindowMullion" type="MeshInstance3D" parent="Shell" unique_id=633928893]
+[node name="LivingWindowMullion" type="MeshInstance3D" parent="Shell" unique_id=1460291481]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -3.02)
 mesh = SubResource("BoxMesh_s16")
 surface_material_override/0 = ExtResource("4_gunmetal")
 
-[node name="LivingWindowMullionCollision" type="CollisionShape3D" parent="Shell" unique_id=1263527371]
+[node name="LivingWindowMullionCollision" type="CollisionShape3D" parent="Shell" unique_id=255777702]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -3.02)
 shape = SubResource("BoxShape3D_s16")
 
-[node name="KitchenWindowGlass" type="MeshInstance3D" parent="Shell" unique_id=1055968796]
+[node name="KitchenWindowGlass" type="MeshInstance3D" parent="Shell" unique_id=1624234512]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.55, 1.4, -3.1)
 cast_shadow = 0
 mesh = SubResource("BoxMesh_s17")
 surface_material_override/0 = ExtResource("8_glass")
 
-[node name="KitchenWindowGlassCollision" type="CollisionShape3D" parent="Shell" unique_id=1873696882]
+[node name="KitchenWindowGlassCollision" type="CollisionShape3D" parent="Shell" unique_id=568486434]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.55, 1.4, -3.1)
 shape = SubResource("BoxShape3D_s17")
 
-[node name="KitchenWindowLedge" type="MeshInstance3D" parent="Shell" unique_id=1309100306]
+[node name="KitchenWindowLedge" type="MeshInstance3D" parent="Shell" unique_id=121614645]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.55, 0.42, -2.94)
 mesh = SubResource("BoxMesh_s18")
 surface_material_override/0 = ExtResource("4_gunmetal")
 
-[node name="KitchenWindowLedgeCollision" type="CollisionShape3D" parent="Shell" unique_id=551154850]
+[node name="KitchenWindowLedgeCollision" type="CollisionShape3D" parent="Shell" unique_id=1443891531]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.55, 0.42, -2.94)
 shape = SubResource("BoxShape3D_s18")
 
-[node name="West0" type="MeshInstance3D" parent="Shell" unique_id=63607015]
+[node name="West0" type="MeshInstance3D" parent="Shell" unique_id=1328825435]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.9, 1.3, 0.3)
 mesh = SubResource("BoxMesh_s19")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="West0Collision" type="CollisionShape3D" parent="Shell" unique_id=1614270653]
+[node name="West0Collision" type="CollisionShape3D" parent="Shell" unique_id=162341940]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.9, 1.3, 0.3)
 shape = SubResource("BoxShape3D_s19")
 
-[node name="East0" type="MeshInstance3D" parent="Shell" unique_id=1844787204]
+[node name="East0" type="MeshInstance3D" parent="Shell" unique_id=363495087]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 1.3, -0.375)
 mesh = SubResource("BoxMesh_s20")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="East0Collision" type="CollisionShape3D" parent="Shell" unique_id=1108603610]
+[node name="East0Collision" type="CollisionShape3D" parent="Shell" unique_id=582793063]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 1.3, -0.375)
 shape = SubResource("BoxShape3D_s20")
 
-[node name="East0Above" type="MeshInstance3D" parent="Shell" unique_id=728627689]
+[node name="East0Above" type="MeshInstance3D" parent="Shell" unique_id=25436314]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 2.35, 2.9)
 mesh = SubResource("BoxMesh_s21")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="East0AboveCollision" type="CollisionShape3D" parent="Shell" unique_id=2082301587]
+[node name="East0AboveCollision" type="CollisionShape3D" parent="Shell" unique_id=645422164]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 2.35, 2.9)
 shape = SubResource("BoxShape3D_s21")
 
-[node name="East1" type="MeshInstance3D" parent="Shell" unique_id=420468785]
+[node name="East1" type="MeshInstance3D" parent="Shell" unique_id=1537881831]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 1.3, 3.575)
 mesh = SubResource("BoxMesh_s22")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="East1Collision" type="CollisionShape3D" parent="Shell" unique_id=195865395]
+[node name="East1Collision" type="CollisionShape3D" parent="Shell" unique_id=772025599]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 1.3, 3.575)
 shape = SubResource("BoxShape3D_s22")
 
-[node name="BedroomLiving0" type="MeshInstance3D" parent="Shell" unique_id=2032238705]
+[node name="BedroomLiving0" type="MeshInstance3D" parent="Shell" unique_id=596954711]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.1, 1.3, -0.5)
 mesh = SubResource("BoxMesh_s23")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="BedroomLiving0Collision" type="CollisionShape3D" parent="Shell" unique_id=1602958375]
+[node name="BedroomLiving0Collision" type="CollisionShape3D" parent="Shell" unique_id=1831615855]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.1, 1.3, -0.5)
 shape = SubResource("BoxShape3D_s23")
 
-[node name="LivingKitchen0" type="MeshInstance3D" parent="Shell" unique_id=1576581233]
+[node name="LivingKitchen0" type="MeshInstance3D" parent="Shell" unique_id=1785404895]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.1, 1.3, -2.1)
 mesh = SubResource("BoxMesh_s24")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="LivingKitchen0Collision" type="CollisionShape3D" parent="Shell" unique_id=2011660040]
+[node name="LivingKitchen0Collision" type="CollisionShape3D" parent="Shell" unique_id=1933644256]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.1, 1.3, -2.1)
 shape = SubResource("BoxShape3D_s24")
 
-[node name="LivingKitchen0Above" type="MeshInstance3D" parent="Shell" unique_id=1322098953]
+[node name="LivingKitchen0Above" type="MeshInstance3D" parent="Shell" unique_id=1651936477]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.1, 2.35, -0.3)
 mesh = SubResource("BoxMesh_s25")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="LivingKitchen0AboveCollision" type="CollisionShape3D" parent="Shell" unique_id=639920369]
+[node name="LivingKitchen0AboveCollision" type="CollisionShape3D" parent="Shell" unique_id=1459343583]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.1, 2.35, -0.3)
 shape = SubResource("BoxShape3D_s25")
 
-[node name="LivingKitchen1" type="MeshInstance3D" parent="Shell" unique_id=223430920]
+[node name="LivingKitchen1" type="MeshInstance3D" parent="Shell" unique_id=1412098323]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.1, 1.3, 1.3)
 mesh = SubResource("BoxMesh_s26")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="LivingKitchen1Collision" type="CollisionShape3D" parent="Shell" unique_id=1690266268]
+[node name="LivingKitchen1Collision" type="CollisionShape3D" parent="Shell" unique_id=1616058770]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.1, 1.3, 1.3)
 shape = SubResource("BoxShape3D_s26")
 
-[node name="HallNorth0" type="MeshInstance3D" parent="Shell" unique_id=624619069]
+[node name="HallNorth0" type="MeshInstance3D" parent="Shell" unique_id=798818083]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.7, 1.3, 2.1)
 mesh = SubResource("BoxMesh_s27")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="HallNorth0Collision" type="CollisionShape3D" parent="Shell" unique_id=435767716]
+[node name="HallNorth0Collision" type="CollisionShape3D" parent="Shell" unique_id=469211780]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.7, 1.3, 2.1)
 shape = SubResource("BoxShape3D_s27")
 
-[node name="HallNorth0Above" type="MeshInstance3D" parent="Shell" unique_id=484760366]
+[node name="HallNorth0Above" type="MeshInstance3D" parent="Shell" unique_id=1873514321]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.95, 2.35, 2.1)
 mesh = SubResource("BoxMesh_s28")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="HallNorth0AboveCollision" type="CollisionShape3D" parent="Shell" unique_id=1989139492]
+[node name="HallNorth0AboveCollision" type="CollisionShape3D" parent="Shell" unique_id=1077515268]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.95, 2.35, 2.1)
 shape = SubResource("BoxShape3D_s28")
 
-[node name="HallNorth1" type="MeshInstance3D" parent="Shell" unique_id=1392410858]
+[node name="HallNorth1" type="MeshInstance3D" parent="Shell" unique_id=779847653]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.95, 1.3, 2.1)
 mesh = SubResource("BoxMesh_s29")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="HallNorth1Collision" type="CollisionShape3D" parent="Shell" unique_id=2087862774]
+[node name="HallNorth1Collision" type="CollisionShape3D" parent="Shell" unique_id=2080211201]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.95, 1.3, 2.1)
 shape = SubResource("BoxShape3D_s29")
 
-[node name="HallNorth1Above" type="MeshInstance3D" parent="Shell" unique_id=4387386]
+[node name="HallNorth1Above" type="MeshInstance3D" parent="Shell" unique_id=458869095]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.05, 2.35, 2.1)
 mesh = SubResource("BoxMesh_s30")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="HallNorth1AboveCollision" type="CollisionShape3D" parent="Shell" unique_id=1372037608]
+[node name="HallNorth1AboveCollision" type="CollisionShape3D" parent="Shell" unique_id=803457034]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.05, 2.35, 2.1)
 shape = SubResource("BoxShape3D_s30")
 
-[node name="HallNorth2" type="MeshInstance3D" parent="Shell" unique_id=1645049702]
+[node name="HallNorth2" type="MeshInstance3D" parent="Shell" unique_id=1348792716]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.35, 1.3, 2.1)
 mesh = SubResource("BoxMesh_s31")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="HallNorth2Collision" type="CollisionShape3D" parent="Shell" unique_id=1050892950]
+[node name="HallNorth2Collision" type="CollisionShape3D" parent="Shell" unique_id=361721447]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.35, 1.3, 2.1)
 shape = SubResource("BoxShape3D_s31")
 
-[node name="HallNorth2Above" type="MeshInstance3D" parent="Shell" unique_id=1568407441]
+[node name="HallNorth2Above" type="MeshInstance3D" parent="Shell" unique_id=1753474489]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.7, 2.35, 2.1)
 mesh = SubResource("BoxMesh_s32")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="HallNorth2AboveCollision" type="CollisionShape3D" parent="Shell" unique_id=192708484]
+[node name="HallNorth2AboveCollision" type="CollisionShape3D" parent="Shell" unique_id=643910901]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.7, 2.35, 2.1)
 shape = SubResource("BoxShape3D_s32")
 
-[node name="HallNorth3" type="MeshInstance3D" parent="Shell" unique_id=1190495572]
+[node name="HallNorth3" type="MeshInstance3D" parent="Shell" unique_id=246161795]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.9, 1.3, 2.1)
 mesh = SubResource("BoxMesh_s33")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="HallNorth3Collision" type="CollisionShape3D" parent="Shell" unique_id=922892109]
+[node name="HallNorth3Collision" type="CollisionShape3D" parent="Shell" unique_id=2120754249]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.9, 1.3, 2.1)
 shape = SubResource("BoxShape3D_s33")
 
-[node name="HallSouth0" type="MeshInstance3D" parent="Shell" unique_id=921662922]
+[node name="HallSouth0" type="MeshInstance3D" parent="Shell" unique_id=1357086272]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.45, 1.3, 3.7)
 mesh = SubResource("BoxMesh_s34")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="HallSouth0Collision" type="CollisionShape3D" parent="Shell" unique_id=2147021777]
+[node name="HallSouth0Collision" type="CollisionShape3D" parent="Shell" unique_id=585129935]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.45, 1.3, 3.7)
 shape = SubResource("BoxShape3D_s34")
 
-[node name="HallSouth0Above" type="MeshInstance3D" parent="Shell" unique_id=2038708568]
+[node name="HallSouth0Above" type="MeshInstance3D" parent="Shell" unique_id=849108892]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.55, 2.35, 3.7)
 mesh = SubResource("BoxMesh_s35")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="HallSouth0AboveCollision" type="CollisionShape3D" parent="Shell" unique_id=46985405]
+[node name="HallSouth0AboveCollision" type="CollisionShape3D" parent="Shell" unique_id=1908996707]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.55, 2.35, 3.7)
 shape = SubResource("BoxShape3D_s35")
 
-[node name="HallSouth1" type="MeshInstance3D" parent="Shell" unique_id=1986004667]
+[node name="HallSouth1" type="MeshInstance3D" parent="Shell" unique_id=1539528339]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.8, 1.3, 3.7)
 mesh = SubResource("BoxMesh_s36")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="HallSouth1Collision" type="CollisionShape3D" parent="Shell" unique_id=1799568318]
+[node name="HallSouth1Collision" type="CollisionShape3D" parent="Shell" unique_id=1734083476]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.8, 1.3, 3.7)
 shape = SubResource("BoxShape3D_s36")
 
-[node name="BathWest0" type="MeshInstance3D" parent="Shell" unique_id=1558358340]
+[node name="BathWest0" type="MeshInstance3D" parent="Shell" unique_id=1029846313]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.1, 1.3, 5)
 mesh = SubResource("BoxMesh_s37")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="BathWest0Collision" type="CollisionShape3D" parent="Shell" unique_id=1949889810]
+[node name="BathWest0Collision" type="CollisionShape3D" parent="Shell" unique_id=1443569099]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.1, 1.3, 5)
 shape = SubResource("BoxShape3D_s37")
 
-[node name="BathEast0" type="MeshInstance3D" parent="Shell" unique_id=2106377949]
+[node name="BathEast0" type="MeshInstance3D" parent="Shell" unique_id=970551593]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.1, 1.3, 5)
 mesh = SubResource("BoxMesh_s37")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="BathEast0Collision" type="CollisionShape3D" parent="Shell" unique_id=586131092]
+[node name="BathEast0Collision" type="CollisionShape3D" parent="Shell" unique_id=1821769497]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.1, 1.3, 5)
 shape = SubResource("BoxShape3D_s37")
 
-[node name="BathSouth0" type="MeshInstance3D" parent="Shell" unique_id=921904624]
+[node name="BathSouth0" type="MeshInstance3D" parent="Shell" unique_id=2108281581]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1.3, 6.3)
 mesh = SubResource("BoxMesh_s38")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="BathSouth0Collision" type="CollisionShape3D" parent="Shell" unique_id=1775464999]
+[node name="BathSouth0Collision" type="CollisionShape3D" parent="Shell" unique_id=201118128]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1.3, 6.3)
 shape = SubResource("BoxShape3D_s38")
 
-[node name="Vestibule" type="StaticBody3D" parent="." unique_id=1553191568]
+[node name="Vestibule" type="StaticBody3D" parent="." unique_id=959407308]
 
-[node name="VestFloor" type="MeshInstance3D" parent="Vestibule" unique_id=1069109251]
+[node name="VestFloor" type="MeshInstance3D" parent="Vestibule" unique_id=1924725928]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, -0.1, 2.9)
 mesh = SubResource("BoxMesh_s39")
 surface_material_override/0 = ExtResource("1_floor")
 
-[node name="VestFloorCollision" type="CollisionShape3D" parent="Vestibule" unique_id=167160165]
+[node name="VestFloorCollision" type="CollisionShape3D" parent="Vestibule" unique_id=999166466]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, -0.1, 2.9)
 shape = SubResource("BoxShape3D_s39")
 
-[node name="VestCeiling" type="MeshInstance3D" parent="Vestibule" unique_id=108258772]
+[node name="VestCeiling" type="MeshInstance3D" parent="Vestibule" unique_id=590347032]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, 2.7, 2.9)
 mesh = SubResource("BoxMesh_s39")
 surface_material_override/0 = ExtResource("3_ceiling")
 
-[node name="VestCeilingCollision" type="CollisionShape3D" parent="Vestibule" unique_id=1380383957]
+[node name="VestCeilingCollision" type="CollisionShape3D" parent="Vestibule" unique_id=928339593]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, 2.7, 2.9)
 shape = SubResource("BoxShape3D_s39")
 
-[node name="VestNorth0" type="MeshInstance3D" parent="Vestibule" unique_id=187817098]
+[node name="VestNorth0" type="MeshInstance3D" parent="Vestibule" unique_id=1483082373]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.5, 1.3, 2.1)
 mesh = SubResource("BoxMesh_s40")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="VestNorth0Collision" type="CollisionShape3D" parent="Vestibule" unique_id=258986139]
+[node name="VestNorth0Collision" type="CollisionShape3D" parent="Vestibule" unique_id=1590847872]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.5, 1.3, 2.1)
 shape = SubResource("BoxShape3D_s40")
 
-[node name="VestSouth0" type="MeshInstance3D" parent="Vestibule" unique_id=1443887895]
+[node name="VestSouth0" type="MeshInstance3D" parent="Vestibule" unique_id=695479021]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.5, 1.3, 3.7)
 mesh = SubResource("BoxMesh_s40")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="VestSouth0Collision" type="CollisionShape3D" parent="Vestibule" unique_id=1134490560]
+[node name="VestSouth0Collision" type="CollisionShape3D" parent="Vestibule" unique_id=129046062]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.5, 1.3, 3.7)
 shape = SubResource("BoxShape3D_s40")
 
-[node name="VestEnd0" type="MeshInstance3D" parent="Vestibule" unique_id=1905157009]
+[node name="VestEnd0" type="MeshInstance3D" parent="Vestibule" unique_id=1323318288]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.3, 1.3, 2.9)
 mesh = SubResource("BoxMesh_s26")
 surface_material_override/0 = ExtResource("2_wall")
 
-[node name="VestEnd0Collision" type="CollisionShape3D" parent="Vestibule" unique_id=1798028482]
+[node name="VestEnd0Collision" type="CollisionShape3D" parent="Vestibule" unique_id=1641678144]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.3, 1.3, 2.9)
 shape = SubResource("BoxShape3D_s26")
 
-[node name="VestSign" type="MeshInstance3D" parent="Vestibule" unique_id=48924680]
+[node name="VestSign" type="MeshInstance3D" parent="Vestibule" unique_id=356445836]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.19, 2.2, 2.9)
 cast_shadow = 0
 mesh = SubResource("BoxMesh_s41")
 surface_material_override/0 = ExtResource("10_cyan")
 
-[node name="Living" type="StaticBody3D" parent="." unique_id=1326548743]
+[node name="Living" type="StaticBody3D" parent="." unique_id=1166172443]
 
-[node name="TableTop" type="MeshInstance3D" parent="Living" unique_id=1539121267]
+[node name="TableTop" type="MeshInstance3D" parent="Living" unique_id=3190235]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1, 0.73, -1.3)
 mesh = SubResource("BoxMesh_s42")
 surface_material_override/0 = ExtResource("6_dark")
 
-[node name="TableTopCollision" type="CollisionShape3D" parent="Living" unique_id=934072463]
+[node name="TableTopCollision" type="CollisionShape3D" parent="Living" unique_id=220737242]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1, 0.375, -1.3)
-shape = SubResource("BoxShape3D_s72")
+shape = SubResource("BoxShape3D_s66")
 
-[node name="TablePedestal" type="MeshInstance3D" parent="Living" unique_id=258501594]
+[node name="TablePedestal" type="MeshInstance3D" parent="Living" unique_id=1318466585]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1, 0.36, -1.3)
 mesh = SubResource("BoxMesh_s43")
 surface_material_override/0 = ExtResource("5_steel")
 
-[node name="TableBase" type="MeshInstance3D" parent="Living" unique_id=464858737]
+[node name="TableBase" type="MeshInstance3D" parent="Living" unique_id=1560916727]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1, 0.01, -1.3)
 mesh = SubResource("BoxMesh_s44")
 surface_material_override/0 = ExtResource("5_steel")
 
-[node name="Shelf" type="MeshInstance3D" parent="Living" unique_id=234455973]
+[node name="Shelf" type="MeshInstance3D" parent="Living" unique_id=2024317887]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.86, 1.1, -1.5)
 mesh = SubResource("BoxMesh_s45")
 surface_material_override/0 = ExtResource("4_gunmetal")
 
-[node name="ShelfCollision" type="CollisionShape3D" parent="Living" unique_id=307941902]
+[node name="ShelfCollision" type="CollisionShape3D" parent="Living" unique_id=1486147838]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.86, 1.1, -1.5)
 shape = SubResource("BoxShape3D_s45")
 
-[node name="ShelfLip" type="MeshInstance3D" parent="Living" unique_id=2089182865]
+[node name="ShelfLip" type="MeshInstance3D" parent="Living" unique_id=1783556152]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.73, 1.14, -1.5)
 mesh = SubResource("BoxMesh_s46")
 surface_material_override/0 = ExtResource("4_gunmetal")
 
-[node name="ShelfLipCollision" type="CollisionShape3D" parent="Living" unique_id=195699644]
+[node name="ShelfLipCollision" type="CollisionShape3D" parent="Living" unique_id=247158140]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.73, 1.14, -1.5)
 shape = SubResource("BoxShape3D_s46")
 
-[node name="NeonStrip" type="MeshInstance3D" parent="Living" unique_id=2049016642]
+[node name="NeonStrip" type="MeshInstance3D" parent="Living" unique_id=1348848914]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.99, 2.2, -0.2)
 cast_shadow = 0
 mesh = SubResource("BoxMesh_s47")
 surface_material_override/0 = ExtResource("9_magenta")
 
-[node name="LampDisc" type="MeshInstance3D" parent="Living" unique_id=596821002]
+[node name="LampDisc" type="MeshInstance3D" parent="Living" unique_id=446127283]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.585, -0.5)
 cast_shadow = 0
 mesh = SubResource("BoxMesh_s48")
 surface_material_override/0 = ExtResource("11_lamp")
 
-[node name="Kitchen" type="StaticBody3D" parent="." unique_id=389460953]
+[node name="Kitchen" type="StaticBody3D" parent="." unique_id=886504499]
 
-[node name="CounterBody" type="MeshInstance3D" parent="Kitchen" unique_id=266851927]
+[node name="CounterBody" type="MeshInstance3D" parent="Kitchen" unique_id=1025844738]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.1, 0.44, -0.5)
 mesh = SubResource("BoxMesh_s49")
 surface_material_override/0 = ExtResource("6_dark")
 
-[node name="CounterBodyCollision" type="CollisionShape3D" parent="Kitchen" unique_id=1170605255]
+[node name="CounterBodyCollision" type="CollisionShape3D" parent="Kitchen" unique_id=211152904]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.1, 0.44, -0.5)
 shape = SubResource("BoxShape3D_s49")
 
-[node name="CounterTop" type="MeshInstance3D" parent="Kitchen" unique_id=1228070701]
+[node name="CounterTop" type="MeshInstance3D" parent="Kitchen" unique_id=1399833645]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.08, 0.9, -0.5)
 mesh = SubResource("BoxMesh_s50")
 surface_material_override/0 = ExtResource("5_steel")
 
-[node name="CounterTopCollision" type="CollisionShape3D" parent="Kitchen" unique_id=1254199768]
+[node name="CounterTopCollision" type="CollisionShape3D" parent="Kitchen" unique_id=1200911300]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.08, 0.9, -0.5)
 shape = SubResource("BoxShape3D_s50")
 
-[node name="Backsplash" type="MeshInstance3D" parent="Kitchen" unique_id=439593980]
+[node name="Backsplash" type="MeshInstance3D" parent="Kitchen" unique_id=928273288]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.39, 1.25, -0.5)
 mesh = SubResource("BoxMesh_s51")
 surface_material_override/0 = ExtResource("16_ceramic")
 
-[node name="CounterNeon" type="MeshInstance3D" parent="Kitchen" unique_id=402403763]
+[node name="CounterNeon" type="MeshInstance3D" parent="Kitchen" unique_id=1148187582]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.37, 1.56, -0.5)
 cast_shadow = 0
 mesh = SubResource("BoxMesh_s52")
 surface_material_override/0 = ExtResource("10_cyan")
 
-[node name="TableTop" type="MeshInstance3D" parent="Kitchen" unique_id=350268512]
+[node name="TableTop" type="MeshInstance3D" parent="Kitchen" unique_id=712357138]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.4, 0.73, -1)
 mesh = SubResource("BoxMesh_s53")
 surface_material_override/0 = ExtResource("15_wood")
 
-[node name="TableTopCollision" type="CollisionShape3D" parent="Kitchen" unique_id=42549421]
+[node name="TableTopCollision" type="CollisionShape3D" parent="Kitchen" unique_id=144886597]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.4, 0.375, -1)
-shape = SubResource("BoxShape3D_s73")
+shape = SubResource("BoxShape3D_s67")
 
-[node name="TablePedestal" type="MeshInstance3D" parent="Kitchen" unique_id=1688338667]
+[node name="TablePedestal" type="MeshInstance3D" parent="Kitchen" unique_id=1487230709]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.4, 0.36, -1)
 mesh = SubResource("BoxMesh_s43")
 surface_material_override/0 = ExtResource("5_steel")
 
-[node name="TableBase" type="MeshInstance3D" parent="Kitchen" unique_id=378341972]
+[node name="TableBase" type="MeshInstance3D" parent="Kitchen" unique_id=990845213]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.4, 0.01, -1)
 mesh = SubResource("BoxMesh_s54")
 surface_material_override/0 = ExtResource("5_steel")
 
-[node name="LampDisc" type="MeshInstance3D" parent="Kitchen" unique_id=1169419698]
+[node name="LampDisc" type="MeshInstance3D" parent="Kitchen" unique_id=1180590348]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.8, 2.585, -0.5)
 cast_shadow = 0
 mesh = SubResource("BoxMesh_s55")
 surface_material_override/0 = ExtResource("11_lamp")
 
-[node name="Bedroom" type="StaticBody3D" parent="." unique_id=1833587135]
+[node name="Bedroom" type="StaticBody3D" parent="." unique_id=1314676812]
 
-[node name="BedFrame" type="MeshInstance3D" parent="Bedroom" unique_id=2061086241]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.75, 0.15, -0.9)
-mesh = SubResource("BoxMesh_s56")
-surface_material_override/0 = ExtResource("15_wood")
-
-[node name="BedFrameCollision" type="CollisionShape3D" parent="Bedroom" unique_id=617388424]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.75, 0.15, -0.9)
-shape = SubResource("BoxShape3D_s56")
-
-[node name="Mattress" type="MeshInstance3D" parent="Bedroom" unique_id=1798008930]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.7, 0.4, -0.9)
-mesh = SubResource("BoxMesh_s57")
-surface_material_override/0 = ExtResource("14_linen")
-
-[node name="MattressCollision" type="CollisionShape3D" parent="Bedroom" unique_id=1831498043]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.7, 0.4, -0.9)
-shape = SubResource("BoxShape3D_s57")
-
-[node name="Pillow" type="MeshInstance3D" parent="Bedroom" unique_id=687821449]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 0.56, -0.9)
-mesh = SubResource("BoxMesh_s58")
-surface_material_override/0 = ExtResource("14_linen")
-
-[node name="PillowCollision" type="CollisionShape3D" parent="Bedroom" unique_id=431577501]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 0.56, -0.9)
-shape = SubResource("BoxShape3D_s58")
-
-[node name="Headboard" type="MeshInstance3D" parent="Bedroom" unique_id=1818839868]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.76, 0.55, -0.9)
-mesh = SubResource("BoxMesh_s59")
-surface_material_override/0 = ExtResource("15_wood")
-
-[node name="HeadboardCollision" type="CollisionShape3D" parent="Bedroom" unique_id=1967186622]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.76, 0.55, -0.9)
-shape = SubResource("BoxShape3D_s59")
-
-[node name="Nightstand" type="MeshInstance3D" parent="Bedroom" unique_id=287499896]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 0.25, 0.35)
-mesh = SubResource("BoxMesh_s60")
-surface_material_override/0 = ExtResource("15_wood")
-
-[node name="NightstandCollision" type="CollisionShape3D" parent="Bedroom" unique_id=1656221945]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 0.25, 0.35)
-shape = SubResource("BoxShape3D_s60")
-
-[node name="Wardrobe" type="MeshInstance3D" parent="Bedroom" unique_id=1759971393]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.9, 1.05, 1.68)
-mesh = SubResource("BoxMesh_s61")
-surface_material_override/0 = ExtResource("6_dark")
-
-[node name="WardrobeCollision" type="CollisionShape3D" parent="Bedroom" unique_id=1372143385]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.9, 1.05, 1.68)
-shape = SubResource("BoxShape3D_s61")
-
-[node name="BedNeon" type="MeshInstance3D" parent="Bedroom" unique_id=122571279]
+[node name="BedNeon" type="MeshInstance3D" parent="Bedroom" unique_id=3920232]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.79, 1.7, -0.9)
 cast_shadow = 0
-mesh = SubResource("BoxMesh_s62")
+mesh = SubResource("BoxMesh_s56")
 surface_material_override/0 = ExtResource("10_cyan")
 
-[node name="LampDisc" type="MeshInstance3D" parent="Bedroom" unique_id=1324741935]
+[node name="LampDisc" type="MeshInstance3D" parent="Bedroom" unique_id=212717662]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 2.585, -0.5)
 cast_shadow = 0
 mesh = SubResource("BoxMesh_s55")
 surface_material_override/0 = ExtResource("11_lamp")
 
-[node name="Bathroom" type="StaticBody3D" parent="." unique_id=2128748290]
+[node name="Bathroom" type="StaticBody3D" parent="." unique_id=1194435648]
 
-[node name="SinkCabinet" type="MeshInstance3D" parent="Bathroom" unique_id=1161416128]
+[node name="SinkCabinet" type="MeshInstance3D" parent="Bathroom" unique_id=208411335]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.75, 0.425, 5)
-mesh = SubResource("BoxMesh_s63")
+mesh = SubResource("BoxMesh_s57")
 surface_material_override/0 = ExtResource("16_ceramic")
 
-[node name="SinkCabinetCollision" type="CollisionShape3D" parent="Bathroom" unique_id=2138691552]
+[node name="SinkCabinetCollision" type="CollisionShape3D" parent="Bathroom" unique_id=843394968]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.75, 0.425, 5)
-shape = SubResource("BoxShape3D_s63")
+shape = SubResource("BoxShape3D_s57")
 
-[node name="Mirror" type="MeshInstance3D" parent="Bathroom" unique_id=1856256489]
+[node name="Mirror" type="MeshInstance3D" parent="Bathroom" unique_id=2091598096]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.99, 1.45, 5)
-mesh = SubResource("BoxMesh_s64")
+mesh = SubResource("BoxMesh_s58")
 surface_material_override/0 = ExtResource("13_mirror")
 
-[node name="ToiletBase" type="MeshInstance3D" parent="Bathroom" unique_id=991944631]
+[node name="ToiletBase" type="MeshInstance3D" parent="Bathroom" unique_id=730085239]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 0.21, 5.85)
-mesh = SubResource("BoxMesh_s65")
+mesh = SubResource("BoxMesh_s59")
 surface_material_override/0 = ExtResource("16_ceramic")
 
-[node name="ToiletBaseCollision" type="CollisionShape3D" parent="Bathroom" unique_id=1994304664]
+[node name="ToiletBaseCollision" type="CollisionShape3D" parent="Bathroom" unique_id=1181076560]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 0.21, 5.85)
-shape = SubResource("BoxShape3D_s65")
+shape = SubResource("BoxShape3D_s59")
 
-[node name="ToiletTank" type="MeshInstance3D" parent="Bathroom" unique_id=2132985001]
+[node name="ToiletTank" type="MeshInstance3D" parent="Bathroom" unique_id=378727516]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 0.62, 6.1)
-mesh = SubResource("BoxMesh_s66")
+mesh = SubResource("BoxMesh_s60")
 surface_material_override/0 = ExtResource("16_ceramic")
 
-[node name="ToiletTankCollision" type="CollisionShape3D" parent="Bathroom" unique_id=457397926]
+[node name="ToiletTankCollision" type="CollisionShape3D" parent="Bathroom" unique_id=202864198]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 0.62, 6.1)
-shape = SubResource("BoxShape3D_s66")
+shape = SubResource("BoxShape3D_s60")
 
-[node name="ShowerTray" type="MeshInstance3D" parent="Bathroom" unique_id=91043750]
+[node name="ShowerTray" type="MeshInstance3D" parent="Bathroom" unique_id=1552529746]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.55, 0.03, 4.3)
-mesh = SubResource("BoxMesh_s67")
+mesh = SubResource("BoxMesh_s61")
 surface_material_override/0 = ExtResource("16_ceramic")
 
-[node name="ShowerTrayCollision" type="CollisionShape3D" parent="Bathroom" unique_id=973290520]
+[node name="ShowerTrayCollision" type="CollisionShape3D" parent="Bathroom" unique_id=1566000660]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.55, 0.03, 4.3)
-shape = SubResource("BoxShape3D_s67")
+shape = SubResource("BoxShape3D_s61")
 
-[node name="ShowerHead" type="MeshInstance3D" parent="Bathroom" unique_id=1736413222]
+[node name="ShowerHead" type="MeshInstance3D" parent="Bathroom" unique_id=1179729726]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.55, 2.2, 4)
-mesh = SubResource("BoxMesh_s68")
+mesh = SubResource("BoxMesh_s62")
 surface_material_override/0 = ExtResource("5_steel")
 
-[node name="LampDisc" type="MeshInstance3D" parent="Bathroom" unique_id=599724883]
+[node name="LampDisc" type="MeshInstance3D" parent="Bathroom" unique_id=413102878]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 2.585, 5)
 cast_shadow = 0
-mesh = SubResource("BoxMesh_s69")
+mesh = SubResource("BoxMesh_s63")
 surface_material_override/0 = ExtResource("11_lamp")
 
-[node name="Hallway" type="StaticBody3D" parent="." unique_id=1396232842]
+[node name="Hallway" type="StaticBody3D" parent="." unique_id=2081757550]
 
-[node name="ShoeBench" type="MeshInstance3D" parent="Hallway" unique_id=105937632]
+[node name="ShoeBench" type="MeshInstance3D" parent="Hallway" unique_id=705926799]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.6, 0.225, 3.4)
-mesh = SubResource("BoxMesh_s70")
+mesh = SubResource("BoxMesh_s64")
 surface_material_override/0 = ExtResource("15_wood")
 
-[node name="ShoeBenchCollision" type="CollisionShape3D" parent="Hallway" unique_id=518217506]
+[node name="ShoeBenchCollision" type="CollisionShape3D" parent="Hallway" unique_id=1807767227]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.6, 0.225, 3.4)
-shape = SubResource("BoxShape3D_s70")
+shape = SubResource("BoxShape3D_s64")
 
-[node name="LampDisc0" type="MeshInstance3D" parent="Hallway" unique_id=362144327]
+[node name="LampDisc0" type="MeshInstance3D" parent="Hallway" unique_id=1411486628]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 2.585, 2.9)
 cast_shadow = 0
-mesh = SubResource("BoxMesh_s71")
+mesh = SubResource("BoxMesh_s65")
 surface_material_override/0 = ExtResource("11_lamp")
 
-[node name="LampDisc1" type="MeshInstance3D" parent="Hallway" unique_id=1224117716]
+[node name="LampDisc1" type="MeshInstance3D" parent="Hallway" unique_id=1445514164]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.585, 2.9)
 cast_shadow = 0
-mesh = SubResource("BoxMesh_s71")
+mesh = SubResource("BoxMesh_s65")
 surface_material_override/0 = ExtResource("11_lamp")
 
-[node name="LampDisc2" type="MeshInstance3D" parent="Hallway" unique_id=2142024083]
+[node name="LampDisc2" type="MeshInstance3D" parent="Hallway" unique_id=185447352]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 2.585, 2.9)
 cast_shadow = 0
-mesh = SubResource("BoxMesh_s71")
+mesh = SubResource("BoxMesh_s65")
 surface_material_override/0 = ExtResource("11_lamp")
 
-[node name="Props" type="Node3D" parent="." unique_id=590199765]
+[node name="Props" type="Node3D" parent="." unique_id=254950377]
 
-[node name="DoorLiving" parent="Props" unique_id=1122430389 instance=ExtResource("17_door")]
+[node name="DoorLiving" parent="Props" unique_id=1343865792 instance=ExtResource("17_door")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.62, 0, 1.98)
 
-[node name="DoorBedroom" parent="Props" unique_id=713017949 instance=ExtResource("17_door")]
+[node name="DoorBedroom" parent="Props" unique_id=1962977711 instance=ExtResource("17_door")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.38, 0, 1.98)
 
-[node name="DoorBathroom" parent="Props" unique_id=851745242 instance=ExtResource("17_door")]
+[node name="DoorBathroom" parent="Props" unique_id=2037544768 instance=ExtResource("17_door")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.98, 0, 3.82)
 
-[node name="DoorEntrance" parent="Props" unique_id=141549608 instance=ExtResource("17_door")]
+[node name="DoorEntrance" parent="Props" unique_id=2015367403 instance=ExtResource("17_door")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 6.38, 0, 3.33)
 
-[node name="TrashCan" parent="Props" unique_id=1762500481 instance=ExtResource("20_trash")]
+[node name="TrashCan" parent="Props" unique_id=2003882879 instance=ExtResource("20_trash")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.15, 0, 1.6)
 
-[node name="Fridge" parent="Props" unique_id=295664688 instance=ExtResource("21_fridge")]
+[node name="Fridge" parent="Props" unique_id=1501052154 instance=ExtResource("21_fridge")]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 6.055, 0, -2.53)
 
-[node name="Sofa" parent="Props" unique_id=1328037339 instance=ExtResource("22_sofa")]
+[node name="Sofa" parent="Props" unique_id=758895250 instance=ExtResource("22_sofa")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -1.6, 0, 0.9)
 
-[node name="SofaPillow1" parent="Props" unique_id=785170224 instance=ExtResource("22_pillow")]
+[node name="SofaPillow1" parent="Props" unique_id=732464699 instance=ExtResource("22_pillow")]
 transform = Transform3D(-0.9848077, 0.16692145, 0.047863964, 0, 0.2756374, -0.9612617, -0.1736483, -0.94665796, -0.27144983, -0.88, 0.68, 0.9)
 
-[node name="SofaPillow2" parent="Props" unique_id=994239112 instance=ExtResource("22_pillow")]
+[node name="SofaPillow2" parent="Props" unique_id=1205860285 instance=ExtResource("22_pillow")]
 transform = Transform3D(-0.9848077, -0.16692138, -0.04786394, 0, 0.2756374, -0.9612617, 0.17364822, -0.94665796, -0.27144983, -2.3, 0.68, 0.9)
 
-[node name="Ball" parent="Props" unique_id=714283672 instance=ExtResource("18_ball")]
+[node name="Ball" parent="Props" unique_id=1377676827 instance=ExtResource("18_ball")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.84, 1.22, -1.8)
 
-[node name="CanLivingTable" parent="Props" unique_id=1729012144 instance=ExtResource("19_can")]
+[node name="CanLivingTable" parent="Props" unique_id=331032506 instance=ExtResource("19_can")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.25, 0.812, -1.25)
 
-[node name="CanWindowLedge" parent="Props" unique_id=201503206 instance=ExtResource("19_can")]
+[node name="CanWindowLedge" parent="Props" unique_id=449115810 instance=ExtResource("19_can")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2, 0.502, -2.94)
 
-[node name="CanCounter" parent="Props" unique_id=1911073209 instance=ExtResource("19_can")]
+[node name="CanCounter" parent="Props" unique_id=305357713 instance=ExtResource("19_can")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0.982, 0.3)
 
-[node name="CanKitchenTable" parent="Props" unique_id=2024424152 instance=ExtResource("19_can")]
+[node name="CanKitchenTable" parent="Props" unique_id=1426850198 instance=ExtResource("19_can")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.3, 0.812, -1.1)
 
-[node name="CanNightstand" parent="Props" unique_id=1092060230 instance=ExtResource("19_can")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 0.562, 0.35)
+[node name="CanNightstand" parent="Props" unique_id=919538106 instance=ExtResource("19_can")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 0.612, 0.45)
 
-[node name="CanSink" parent="Props" unique_id=252350660 instance=ExtResource("19_can")]
+[node name="ABPanel" parent="Props" unique_id=1322416313 instance=ExtResource("23_ab_panel")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -3.2, 1.25, 0.5)
+
+[node name="CanSink" parent="Props" unique_id=472594155 instance=ExtResource("19_can")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.7, 0.912, 4.75)
 
-[node name="Seats" type="Node3D" parent="." unique_id=145005650]
+[node name="Bed" type="Node3D" parent="Props" unique_id=59215242]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -5.7, 0, -0.9)
+script = ExtResource("31_ab")
 
-[node name="SofaSeat" type="Area3D" parent="Seats" unique_id=2134061986 node_paths=PackedStringArray("sit_point", "stand_point", "prompt")]
+[node name="A" parent="Props/Bed" unique_id=1511818728 instance=ExtResource("24_bed_a")]
+
+[node name="B" parent="Props/Bed" unique_id=1305308869 instance=ExtResource("25_bed_b")]
+
+[node name="Wardrobe" type="Node3D" parent="Props" unique_id=736161195]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -5.9, 0, 1.7)
+script = ExtResource("31_ab")
+
+[node name="A" parent="Props/Wardrobe" unique_id=1765972701 instance=ExtResource("26_wardrobe_a")]
+
+[node name="B" parent="Props/Wardrobe" unique_id=963344162 instance=ExtResource("27_wardrobe_b")]
+
+[node name="Nightstand" type="Node3D" parent="Props" unique_id=213375549]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -6.6, 0, 0.35)
+script = ExtResource("31_ab")
+
+[node name="A" parent="Props/Nightstand" unique_id=515107958 instance=ExtResource("28_nightstand_a")]
+
+[node name="B" parent="Props/Nightstand" unique_id=601846376 instance=ExtResource("29_nightstand_b")]
+
+[node name="Seats" type="Node3D" parent="." unique_id=1070421022]
+
+[node name="SofaSeat" type="Area3D" parent="Seats" unique_id=993998721 node_paths=PackedStringArray("sit_point", "stand_point", "prompt")]
 collision_layer = 0
 collision_mask = 524288
 monitorable = false
-script = ExtResource("23_seat")
+script = ExtResource("30_seat")
 sit_point = NodePath("../SofaSeatSit")
 stand_point = NodePath("../SofaSeatStand")
 prompt = NodePath("../SofaSeatPrompt")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Seats/SofaSeat" unique_id=803155026]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Seats/SofaSeat" unique_id=1425978074]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 1, 0.15)
 shape = SubResource("BoxShape3D_seat0")
 
-[node name="SofaSeatSit" type="Marker3D" parent="Seats" unique_id=1451169764]
+[node name="SofaSeatSit" type="Marker3D" parent="Seats" unique_id=461950302]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 1.15, 0.85)
 
-[node name="SofaSeatStand" type="Marker3D" parent="Seats" unique_id=1607711354]
+[node name="SofaSeatStand" type="Marker3D" parent="Seats" unique_id=1613519750]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 0, 0.1)
 
-[node name="SofaSeatPrompt" type="Label3D" parent="Seats" unique_id=1479570170]
+[node name="SofaSeatPrompt" type="Label3D" parent="Seats" unique_id=2001909403]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 0.9, 0.9)
 pixel_size = 0.0015
 billboard = 1
@@ -1197,26 +1141,26 @@ outline_modulate = Color(0, 0, 0, 0.6)
 text = "X  ·  sit"
 font_size = 48
 
-[node name="BedSeat" type="Area3D" parent="Seats" unique_id=1178006362 node_paths=PackedStringArray("sit_point", "stand_point", "prompt")]
+[node name="BedSeat" type="Area3D" parent="Seats" unique_id=1790244115 node_paths=PackedStringArray("sit_point", "stand_point", "prompt")]
 collision_layer = 0
 collision_mask = 524288
 monitorable = false
-script = ExtResource("23_seat")
+script = ExtResource("30_seat")
 sit_point = NodePath("../BedSeatSit")
 stand_point = NodePath("../BedSeatStand")
 prompt = NodePath("../BedSeatPrompt")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Seats/BedSeat" unique_id=1965342468]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Seats/BedSeat" unique_id=955730352]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.3, 1, -2.25)
 shape = SubResource("BoxShape3D_seat1")
 
-[node name="BedSeatSit" type="Marker3D" parent="Seats" unique_id=1789278481]
+[node name="BedSeatSit" type="Marker3D" parent="Seats" unique_id=2050890826]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.3, 1.2, -1.5)
 
-[node name="BedSeatStand" type="Marker3D" parent="Seats" unique_id=1592547530]
+[node name="BedSeatStand" type="Marker3D" parent="Seats" unique_id=1871888322]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.3, 0, -2.3)
 
-[node name="BedSeatPrompt" type="Label3D" parent="Seats" unique_id=933559082]
+[node name="BedSeatPrompt" type="Label3D" parent="Seats" unique_id=1899582973]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.3, 0.85, -1.6)
 pixel_size = 0.0015
 billboard = 1
@@ -1225,9 +1169,9 @@ outline_modulate = Color(0, 0, 0, 0.6)
 text = "X  ·  sit"
 font_size = 48
 
-[node name="Lighting" type="Node3D" parent="." unique_id=1849539531]
+[node name="Lighting" type="Node3D" parent="." unique_id=2138228873]
 
-[node name="LivingCeiling" type="OmniLight3D" parent="Lighting" unique_id=154228409]
+[node name="LivingCeiling" type="OmniLight3D" parent="Lighting" unique_id=980427086]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, -0.5)
 light_color = Color(1, 0.77, 0.56, 1)
 light_energy = 1.4
@@ -1235,13 +1179,13 @@ shadow_enabled = true
 omni_range = 6.5
 omni_attenuation = 1.2
 
-[node name="LivingNeonSpill" type="OmniLight3D" parent="Lighting" unique_id=91149900]
+[node name="LivingNeonSpill" type="OmniLight3D" parent="Lighting" unique_id=1198681909]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.8, 2.1, -0.2)
 light_color = Color(1, 0.165, 0.427, 1)
 light_energy = 0.35
 omni_range = 2.5
 
-[node name="LivingCitySpill" type="SpotLight3D" parent="Lighting" unique_id=941946869]
+[node name="LivingCitySpill" type="SpotLight3D" parent="Lighting" unique_id=1162926845]
 transform = Transform3D(-1, 1.8176218e-08, -8.551238e-08, 0, 0.9781476, 0.2079117, 8.742278e-08, 0.2079117, -0.9781476, 0, 2.2, -5.5)
 light_color = Color(0.45, 0.55, 1, 1)
 light_energy = 1.6
@@ -1249,149 +1193,143 @@ spot_range = 12.0
 spot_angle = 55.0
 spot_angle_attenuation = 1.5
 
-[node name="KitchenCeiling" type="OmniLight3D" parent="Lighting" unique_id=1255857321]
+[node name="KitchenCeiling" type="OmniLight3D" parent="Lighting" unique_id=809473495]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.8, 2.45, -0.5)
 light_color = Color(1, 0.88, 0.75, 1)
 omni_range = 4.5
 
-[node name="KitchenCounter" type="OmniLight3D" parent="Lighting" unique_id=1318980762]
+[node name="KitchenCounter" type="OmniLight3D" parent="Lighting" unique_id=1360754764]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 1.5, -0.5)
 light_color = Color(0.6, 0.9, 1, 1)
 light_energy = 0.35
 omni_range = 2.0
 
-[node name="KitchenCitySpill" type="SpotLight3D" parent="Lighting" unique_id=1059941905]
+[node name="KitchenCitySpill" type="SpotLight3D" parent="Lighting" unique_id=790216604]
 transform = Transform3D(-1, 1.8176218e-08, -8.551238e-08, 0, 0.9781476, 0.2079117, 8.742278e-08, 0.2079117, -0.9781476, 4.55, 2.2, -5)
 light_color = Color(0.45, 0.55, 1, 1)
 spot_range = 10.0
 spot_angle_attenuation = 1.5
 
-[node name="BedroomCeiling" type="OmniLight3D" parent="Lighting" unique_id=1978746725]
+[node name="BedroomCeiling" type="OmniLight3D" parent="Lighting" unique_id=125254263]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 2.45, -0.5)
 light_color = Color(1, 0.72, 0.5, 1)
 light_energy = 0.7
 omni_range = 4.5
 
-[node name="BedroomLamp" type="OmniLight3D" parent="Lighting" unique_id=1410139918]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.45, 0.85, 0.35)
-light_color = Color(1, 0.65, 0.4, 1)
-light_energy = 0.4
-omni_range = 1.8
-
-[node name="BedroomCitySpill" type="SpotLight3D" parent="Lighting" unique_id=997723870]
+[node name="BedroomCitySpill" type="SpotLight3D" parent="Lighting" unique_id=1537555782]
 transform = Transform3D(-1, 1.8176218e-08, -8.551238e-08, 0, 0.9781476, 0.2079117, 8.742278e-08, 0.2079117, -0.9781476, -5, 2.2, -5)
 light_color = Color(0.55, 0.45, 1, 1)
 spot_range = 10.0
 spot_angle_attenuation = 1.5
 
-[node name="Hall0" type="OmniLight3D" parent="Lighting" unique_id=1611340768]
+[node name="Hall0" type="OmniLight3D" parent="Lighting" unique_id=1749931138]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 2.4, 2.9)
 light_color = Color(0.75, 0.88, 1, 1)
 light_energy = 0.45
 omni_range = 3.0
 
-[node name="Hall1" type="OmniLight3D" parent="Lighting" unique_id=1546823193]
+[node name="Hall1" type="OmniLight3D" parent="Lighting" unique_id=1526730305]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4, 2.9)
 light_color = Color(0.75, 0.88, 1, 1)
 light_energy = 0.45
 omni_range = 3.0
 
-[node name="Hall2" type="OmniLight3D" parent="Lighting" unique_id=196142444]
+[node name="Hall2" type="OmniLight3D" parent="Lighting" unique_id=839785779]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 2.4, 2.9)
 light_color = Color(0.75, 0.88, 1, 1)
 light_energy = 0.45
 omni_range = 3.0
 
-[node name="BathCeiling" type="OmniLight3D" parent="Lighting" unique_id=921689591]
+[node name="BathCeiling" type="OmniLight3D" parent="Lighting" unique_id=148292601]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 2.4, 5)
 light_color = Color(0.9, 0.95, 1, 1)
 light_energy = 0.9
 omni_range = 3.5
 
-[node name="VestibuleLight" type="OmniLight3D" parent="Lighting" unique_id=1343815917]
+[node name="VestibuleLight" type="OmniLight3D" parent="Lighting" unique_id=1514060656]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, 2.35, 2.9)
 light_color = Color(0.6, 0.85, 1, 1)
 light_energy = 0.4
 omni_range = 2.2
 
-[node name="LivingProbe" type="ReflectionProbe" parent="Lighting" unique_id=1693460977]
+[node name="LivingProbe" type="ReflectionProbe" parent="Lighting" unique_id=1228104668]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, -0.5)
 size = Vector3(6.2, 2.7, 5.2)
 box_projection = true
 interior = true
 ambient_mode = 0
 
-[node name="KitchenProbe" type="ReflectionProbe" parent="Lighting" unique_id=802211887]
+[node name="KitchenProbe" type="ReflectionProbe" parent="Lighting" unique_id=368353390]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.8, 1.3, -0.5)
 size = Vector3(3.4, 2.7, 5.2)
 box_projection = true
 interior = true
 ambient_mode = 0
 
-[node name="BedroomProbe" type="ReflectionProbe" parent="Lighting" unique_id=573096447]
+[node name="BedroomProbe" type="ReflectionProbe" parent="Lighting" unique_id=235678323]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 1.3, -0.5)
 size = Vector3(3.8, 2.7, 5.2)
 box_projection = true
 interior = true
 ambient_mode = 0
 
-[node name="HallwayProbe" type="ReflectionProbe" parent="Lighting" unique_id=1014085642]
+[node name="HallwayProbe" type="ReflectionProbe" parent="Lighting" unique_id=1031075570]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 1.3, 2.9)
 size = Vector3(13.4, 2.7, 1.6)
 box_projection = true
 interior = true
 ambient_mode = 0
 
-[node name="BathroomProbe" type="ReflectionProbe" parent="Lighting" unique_id=803117691]
+[node name="BathroomProbe" type="ReflectionProbe" parent="Lighting" unique_id=1116849455]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1.3, 5)
 size = Vector3(3.2, 2.7, 2.6)
 box_projection = true
 interior = true
 ambient_mode = 0
 
-[node name="Entries" type="Node3D" parent="." unique_id=673325746]
+[node name="Entries" type="Node3D" parent="." unique_id=1307496385]
 
-[node name="Default" type="Marker3D" parent="Entries" unique_id=1892265946]
+[node name="Default" type="Marker3D" parent="Entries" unique_id=1180171271]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0, -0.4)
 
-[node name="Entrance" type="Marker3D" parent="Entries" unique_id=1133150709]
+[node name="Entrance" type="Marker3D" parent="Entries" unique_id=1971677344]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 7.4, 0, 2.9)
 
-[node name="PerfPath" type="Node3D" parent="." unique_id=917586665]
+[node name="PerfPath" type="Node3D" parent="." unique_id=207401282]
 metadata/_doc = "Perf flythrough waypoints at eye height, visited in order; -Z is the view direction. See tools/perf."
 
-[node name="P0" type="Marker3D" parent="PerfPath" unique_id=175335722]
+[node name="P0" type="Marker3D" parent="PerfPath" unique_id=767760603]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 1.7, -0.4)
 
-[node name="P1" type="Marker3D" parent="PerfPath" unique_id=33162030]
+[node name="P1" type="Marker3D" parent="PerfPath" unique_id=1978457520]
 transform = Transform3D(1, 0, 0, 0, 0.9781476, 0.2079117, 0, -0.2079117, 0.9781476, 0, 1.7, -2.3)
 
-[node name="P2" type="Marker3D" parent="PerfPath" unique_id=336367307]
+[node name="P2" type="Marker3D" parent="PerfPath" unique_id=1295664376]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 2.3, 1.7, -0.3)
 
-[node name="P3" type="Marker3D" parent="PerfPath" unique_id=722856067]
+[node name="P3" type="Marker3D" parent="PerfPath" unique_id=1707120398]
 transform = Transform3D(0.8660254, 0.04357787, -0.49809736, 0, 0.9961947, 0.08715574, 0.5, -0.07547908, 0.8627299, 4.6, 1.7, -1)
 
-[node name="P4" type="Marker3D" parent="PerfPath" unique_id=2042459900]
+[node name="P4" type="Marker3D" parent="PerfPath" unique_id=762395460]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 4.7, 1.7, 1.4)
 
-[node name="P5" type="Marker3D" parent="PerfPath" unique_id=1667308962]
+[node name="P5" type="Marker3D" parent="PerfPath" unique_id=1008444421]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 4.7, 1.7, 2.9)
 
-[node name="P6" type="Marker3D" parent="PerfPath" unique_id=1018295635]
+[node name="P6" type="Marker3D" parent="PerfPath" unique_id=241714123]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.55, 1.7, 2.9)
 
-[node name="P7" type="Marker3D" parent="PerfPath" unique_id=2057593279]
+[node name="P7" type="Marker3D" parent="PerfPath" unique_id=76205137]
 transform = Transform3D(-0.9396926, 0.05939118, -0.3368241, 0, 0.9848077, 0.17364818, 0.34202015, 0.16317591, -0.9254165, 0.5, 1.7, 4.8)
 
-[node name="P8" type="Marker3D" parent="PerfPath" unique_id=680408588]
+[node name="P8" type="Marker3D" parent="PerfPath" unique_id=923599452]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0.55, 1.7, 2.9)
 
-[node name="P9" type="Marker3D" parent="PerfPath" unique_id=822697753]
+[node name="P9" type="Marker3D" parent="PerfPath" unique_id=1572943642]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.95, 1.7, 2.9)
 
-[node name="P10" type="Marker3D" parent="PerfPath" unique_id=1495160327]
+[node name="P10" type="Marker3D" parent="PerfPath" unique_id=896648939]
 transform = Transform3D(0.9396926, 0, 0.34202012, 0, 1, 0, -0.34202012, 0, 0.9396926, -3.95, 1.7, 1.5)
 
-[node name="P11" type="Marker3D" parent="PerfPath" unique_id=1361721462]
+[node name="P11" type="Marker3D" parent="PerfPath" unique_id=1566885972]
 transform = Transform3D(0.8660254, -0.04357787, 0.49809736, 0, 0.9961947, 0.08715574, -0.5, -0.07547908, 0.8627299, -5, 1.7, -1.8)

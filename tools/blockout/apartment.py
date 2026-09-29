@@ -41,8 +41,17 @@ SCENES = {
     "fridge": "res://assets/props/fridge/fridge.tscn",
     "sofa": "res://assets/props/sofa/sofa.tscn",
     "pillow": "res://assets/props/sofa/sofa_pillow.tscn",
+    "ab_panel": "res://assets/props/ab_panel/ab_panel.tscn",
+    # Bedroom set A/B (blind model comparison); keep one of each after the headset test.
+    "bed_a": "res://assets/props/bed/bed__fable-high.tscn",
+    "bed_b": "res://assets/props/bed/bed__opus-high.tscn",
+    "wardrobe_a": "res://assets/props/wardrobe/wardrobe__opus-high.tscn",
+    "wardrobe_b": "res://assets/props/wardrobe/wardrobe__fable-high.tscn",
+    "nightstand_a": "res://assets/props/nightstand/nightstand__fable-high.tscn",
+    "nightstand_b": "res://assets/props/nightstand/nightstand__opus-high.tscn",
 }
 SEAT_SCRIPT = "res://core/interaction/seat.gd"
+AB_SCRIPT = "res://core/debug/ab_switch.gd"
 
 boxes = []  # (group, name, center, size, material, collide)
 
@@ -156,12 +165,6 @@ box("Kitchen", "TableBase", (4.4, 0.01, -1.0), (0.5, 0.02, 0.5), "steel", False)
 box("Kitchen", "LampDisc", (4.8, 2.585, -0.5), (0.5, 0.03, 0.5), "lamp", False)
 
 # --- Bedroom ---------------------------------------------------------------
-box("Bedroom", "BedFrame", (-5.75, 0.15, -0.9), (2.1, 0.3, 1.6), "wood")
-box("Bedroom", "Mattress", (-5.7, 0.4, -0.9), (2.0, 0.2, 1.5), "linen")
-box("Bedroom", "Pillow", (-6.5, 0.56, -0.9), (0.35, 0.12, 1.2), "linen")
-box("Bedroom", "Headboard", (-6.76, 0.55, -0.9), (0.08, 1.1, 1.6), "wood")
-box("Bedroom", "Nightstand", (-6.5, 0.25, 0.35), (0.45, 0.5, 0.4), "wood")
-box("Bedroom", "Wardrobe", (-5.9, 1.05, 1.68), (1.5, 2.1, 0.6), "dark")
 box("Bedroom", "BedNeon", (-6.79, 1.7, -0.9), (0.02, 0.03, 1.4), "cyan", False)
 box("Bedroom", "LampDisc", (-5.0, 2.585, -0.5), (0.5, 0.03, 0.5), "lamp", False)
 
@@ -199,8 +202,20 @@ INSTANCES = [
     ("CanWindowLedge", "can", (-1.2, 0.502, -2.94), (0, 0, 0)),
     ("CanCounter", "can", (6.0, 0.982, 0.3), (0, 0, 0)),
     ("CanKitchenTable", "can", (4.3, 0.812, -1.1), (0, 0, 0)),
-    ("CanNightstand", "can", (-6.5, 0.562, 0.35), (0, 0, 0)),
+    ("CanNightstand", "can", (-6.5, 0.612, 0.45), (0, 0, 0)),
+    # Flips every A/B pair (bedroom east wall, seated reach).
+    ("ABPanel", "ab_panel", (-3.2, 1.25, 0.5), (0, -90, 0)),
     ("CanSink", "can", (1.7, 0.912, 4.75), (0, 0, 0)),
+]
+
+# Blind A/B pairs (core/debug/ab_switch.gd): name, scene A, scene B, position, rotation.
+# The ABPanel in the bedroom flips all of them. Empty outside an A/B test.
+AB_INSTANCES = [
+    # Bed: head end (-Z) against the west wall. Wardrobe: back against the hallway wall, faces north.
+    # Nightstand: west wall next to the bed head, faces east; carries its own lamp and light.
+    ("Bed", "bed_a", "bed_b", (-5.70, 0, -0.9), (0, 90, 0)),
+    ("Wardrobe", "wardrobe_a", "wardrobe_b", (-5.9, 0, 1.70), (0, 180, 0)),
+    ("Nightstand", "nightstand_a", "nightstand_b", (-6.60, 0, 0.35), (0, 90, 0)),
 ]
 
 # Seats: name, area center, area size, sit eye point, sit yaw, stand point, stand yaw, prompt pos
@@ -218,7 +233,6 @@ LIGHTS = [
     ("KitchenCounter", "Omni", (6.0, 1.5, -0.5), None, (0.6, 0.9, 1), 0.35, 2.0, False, ""),
     ("KitchenCitySpill", "Spot", (4.55, 2.2, -5.0), (-12, 180, 0), (0.45, 0.55, 1), 1.0, 10, False, "spot_angle = 45.0\nspot_angle_attenuation = 1.5\n"),
     ("BedroomCeiling", "Omni", (-5.0, 2.45, -0.5), None, (1, 0.72, 0.5), 0.7, 4.5, False, ""),
-    ("BedroomLamp", "Omni", (-6.45, 0.85, 0.35), None, (1, 0.65, 0.4), 0.4, 1.8, False, ""),
     ("BedroomCitySpill", "Spot", (-5.0, 2.2, -5.0), (-12, 180, 0), (0.55, 0.45, 1), 1.0, 10, False, "spot_angle = 45.0\nspot_angle_attenuation = 1.5\n"),
     ("Hall0", "Omni", (-4.5, 2.4, 2.9), None, (0.75, 0.88, 1), 0.45, 3.0, False, ""),
     ("Hall1", "Omni", (0.0, 2.4, 2.9), None, (0.75, 0.88, 1), 0.45, 3.0, False, ""),
@@ -279,6 +293,8 @@ def main():
     for key, path in SCENES.items():
         add_ext(key, "PackedScene", path)
     add_ext("seat", "Script", SEAT_SCRIPT)
+    if AB_INSTANCES:
+        add_ext("ab", "Script", AB_SCRIPT)
 
     sizes = {}
     all_sizes = [b[3] for b in boxes] + [b[5][1] for b in boxes if isinstance(b[5], tuple)]
@@ -324,6 +340,12 @@ def main():
         rot_line = f"rotation_degrees = {v3(rot)}\n" if any(rot) else ""
         nodes.append(f'[node name="{name}" parent="Props" instance=ExtResource("{ids[key]}")]\n'
                      f"position = {v3(pos)}\n{rot_line}")
+    for name, key_a, key_b, pos, rot in AB_INSTANCES:
+        rot_line = f"rotation_degrees = {v3(rot)}\n" if any(rot) else ""
+        nodes.append(f'[node name="{name}" type="Node3D" parent="Props"]\nposition = {v3(pos)}\n{rot_line}'
+                     f'script = ExtResource("{ids["ab"]}")\n')
+        for variant, key in (("A", key_a), ("B", key_b)):
+            nodes.append(f'[node name="{variant}" parent="Props/{name}" instance=ExtResource("{ids[key]}")]\n')
 
     nodes.append('[node name="Seats" type="Node3D" parent="."]\n')
     for name, center, size, sit, sit_yaw, stand, stand_yaw, prompt in SEATS:
