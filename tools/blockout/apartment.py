@@ -41,14 +41,9 @@ SCENES = {
     "fridge": "res://assets/props/fridge/fridge.tscn",
     "sofa": "res://assets/props/sofa/sofa.tscn",
     "pillow": "res://assets/props/sofa/sofa_pillow.tscn",
-    "ab_panel": "res://assets/props/ab_panel/ab_panel.tscn",
-    # Bedroom set A/B (blind model comparison); keep one of each after the headset test.
-    "bed_a": "res://assets/props/bed/bed__fable-high.tscn",
-    "bed_b": "res://assets/props/bed/bed__opus-high.tscn",
-    "wardrobe_a": "res://assets/props/wardrobe/wardrobe__opus-high.tscn",
-    "wardrobe_b": "res://assets/props/wardrobe/wardrobe__fable-high.tscn",
-    "nightstand_a": "res://assets/props/nightstand/nightstand__fable-high.tscn",
-    "nightstand_b": "res://assets/props/nightstand/nightstand__opus-high.tscn",
+    "bed": "res://assets/props/bed/bed.tscn",
+    "wardrobe": "res://assets/props/wardrobe/wardrobe.tscn",
+    "nightstand": "res://assets/props/nightstand/nightstand.tscn",
 }
 SEAT_SCRIPT = "res://core/interaction/seat.gd"
 AB_SCRIPT = "res://core/debug/ab_switch.gd"
@@ -203,20 +198,17 @@ INSTANCES = [
     ("CanCounter", "can", (6.0, 0.982, 0.3), (0, 0, 0)),
     ("CanKitchenTable", "can", (4.3, 0.812, -1.1), (0, 0, 0)),
     ("CanNightstand", "can", (-6.5, 0.612, 0.45), (0, 0, 0)),
-    # Flips every A/B pair (bedroom east wall, seated reach).
-    ("ABPanel", "ab_panel", (-3.2, 1.25, 0.5), (0, -90, 0)),
+    # Bedroom: bed head (-Z) against the west wall; wardrobe against the hallway wall, facing north;
+    # nightstand on the west wall next to the bed head, facing east (it carries its lamp and light).
+    ("Bed", "bed", (-5.70, 0, -0.9), (0, 90, 0)),
+    ("Wardrobe", "wardrobe", (-5.9, 0, 1.70), (0, 180, 0)),
+    ("Nightstand", "nightstand", (-6.60, 0, 0.35), (0, 90, 0)),
     ("CanSink", "can", (1.7, 0.912, 4.75), (0, 0, 0)),
 ]
 
 # Blind A/B pairs (core/debug/ab_switch.gd): name, scene A, scene B, position, rotation.
-# The ABPanel in the bedroom flips all of them. Empty outside an A/B test.
-AB_INSTANCES = [
-    # Bed: head end (-Z) against the west wall. Wardrobe: back against the hallway wall, faces north.
-    # Nightstand: west wall next to the bed head, faces east; carries its own lamp and light.
-    ("Bed", "bed_a", "bed_b", (-5.70, 0, -0.9), (0, 90, 0)),
-    ("Wardrobe", "wardrobe_a", "wardrobe_b", (-5.9, 0, 1.70), (0, 180, 0)),
-    ("Nightstand", "nightstand_a", "nightstand_b", (-6.60, 0, 0.35), (0, 90, 0)),
-]
+# Add an ABPanel (assets/props/ab_panel) to INSTANCES to flip them. Empty outside an A/B test (D-030, D-032).
+AB_INSTANCES = []
 
 # Seats: name, area center, area size, sit eye point, sit yaw, stand point, stand yaw, prompt pos
 SEATS = [

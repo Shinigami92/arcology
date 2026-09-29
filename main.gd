@@ -30,7 +30,13 @@ func _ready() -> void:
 	if args.has("perf"):
 		_start_perf(args)
 	elif args.has("test"):
-		add_child(load("res://tools/tests/%s_tests.gd" % args["test"]).new())
+		var suite := load("res://tools/tests/%s_tests.gd" % args["test"]) as GDScript
+		if not suite or not suite.can_instantiate():
+			# A parse error would otherwise leave the game running until a timeout.
+			push_error("TEST: suite '%s' failed to load (see the parse error above)" % args["test"])
+			get_tree().quit(2)
+			return
+		add_child(suite.new())
 	elif args.has("shots"):
 		var shots: Node = load(SHOTS_SCRIPT).new()
 		shots.set("zone", $Zones.get_child(0))

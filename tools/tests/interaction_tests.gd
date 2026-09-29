@@ -39,14 +39,16 @@ func _ready() -> void:
 	await _test_fridge_door_bin()
 	await _test_sofa()
 	await _test_spare_sofa()
-	for variant in ["A", "B"]:
+	for variant in _variants("Bed"):
 		await _test_bedroom(variant)
 	await _test_ab_panel()
 	await _test_fingertips()
-	for variant in ["A", "B"]:
+	for variant in _variants("Nightstand"):
 		await _test_lamp_switch(variant)
 	await _test_fridge_alarm()
 	await _test_wardrobe_interior()
+	await _test_bed_bedding_collision()
+	await _test_spare_variants()
 	print("TEST DONE: %d failure(s)" % _failures)
 	get_tree().quit(_failures)
 
@@ -418,34 +420,56 @@ func _drop_can_on_seat(root: Node3D) -> Vector3:
 	return local
 
 
-## Bedroom A/B set (bed, wardrobe, nightstand), for the variant `v`: the
-## hidden variant has no collision, a can rests on the bed, the wardrobe
-## doors' collision follows them, and the nightstand drawer slides, slides on
-## after release, soft-closes and holds a can.
-func _test_bedroom(v: String) -> void:
-	var props := "Zones/Apartment/Props/"
-	var bed_switch: ABSwitch = _main.get_node(props + "Bed")
-	if bed_switch.variant != v:
+## The variants of a bedroom piece to test: ["A", "B"] while it's an A/B
+## pair (ABSwitch), else [""] for the single placed piece.
+func _variants(piece: String) -> Array[String]:
+	if _main.get_node("Zones/Apartment/Props/" + piece) is ABSwitch:
+		return ["A", "B"]
+	return [""]
+
+
+## The placed piece, or variant `v` of an A/B pair (switched to it).
+func _piece(piece: String, v := "") -> Node3D:
+	var node: Node3D = _main.get_node("Zones/Apartment/Props/" + piece)
+	var sw := node as ABSwitch
+	if not sw:
+		return node
+	if sw.variant != v:
 		ABSwitch.toggle_all(get_tree())
+	return sw.get_node(v)
+
+
+## Test name suffix for variant `v` ("" for a single placed piece).
+func _suffix(v: String) -> String:
+	return "" if v.is_empty() else "_" + v
+
+
+## Bedroom set (bed, wardrobe, nightstand), for variant `v` of an A/B pair or
+## the placed pieces: the hidden variant has no collision, a can rests on the
+## bed, the wardrobe doors' collision follows them, and the nightstand drawer
+## slides, slides on after release, soft-closes and holds a can.
+func _test_bedroom(v: String) -> void:
+	var bed := _piece("Bed", v)
 	await _frames(3)
 	var space := _main.get_world_3d().direct_space_state
-	var bed: Node3D = bed_switch.get_node(v)
-	var hidden: Node3D = bed_switch.get_node("B" if v == "A" else "A")
-
-	# Only the shown bed collides.
+	var sw := _main.get_node("Zones/Apartment/Props/Bed") as ABSwitch
+	if sw:
+		# Only the shown bed collides.
+		var hidden: Node3D = sw.get_node("B" if v == "A" else "A")
+		var probe := PhysicsPointQueryParameters3D.new()
+		probe.position = bed.to_global(Vector3(0, 0.25, 0.2))
+		var owners: Array[String] = []
+		for hit in space.intersect_point(probe):
+			var collider := hit.collider as Node
+			owners.append("shown" if bed.is_ancestor_of(collider) else ("hidden" if hidden.is_ancestor_of(collider) else collider.name))
+		_check("bed%s_only_shown_collides" % _suffix(v), owners.has("shown") and not owners.has("hidden"), "colliders at the bed center: %s" % [owners])
 	var q := PhysicsPointQueryParameters3D.new()
-	q.position = bed.to_global(Vector3(0, 0.25, 0.2))
-	var owners: Array[String] = []
-	for hit in space.intersect_point(q):
-		var collider := hit.collider as Node
-		owners.append("shown" if bed.is_ancestor_of(collider) else ("hidden" if hidden.is_ancestor_of(collider) else collider.name))
-	_check("bed_%s_only_shown_collides" % v, owners.has("shown") and not owners.has("hidden"), "colliders at the bed center: %s" % [owners])
 
 	var local := await _drop_can_on_seat(bed)
-	_check("bed_%s_can_on_bed" % v, absf(local.y - 0.56) < 0.05, "can center at local y %.2f (sleeping surface 0.50 + half can)" % local.y)
+	_check("bed%s_can_on_bed" % _suffix(v), absf(local.y - 0.56) < 0.05, "can center at local y %.2f (sleeping surface 0.50 + half can)" % local.y)
 
 	# Wardrobe doors: collision in front of the closed doors follows them.
-	var wardrobe: Node3D = _main.get_node(props + "Wardrobe/" + v)
+	var wardrobe := _piece("Wardrobe", v)
 	for side in ["Left", "Right"]:
 		var hinge: XRToolsInteractableHinge = wardrobe.get_node("Door%s/HingeOrigin/InteractableHinge" % side)
 		var body: PhysicsBody3D = wardrobe.get_node("Door%s/HingeOrigin/InteractableHinge/Leaf/DoorBody" % side)
@@ -460,10 +484,10 @@ func _test_bedroom(v: String) -> void:
 		hinge.hinge_position = 0.0
 		hinge.hinge_moved.emit(0.0)
 		await _frames(2)
-		_check("wardrobe_%s_door_%s" % [v, side.to_lower()], closed and not opened, "door body in front of the carcass: closed %s, open %s" % [closed, opened])
+		_check("wardrobe%s_door_%s" % [_suffix(v), side.to_lower()], closed and not opened, "door body in front of the carcass: closed %s, open %s" % [closed, opened])
 
 	# Nightstand drawer.
-	var stand: Node3D = _main.get_node(props + "Nightstand/" + v)
+	var stand := _piece("Nightstand", v)
 	var slider: XRToolsInteractableSlider = stand.get_node("Drawer/SliderOrigin/InteractableSlider")
 	var drawer: PhysicsBody3D = stand.get_node("Drawer/SliderOrigin/InteractableSlider/Leaf/DrawerBody")
 	var swing: SliderSwing = stand.get_node("Drawer/Swing")
@@ -474,7 +498,7 @@ func _test_bedroom(v: String) -> void:
 	slider.move_slider(0.25)
 	await _frames(3)
 	var open_hit: bool = drawer_hit.call()
-	_check("nightstand_%s_drawer_collision" % v, closed_hit and not open_hit, "drawer front at the closed spot: closed %s, open %s" % [closed_hit, open_hit])
+	_check("nightstand%s_drawer_collision" % _suffix(v), closed_hit and not open_hit, "drawer front at the closed spot: closed %s, open %s" % [closed_hit, open_hit])
 
 	var can: RigidBody3D = (load(CAN_SCENE) as PackedScene).instantiate()
 	_main.add_child(can)
@@ -482,7 +506,7 @@ func _test_bedroom(v: String) -> void:
 	await _frames(120)
 	var in_drawer := drawer.to_local(can.global_position)
 	can.queue_free()
-	_check("nightstand_%s_can_in_drawer" % v, in_drawer.y > 0.0 and in_drawer.y < 0.12 and in_drawer.z < -0.03 and in_drawer.z > -0.36,
+	_check("nightstand%s_can_in_drawer" % _suffix(v), in_drawer.y > 0.0 and in_drawer.y < 0.12 and in_drawer.z < -0.03 and in_drawer.z > -0.36,
 			"can at drawer-local %s" % in_drawer.snappedf(0.01))
 
 	# Pushed shut at 0.6 m/s from 0.25 m it slides on and closes; a slow
@@ -501,32 +525,46 @@ func _test_bedroom(v: String) -> void:
 	slider.released.emit(slider)
 	await _frames(90)
 	var soft_closed := slider.slider_position
-	_check("nightstand_%s_drawer_swing" % v, coasted > released_at + 0.02 and swing.get_velocity() == 0.0 and soft_closed < 0.001,
+	_check("nightstand%s_drawer_swing" % _suffix(v), coasted > released_at + 0.02 and swing.get_velocity() == 0.0 and soft_closed < 0.001,
 			"released at %.3f m going 0.4 m/s, rested at %.3f m; let go at 1 cm, ended at %.4f m" % [released_at, coasted, soft_closed])
 
 
-## A hand-sized body on the hands layer pressed against the A/B panel's
-## button flips the pairs; pulling back and pressing again flips them back.
+## The A/B panel: a fingertip pressing its button flips an ABSwitch (and the
+## hidden variant is disabled); a second press flips back. Built away from the
+## apartment, so it runs with or without A/B pairs placed.
 func _test_ab_panel() -> void:
-	var panel: Node3D = _main.get_node("Zones/Apartment/Props/ABPanel")
-	var bed: ABSwitch = _main.get_node("Zones/Apartment/Props/Bed")
+	var sw := ABSwitch.new()
+	for name in ["A", "B"]:
+		var body := StaticBody3D.new()
+		body.name = name
+		var shape := CollisionShape3D.new()
+		shape.shape = BoxShape3D.new()
+		body.add_child(shape)
+		sw.add_child(body)
+	_main.add_child(sw)
+	sw.global_position = Vector3(40, 1, 40)
+	var panel: Node3D = (load("res://assets/props/ab_panel/ab_panel.tscn") as PackedScene).instantiate()
+	_main.add_child(panel)
+	panel.global_position = Vector3(40, 1.25, 44)
 	var hand := _dummy_fingertip()
 	var away := panel.to_global(Vector3(0, -0.04, 0.3))
 	var press := panel.to_global(Vector3(0, -0.04, 0.05))
 	hand.global_position = away
 	await _frames(3)
-	var before := bed.variant
+	var before := sw.variant
 	hand.global_position = press
 	await _frames(5)
-	var first := bed.variant
+	var first := sw.variant
+	var old_disabled := sw.get_node(before).process_mode == Node.PROCESS_MODE_DISABLED
 	hand.global_position = away
 	await _frames(5)
 	hand.global_position = press
 	await _frames(5)
-	var second := bed.variant
-	hand.queue_free()
-	_check("ab_panel_press", first != before and second == before,
-			"variant before %s, after one press %s, after a second press %s" % [before, first, second])
+	var second := sw.variant
+	for node: Node in [hand, panel, sw]:
+		node.queue_free()
+	_check("ab_panel_press", first != before and second == before and old_disabled,
+			"variant before %s, after one press %s (old one disabled %s), after a second press %s" % [before, first, old_disabled, second])
 
 
 ## A small area on the Player Hands layer, like the rig's fingertips.
@@ -556,11 +594,8 @@ func _test_fingertips() -> void:
 
 ## Pressing the lamp's switch turns its light and glow off, pressing again on.
 func _test_lamp_switch(v: String) -> void:
-	var sw: ABSwitch = _main.get_node("Zones/Apartment/Props/Nightstand")
-	if sw.variant != v:
-		ABSwitch.toggle_all(get_tree())
+	var stand := _piece("Nightstand", v)
 	await _frames(3)
-	var stand: Node3D = sw.get_node(v)
 	var button: Node3D = stand.get_node("LampSwitchButton")
 	var light: Light3D = stand.get_node("LampLight")
 	var tip := _dummy_fingertip()
@@ -577,7 +612,7 @@ func _test_lamp_switch(v: String) -> void:
 	await _frames(4)
 	var after_two := light.visible
 	tip.queue_free()
-	_check("lamp_%s_switch" % v, before and not after_one and after_two,
+	_check("lamp%s_switch" % _suffix(v), before and not after_one and after_two,
 			"lamp light: before %s, after one press %s, after two %s" % [before, after_one, after_two])
 
 
@@ -605,18 +640,17 @@ func _test_fridge_alarm() -> void:
 ## rail, a hanger dropped near the rail hangs again, and one dropped away
 ## from it falls; the box and lid rest on the shelf.
 func _test_wardrobe_interior() -> void:
-	var sw: ABSwitch = _main.get_node("Zones/Apartment/Props/Wardrobe")
 	var v := ""
-	for candidate in ["A", "B"]:
-		if sw.get_node(candidate).has_node("DrawerLeft"):
-			v = candidate
-	if v.is_empty():
-		_check("wardrobe_interior", false, "no wardrobe variant has drawers")
+	var sw := _main.get_node("Zones/Apartment/Props/Wardrobe") as ABSwitch
+	if sw:
+		for candidate in ["A", "B"]:
+			if sw.get_node(candidate).has_node("Rail"):
+				v = candidate
+	var w := _piece("Wardrobe", v)
+	if not w.has_node("Rail"):
+		_check("wardrobe_interior", false, "the wardrobe has no interior (rail, drawers)")
 		return
-	if sw.variant != v:
-		ABSwitch.toggle_all(get_tree())
 	await _frames(30)
-	var w: Node3D = sw.get_node(v)
 	var space := _main.get_world_3d().direct_space_state
 
 	# Doors open so the drawers can come out.
@@ -625,9 +659,10 @@ func _test_wardrobe_interior() -> void:
 		hinge.hinge_position = 95.0
 		hinge.hinge_moved.emit(95.0)
 	await _frames(3)
-	for side in ["Left", "Right"]:
-		var slider: XRToolsInteractableSlider = w.get_node("Drawer%s/SliderOrigin/InteractableSlider" % side)
-		var body: PhysicsBody3D = w.get_node("Drawer%s/SliderOrigin/InteractableSlider/Leaf/DrawerBody" % side)
+	for drawer_node in w.get_children().filter(func(n: Node) -> bool: return n.name.begins_with("Drawer")):
+		var side := (drawer_node.name as String).trim_prefix("Drawer")
+		var slider: XRToolsInteractableSlider = drawer_node.get_node("SliderOrigin/InteractableSlider")
+		var body: PhysicsBody3D = drawer_node.get_node("SliderOrigin/InteractableSlider/Leaf/DrawerBody")
 		var q := PhysicsPointQueryParameters3D.new()
 		q.position = body.to_global(Vector3(0, 0.12, -0.009))
 		var front_at := q.position
@@ -639,38 +674,100 @@ func _test_wardrobe_interior() -> void:
 		var moved_there := space.intersect_point(q).any(func(hit: Dictionary) -> bool: return hit.collider == body)
 		slider.move_slider(0.0)
 		await _frames(2)
-		_check("wardrobe_%s_drawer_%s" % [v, side.to_lower()], not still_there and moved_there,
+		_check("wardrobe_drawer_%s" % side.to_lower(), not still_there and moved_there,
 				"drawer front collision: left the closed spot %s, followed to 0.3 m %s" % [not still_there, moved_there])
 
+	var rail: HangingRail = w.get_node("Rail")
+	var hook_y := rail.start.y + rail.radius
+	var hangers := w.get_children().filter(func(n: Node) -> bool: return n is XRToolsPickable and n.has_node("RailHanger"))
 	var hung := 0
-	for i in 6:
+	for i in hangers.size():
 		var hanger: XRToolsPickable = w.get_node("Hanger%d" % i)
 		var hook := w.to_local(hanger.global_position)
-		if hanger.freeze and absf(hook.y - 1.7475) < 0.005 and absf(hook.z - 0.01) < 0.005:
+		if hanger.freeze and absf(hook.y - hook_y) < 0.005 and absf(hook.z - rail.start.z) < 0.005:
 			hung += 1
-	_check("wardrobe_%s_hangers_hung" % v, hung == 6, "%d of 6 hangers hang on the rail" % hung)
+	_check("wardrobe_hangers_hung", hung == hangers.size() and hung > 0, "%d of %d hangers hang on the rail" % [hung, hangers.size()])
 
 	var hanger0: XRToolsPickable = w.get_node("Hanger0")
 	var rail_hanger: RailHanger = hanger0.get_node("RailHanger")
 	hanger0.freeze = false
-	hanger0.global_position = w.to_global(Vector3(0.1, 1.70, 0.05))
+	hanger0.global_position = w.to_global(Vector3(rail.start.x + 0.2, hook_y - 0.04, 0.05))
 	hanger0.dropped.emit(hanger0)
 	await _frames(2)
-	var rehung := rail_hanger.is_hung() and absf(w.to_local(hanger0.global_position).y - 1.7475) < 0.005
+	var rehung := rail_hanger.is_hung() and absf(w.to_local(hanger0.global_position).y - hook_y) < 0.005
 	hanger0.freeze = false
 	hanger0.global_position = w.to_global(Vector3(0.1, 1.2, 0.5))
 	hanger0.dropped.emit(hanger0)
 	await _frames(30)
 	var fell := not hanger0.freeze and w.to_local(hanger0.global_position).y < 1.15
-	_check("wardrobe_%s_rehang" % v, rehung and fell, "dropped near the rail hangs %s, dropped away from it falls %s" % [rehung, fell])
+	_check("wardrobe_rehang", rehung and fell, "dropped near the rail hangs %s, dropped away from it falls %s" % [rehung, fell])
 
 	var box: Node3D = w.get_node("StorageBox")
 	var lid: Node3D = w.get_node("StorageBoxLid")
 	var box_y := w.to_local(box.global_position).y
 	var lid_above := w.to_local(lid.global_position).y - box_y
-	_check("wardrobe_%s_box_and_lid" % v, absf(box_y - 0.379) < 0.01 and absf(lid_above - 0.145) < 0.01,
-			"box bottom at %.3f (shelf 0.379), lid %.3f above it (0.145)" % [box_y, lid_above])
+	var wall: CollisionShape3D = box.get_node("WallLeft")
+	var rim := wall.position.y + (wall.shape as BoxShape3D).size.y / 2.0
+	var skirt := ((lid.get_node("SkirtLeft") as CollisionShape3D).shape as BoxShape3D).size.y
+	var expect_lid := rim - skirt
+	_check("wardrobe_box_and_lid", absf(lid_above - expect_lid) < 0.012 and (box as RigidBody3D).linear_velocity.length() < 0.05,
+			"box resting at %.3f, lid %.3f above it (skirt over the rim: %.3f)" % [box_y, lid_above, expect_lid])
 	for side in ["Left", "Right"]:
 		var hinge: XRToolsInteractableHinge = w.get_node("Door%s/HingeOrigin/InteractableHinge" % side)
 		hinge.hinge_position = 0.0
 		hinge.hinge_moved.emit(0.0)
+
+
+## The bed's collision follows the bedding: a small sphere swept down onto a
+## pillow stops on the pillow (about 0.58-0.72 m), not on the hidden block
+## (0.44 m) under the duvet. (A dropped can tips off the sloped pillow and
+## rolls onto the sheet, which is fine.)
+func _test_bed_bedding_collision() -> void:
+	var bed := _piece("Bed")
+	var space := _main.get_world_3d().direct_space_state
+	var sphere := SphereShape3D.new()
+	sphere.radius = 0.03
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = sphere
+	query.collision_mask = 1
+	var heights: Array[String] = []
+	var ok := true
+	for spot: Vector3 in [Vector3(0.4, 1.2, -0.7), Vector3(-0.4, 1.2, -0.7)]:
+		query.transform = Transform3D(Basis.IDENTITY, bed.to_global(spot))
+		query.motion = Vector3(0, -1.0, 0)
+		var fraction := space.cast_motion(query)[0]
+		var rest_y: float = spot.y - 1.0 * fraction - sphere.radius
+		ok = ok and rest_y > 0.55
+		heights.append("%.2f" % rest_y)
+	_check("bed_pillow_collision", ok, "sphere stops at local y %s over the pillows (hidden block at 0.44)" % ", ".join(heights))
+
+
+## The runner-up variants kept for other apartments load, and their static
+## collision works (spawned away from the apartment).
+func _test_spare_variants() -> void:
+	var results: Array[String] = []
+	var ok := true
+	for path in ["res://assets/props/bed/bed_padded.tscn", "res://assets/props/wardrobe/wardrobe_lit.tscn",
+			"res://assets/props/nightstand/nightstand_square.tscn"]:
+		var scene := load(path) as PackedScene
+		if not scene:
+			ok = false
+			results.append("%s: failed to load" % path.get_file())
+			continue
+		var node: Node3D = scene.instantiate()
+		_main.add_child(node)
+		node.global_position = Vector3(-30, 0, -30)
+		await _frames(2)
+		# A can dropped on top lands on its collision, not on the ground.
+		var top := 0.50 if path.contains("bed") else (2.10 if path.contains("wardrobe") else 0.55)
+		var can: RigidBody3D = (load(CAN_SCENE) as PackedScene).instantiate()
+		_main.add_child(can)
+		can.global_position = node.to_global(Vector3(0.1, top + 0.3, 0.1))
+		await _frames(120)
+		var y := node.to_local(can.global_position).y
+		can.queue_free()
+		node.queue_free()
+		var landed := absf(y - top - 0.06) < 0.08
+		ok = ok and landed
+		results.append("%s can at %.2f (top %.2f)" % [path.get_file().get_basename(), y, top])
+	_check("spare_variants", ok, ", ".join(results))

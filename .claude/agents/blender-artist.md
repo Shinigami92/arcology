@@ -1,7 +1,7 @@
 ---
 name: blender-artist
 description: Creates and edits 3D assets (props, architecture, facades, panoramas) in Blender via the Blender MCP and exports them as .glb into assets/. Use for any modeling, UV, texturing, baking or Cycles panorama rendering task.
-model: fable
+model: opus
 effort: high
 color: orange
 tools: Read, Write, Edit, Glob, Grep, Bash, mcp__blender
