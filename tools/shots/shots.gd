@@ -6,8 +6,11 @@ extends Node
 ##
 ## Each view is x,y,z,yaw,pitch[,fov] (degrees; yaw 0 looks along -Z, 90
 ## along -X). --shot-hinge opens hinged props (Props/<path>:<degrees>, e.g.
-## Fridge:80 or Wardrobe/A/DoorLeft:80) and --shot-ab=B shows the B variant of
-## every ABSwitch first. Writes tools/shots/results/shot-<n>.png (gitignored) at
+## Fridge:80 or Wardrobe/A/DoorLeft:80, or a zone path such as
+## Windows/BedroomWindow/Vent:10) and --shot-ab=B shows the B variant of
+## every ABSwitch first. --shot-call=<zone path>:<method>:<number>[,...] calls
+## a method first, e.g. Windows/LivingWindow/Shade:set_closure:0.6 or
+## Windows/LivingWindow/SmartGlass:set_tint:0.9. Writes tools/shots/results/shot-<n>.png (gitignored) at
 ## [constant SIZE] and quits.
 
 const SIZE := Vector2i(1920, 1080)
@@ -19,6 +22,7 @@ var zone: Node3D
 var views: PackedStringArray = []
 var hinges: PackedStringArray = []
 var ab := ""
+var calls: PackedStringArray = []
 
 
 func _ready() -> void:
@@ -40,11 +44,21 @@ func _ready() -> void:
 	for spec in hinges:
 		var parts := spec.split(":")
 		var hinge := zone.get_node_or_null("Props/%s/HingeOrigin/InteractableHinge" % parts[0]) as XRToolsInteractableHinge
+		if not hinge:
+			hinge = zone.get_node_or_null("%s/HingeOrigin/InteractableHinge" % parts[0]) as XRToolsInteractableHinge
 		if hinge:
 			hinge.hinge_position = float(parts[1])
 			hinge.hinge_moved.emit(hinge.hinge_position)
 		else:
 			push_warning("SHOTS: no hinge on Props/%s" % parts[0])
+
+	for spec in calls:
+		var parts := spec.split(":")
+		var target := zone.get_node_or_null(parts[0])
+		if target and parts.size() == 3 and target.has_method(parts[1]):
+			target.call(parts[1], float(parts[2]))
+		else:
+			push_warning("SHOTS: can't call %s" % spec)
 
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT_DIR))
 	for i in views.size():

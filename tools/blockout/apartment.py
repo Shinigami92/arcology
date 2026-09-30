@@ -13,26 +13,43 @@ Layout (x = east, z = south, window facade faces -Z), interior extents:
     hallway  x -6.8..6.4    z  2.2..3.6  connects everything, entrance at the east end
     bathroom x -1..2        z  3.8..6.2  no window
     vestibule x 6.6..8.2    z  2.2..3.6  dead end behind the entrance (building corridor in M3)
+
+Windows (D-033) come from tools/props/windows/apartment.json, the spec shared with
+Blender and tools/props/window.py: the openings are cut from it and the generated
+window scenes are placed in them (WINDOWS below). Regenerate the window scenes with
+python tools/props/window.py.
 """
 
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "zones" / "apartment" / "apartment.tscn"
+sys.path.insert(0, str(ROOT / "tools" / "props"))
+import window as window_specs  # noqa: E402  (tools/props/window.py)
 
 H = 2.6  # ceiling height
 T = 0.2  # wall thickness
 DOOR_H = 2.1
-SILL, HEAD = 0.4, 2.4  # window opening
+NORTH = -3.1  # window wall line (the facade faces -Z)
+
+# Window placements: spec name -> node name, opening center x on the north wall, room
+# spill light it dims (WindowLight). Opening size and sill come from the spec.
+WINDOWS = [
+    ("apartment_bedroom", "BedroomWindow", -5.0, "BedroomCitySpill"),
+    ("apartment_living", "LivingWindow", 0.0, "LivingCitySpill"),
+    ("apartment_kitchen", "KitchenWindow", 4.55, "KitchenCitySpill"),
+]
+WINDOW_LIGHT_SCRIPT = "res://core/interaction/window_light.gd"
 
 MATS = {
     "floor": "blockout_floor", "wall": "blockout_wall", "ceiling": "blockout_ceiling",
     "gunmetal": "gunmetal", "steel": "brushed_steel", "dark": "furniture_dark",
-    "sofa": "fabric_sofa", "glass": "window_glass", "magenta": "neon_magenta",
+    "sofa": "fabric_sofa", "magenta": "neon_magenta",
     "cyan": "neon_cyan", "lamp": "ceiling_lamp", "tile": "bathroom_tile",
     "mirror": "mirror", "linen": "bed_linen", "wood": "wood_dark", "ceramic": "ceramic",
 }
-UNSHADOWED = {"glass", "magenta", "cyan", "lamp"}
+UNSHADOWED = {"magenta", "cyan", "lamp"}
 SCENES = {
     "door": "res://assets/props/door/door.tscn",
     "ball": "res://assets/props/ball/ball.tscn",
@@ -86,28 +103,14 @@ def wall(group, name, axis, line, span, openings=(), mat="wall"):
     put(f"{name}{i}", cursor, a1, 0, H)
 
 
-def window(group, name, axis, line, s, e, mullion=False, inward=1):
-    """Glass pane and interior ledge for a window opening. inward: +1 if the
-    room is on the +axis side of the wall line (in the other axis)."""
-    mid, w = (s + e) / 2, e - s
-    cy, hy = (SILL + HEAD) / 2, HEAD - SILL
-    ledge_off = inward * (T / 2 + 0.06)
-    if axis == "x":
-        box(group, f"{name}Glass", (mid, cy, line), (w, hy, 0.02), "glass")
-        box(group, f"{name}Ledge", (mid, SILL + 0.02, line + ledge_off), (w + 0.2, 0.04, 0.14), "gunmetal")
-        if mullion:
-            box(group, f"{name}Mullion", (mid, cy, line + inward * 0.08), (0.05, hy, 0.05), "gunmetal")
-    else:
-        box(group, f"{name}Glass", (line, cy, mid), (0.02, hy, w), "glass")
-        box(group, f"{name}Ledge", (line + ledge_off, SILL + 0.02, mid), (0.14, 0.04, w + 0.2), "gunmetal")
-
-
 def door_gap(s, e):
     return (s, e, 0.0, DOOR_H)
 
 
-def window_gap(s, e):
-    return (s, e, SILL, HEAD)
+def window_gap(spec_name, x):
+    """The wall cut for a window spec centered at x (along the wall)."""
+    x0, x1, y0, y1 = window_specs.opening(*window_specs.spec(spec_name))
+    return (x + x0, x + x1, y0, y1)
 
 
 # --- Shell -----------------------------------------------------------------
@@ -116,11 +119,7 @@ box("Shell", "Ceiling", (-0.2, H + 0.1, 0.3), (13.6, 0.2, 7.0), "ceiling")
 box("Shell", "BathFloor", (0.5, -0.1, 5.1), (3.4, 0.2, 2.6), "tile")
 box("Shell", "BathCeiling", (0.5, H + 0.1, 5.1), (3.4, 0.2, 2.6), "ceiling")
 
-wall("Shell", "North", "x", -3.1, (-7.0, 6.6), [
-    window_gap(-6.3, -3.7), window_gap(-2.5, 2.5), window_gap(3.6, 5.5)])
-window("Shell", "BedroomWindow", "x", -3.1, -6.3, -3.7)
-window("Shell", "LivingWindow", "x", -3.1, -2.5, 2.5, mullion=True)
-window("Shell", "KitchenWindow", "x", -3.1, 3.6, 5.5)
+wall("Shell", "North", "x", NORTH, (-7.0, 6.6), [window_gap(spec, x) for spec, _, x, _ in WINDOWS])
 wall("Shell", "West", "z", -6.9, (-3.2, 3.8))
 wall("Shell", "East", "z", 6.5, (-3.2, 3.8), [door_gap(2.45, 3.35)])
 wall("Shell", "BedroomLiving", "z", -3.1, (-3.0, 2.0))
@@ -194,7 +193,7 @@ INSTANCES = [
     ("SofaPillow2", "pillow", (-2.30, 0.68, 0.9), (74, 190, 0)),
     ("Ball", "ball", (-2.84, 1.22, -1.8), (0, 0, 0)),
     ("CanLivingTable", "can", (1.25, 0.812, -1.25), (0, 0, 0)),
-    ("CanWindowLedge", "can", (-1.2, 0.502, -2.94), (0, 0, 0)),
+    ("CanWindowLedge", "can", (-5.6, 0.465, -3.02), (0, 0, 0)),
     ("CanCounter", "can", (6.0, 0.982, 0.3), (0, 0, 0)),
     ("CanKitchenTable", "can", (4.3, 0.812, -1.1), (0, 0, 0)),
     ("CanNightstand", "can", (-6.5, 0.612, 0.45), (0, 0, 0)),
@@ -235,9 +234,11 @@ LIGHTS = [
 
 PROBES = [
     # name, center, size
-    ("LivingProbe", (0, 1.3, -0.5), (6.2, 2.7, 5.2)),
-    ("KitchenProbe", (4.8, 1.3, -0.5), (3.4, 2.7, 5.2)),
-    ("BedroomProbe", (-5.0, 1.3, -0.5), (3.8, 2.7, 5.2)),
+    # Room probes reach 1.2 m past the window wall: the glass (z -3.15) is inside their 1 m
+    # blend distance and reflects the room at full weight.
+    ("LivingProbe", (0, 1.3, -1.1), (6.2, 2.7, 6.4)),
+    ("KitchenProbe", (4.8, 1.3, -1.1), (3.4, 2.7, 6.4)),
+    ("BedroomProbe", (-5.0, 1.3, -1.1), (3.8, 2.7, 6.4)),
     ("HallwayProbe", (-0.2, 1.3, 2.9), (13.4, 2.7, 1.6)),
     ("BathroomProbe", (0.5, 1.3, 5.0), (3.2, 2.7, 2.6)),
 ]
@@ -285,6 +286,9 @@ def main():
     for key, path in SCENES.items():
         add_ext(key, "PackedScene", path)
     add_ext("seat", "Script", SEAT_SCRIPT)
+    for spec, _, _, _ in WINDOWS:
+        add_ext(spec, "PackedScene", "res://" + window_specs.paths(spec)["tscn"])
+    add_ext("window_light", "Script", WINDOW_LIGHT_SCRIPT)
     if AB_INSTANCES:
         add_ext("ab", "Script", AB_SCRIPT)
 
@@ -327,6 +331,12 @@ def main():
                     f"position = {v3(col_center)}\n"
                     f'shape = SubResource("BoxShape3D_{sizes[col_size]}")\n')
 
+    nodes.append('[node name="Windows" type="Node3D" parent="."]\n'
+                 'metadata/_doc = "Generated window scenes (tools/props/window.py) in the north wall openings."\n')
+    for spec, name, x, _ in WINDOWS:
+        nodes.append(f'[node name="{name}" parent="Windows" instance=ExtResource("{ids[spec]}")]\n'
+                     f"position = {v3((x, 0, NORTH))}\n")
+
     nodes.append('[node name="Props" type="Node3D" parent="."]\n')
     for name, key, pos, rot in INSTANCES:
         rot_line = f"rotation_degrees = {v3(rot)}\n" if any(rot) else ""
@@ -367,6 +377,14 @@ def main():
         nodes.append(f'[node name="{name}" type="{typ}" parent="Lighting"]\nposition = {v3(pos)}\n{rot_line}'
                      f"light_color = {color(col)}\nlight_energy = {energy:g}\n{shadow_line}"
                      f"{range_key} = {rng:g}\n{extra}")
+    for _, name, _, light in WINDOWS:
+        room = name.removesuffix("Window")
+        nodes.append(f'[node name="{room}WindowLight" type="Node" parent="Lighting" '
+                     'node_paths=PackedStringArray("light", "glass", "shade")]\n'
+                     f'script = ExtResource("{ids["window_light"]}")\n'
+                     f'light = NodePath("../{light}")\n'
+                     f'glass = NodePath("../../Windows/{name}/SmartGlass")\n'
+                     f'shade = NodePath("../../Windows/{name}/Shade")\n')
     for name, center, size in PROBES:
         nodes.append(f'[node name="{name}" type="ReflectionProbe" parent="Lighting"]\nposition = {v3(center)}\n'
                      f"size = {v3(size)}\nbox_projection = true\ninterior = true\nambient_mode = 0\n")

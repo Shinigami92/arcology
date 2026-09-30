@@ -1,0 +1,66 @@
+{
+	"_doc": "Window specs for the apartment (D-033). Read by blender/architecture/windows/ (geometry) and tools/props/window.py (Godot scenes); tools/blockout/apartment.py cuts the openings from them and places the windows. Godot coordinates in each window's local frame: origin on the room floor (y = 0), x = 0 at the opening's center, z = 0 on the wall's center line, +Z = room side, -Z = outside. Meters.",
+	"profile": {
+		"_doc": "Shared frame profile. Bays: clear width = width - 2 * frame_face - (bays - 1) * mullion_face, split equally. Clear height = top - bottom - 2 * frame_face. Glass is one quad per bay at glass_z (a vent's glass moves with its sash, inset by sash_face).",
+		"frame_face": 0.045,
+		"frame_z": [-0.1, 0.02],
+		"mullion_face": 0.05,
+		"glass_z": -0.05,
+		"sash_face": 0.055,
+		"sash_z": [-0.07, 0.0],
+		"interior_sill_overhang": 0.03
+	},
+	"windows": [
+		{
+			"name": "apartment_bedroom",
+			"width": 2.6,
+			"bottom": 0.4,
+			"top": 2.4,
+			"wall_depth": 0.2,
+			"bays": 2,
+			"sill": "stone",
+			"vent": {
+				"_doc": "Tilt sash filling the bay: hinge axis along X at the sash's bottom interior edge (y = bottom + frame_face, z = sash_z[1]); the top tilts into the room. Handle on the stile next to the mullion, grip at handle_y above the floor.",
+				"bay": 1,
+				"open_max_deg": 10.0,
+				"handle_stile": "west",
+				"handle_y": 1.3
+			},
+			"shade": true,
+			"tint": true,
+			"led": "warm",
+			"hud": false,
+			"panel": {"side": "east", "y": 1.2}
+		},
+		{
+			"name": "apartment_living",
+			"width": 5.0,
+			"bottom": 0.0,
+			"top": 2.45,
+			"wall_depth": 0.2,
+			"bays": 3,
+			"sill": "floor",
+			"vent": null,
+			"shade": true,
+			"tint": true,
+			"led": "warm",
+			"hud": {"bay": 2, "_doc": "Readout in the lower east corner of the bay, about 1.2-1.4 m above the floor."},
+			"panel": {"side": "west", "y": 1.2}
+		},
+		{
+			"name": "apartment_kitchen",
+			"width": 1.9,
+			"bottom": 0.9,
+			"top": 2.4,
+			"wall_depth": 0.2,
+			"bays": 1,
+			"sill": "stone",
+			"vent": null,
+			"shade": true,
+			"tint": true,
+			"led": "cyan",
+			"hud": false,
+			"panel": {"side": "west", "y": 1.2}
+		}
+	]
+}

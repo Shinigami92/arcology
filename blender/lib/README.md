@@ -5,7 +5,8 @@ the modules; open a module only for the full docstring of a function you use. St
 by copying `blender/props/_template/` (a working five-stage skeleton; its `template_common.py`
 says what to rename). Richer examples: `fridge` (hinged door, display), `nightstand` (drawer,
 lamp with emission, per-board veneer), `bed` (cloth simulation, heightfield collider),
-`wardrobe_lit` (sweeps, shared props atlas, `Spread`).
+`wardrobe_lit` (sweeps, shared props atlas, `Spread`), `blender/architecture/windows/` (spec-driven
+builder: many assets from one JSON, shared trim sheet instead of a per-part bake, `trim`).
 
 ## Stage scripts
 
@@ -139,6 +140,12 @@ from the repo root (Blender 5.2: `"C:/Program Files/Blender Foundation/Blender 5
 - analytic: `drape(rect, top_z(x, y), overhang, thickness, res, radius, corner_radius, fold_amp, ...)`, `shell_rim(bm, loop, inward, thickness, profile)`
 - height helpers: `smoothstep(x, a, b)`, `ridge(x, y, a, b, amp, width, taper)`, `lumps(x, y, amp, scale, seed)`, `bumps(x, y, amount, scale, seed)`
 - `hanging_garment(width, length, thick, ...)` shirt on a hanger
+
+### trim (trim sheets for profiled architecture: windows, casings, rails)
+- numpy, tileable along U: `noise(h, w, size_u, size_v, seed)`, `fbm(...)`, `warp(field, du, dv)`, `smoothstep`, `height_to_normal(height_m, px_m, strength)`, `linear_to_srgb`
+- `TrimSheet(width, height, px_per_m, pad)`: `add_band(name, rows)`, `fill(name, fn(h, w, px_m, v_m, seed) -> {albedo, rough, metal, height, ao})`, `images(prefix)` packed albedo/normal/ORM (wire with `bake.final_material`), `uv(band, u_m, v_m)`
+- `TrimMesh(sheet, basis, origin, band_mats, u_offset)` faces with a band each, real-world UVs (U along the member): `poly`, `quad_strip`, `rect_sweep(rect, profile, bands, side_offset, sides, skip)` (profile mitered around a rectangle: frames, gaskets, sashes), `extrude` (straight member), `loft(rings, center="rings")`, `bridge(inner, outer)` (planar ring between loops, no T-junctions), `grid(cuts, cell)` (planar face with holes: slots, inlays), `to_object(name, coll, {slot: Material})`
+- `GODOT_TO_BLENDER` basis for authoring in Godot axes; `image_from_array`, `image_pixels`, `write_png(path, rgb)` (8-bit PNG, no color management)
 
 ### collision
 - `collision_box` (from geo); `heightfield(objs, lo, hi, spacing, floor_z)`;

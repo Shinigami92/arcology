@@ -21,12 +21,14 @@ func _ready() -> void:
 	player.global_transform = Transform3D.IDENTITY
 	await get_tree().create_timer(1.0).timeout
 
-	var glass: Node3D = _main.get_node("Zones/Apartment/Shell/LivingWindowGlass")
+	var panes := _main.get_node("Zones/Apartment/Windows/LivingWindow").find_children("Glass*", "MeshInstance3D", true, false)
 	var default_pct := await _shimmer()
 	print("SHIMMER through_glass: %.2f %%" % default_pct)
-	glass.visible = false
+	for pane: Node3D in panes:
+		pane.visible = false
 	print("SHIMMER without_glass: %.2f %%" % await _shimmer())
-	glass.visible = true
+	for pane: Node3D in panes:
+		pane.visible = true
 	var env: Environment = _main.get_node("Skyline/WorldEnvironment").environment
 	env.glow_enabled = false
 	print("SHIMMER without_glow: %.2f %%" % await _shimmer())

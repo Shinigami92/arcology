@@ -227,6 +227,91 @@ def fridge_alarm() -> list[float]:
     return out
 
 
+def _loop_noise(rng: random.Random, n: int, alpha: float, fade_s: float = 0.5) -> list[float]:
+    """Lowpassed noise made periodic (tail crossfaded into the head); returns n - fade samples."""
+    noise = lowpass([rng.uniform(-1, 1) for _ in range(n)], alpha)
+    fade = int(RATE * fade_s)
+    for i in range(fade):
+        w = i / fade
+        noise[i] = noise[i] * w + noise[n - fade + i] * (1 - w)
+    return noise[: n - fade]
+
+
+def shade_motor() -> list[float]:
+    """Roller-shade tube motor: soft buzz, gear whine and a little air; seamless
+    loop (import with loop mode Forward)."""
+    rng = random.Random(11)
+    noise = _loop_noise(rng, int(RATE * 2.5), 0.05)
+    n = len(noise)
+    hiss = _loop_noise(random.Random(12), int(RATE * 2.5), 0.4)
+    # Whole cycles per loop for every partial.
+    def f(hz: float) -> float:
+        return round(hz * n / RATE) * RATE / n
+    buzz, whine, wob = f(118), f(940), f(3)
+    out = []
+    for i in range(n):
+        t = i / RATE
+        s = 0.5 * math.sin(2 * math.pi * buzz * t) + 0.25 * math.sin(2 * math.pi * 2 * buzz * t)
+        s += 0.12 * math.sin(2 * math.pi * 3 * buzz * t)
+        s += 0.06 * math.sin(2 * math.pi * whine * t) * (1 + 0.3 * math.sin(2 * math.pi * wob * t))
+        out.append(s * 0.5 + 2.5 * noise[i] + 0.05 * hiss[i])
+    return out
+
+
+def tint_tone() -> list[float]:
+    """Smart glass changing: a soft, glassy two-note tone."""
+    n = int(RATE * 1.0)
+    out = []
+    for i in range(n):
+        t = i / RATE
+        s = 0.6 * math.sin(2 * math.pi * 880 * t) * env(t, 0.02, 0.3)
+        t2 = t - 0.12
+        if t2 > 0:
+            s += 0.5 * math.sin(2 * math.pi * 1318.5 * t2) * env(t2, 0.02, 0.4)
+            s += 0.08 * math.sin(2 * math.pi * 2637 * t2) * env(t2, 0.01, 0.15)
+        out.append(s * (1 + 0.04 * math.sin(2 * math.pi * 5 * t)))
+    return out
+
+
+def vent_latch() -> list[float]:
+    """Window sash catching in its frame: a firm plastic-and-metal click-clack."""
+    rng = random.Random(13)
+    n = int(RATE * 0.25)
+    noise = [rng.uniform(-1, 1) for _ in range(n)]
+    out = []
+    for i in range(n):
+        t = i / RATE
+        s = 0.6 * math.sin(2 * math.pi * 140 * t) * env(t, 0.001, 0.03)
+        s += 0.5 * noise[i] * env(t, 0.0003, 0.004)
+        s += 0.2 * math.sin(2 * math.pi * 1850 * t) * env(t, 0.0005, 0.012)
+        t2 = t - 0.055
+        if t2 > 0:
+            s += 0.7 * noise[i] * env(t2, 0.0003, 0.003)
+            s += 0.3 * math.sin(2 * math.pi * 3100 * t2) * env(t2, 0.0005, 0.02)
+            s += 0.3 * math.sin(2 * math.pi * 210 * t2) * env(t2, 0.001, 0.025)
+        out.append(s)
+    return out
+
+
+def city_ambience() -> list[float]:
+    """The city through an open window: low traffic rumble, far hiss and slow
+    swells of passing vehicles; 8 s seamless loop (import with loop mode Forward)."""
+    rng = random.Random(14)
+    rumble = _loop_noise(rng, int(RATE * 8.5), 0.004)
+    body = _loop_noise(random.Random(15), int(RATE * 8.5), 0.05)
+    hiss = _loop_noise(random.Random(16), int(RATE * 8.5), 0.5)
+    n = len(rumble)
+    period = n / RATE
+    out = []
+    for i in range(n):
+        t = i / RATE
+        # Swells: whole cycles per loop so the loop stays seamless.
+        swell = 0.5 + 0.3 * math.sin(2 * math.pi * 2 * t / period) + 0.2 * math.sin(2 * math.pi * 5 * t / period + 1.3)
+        s = 6.0 * rumble[i] + 1.2 * body[i] * swell + 0.04 * hiss[i]
+        out.append(s)
+    return out
+
+
 if __name__ == "__main__":
     write_wav("ball_bounce", ball_bounce())
     write_wav("can_hit", can_hit())
@@ -239,3 +324,7 @@ if __name__ == "__main__":
     write_wav("button_click", button_click())
     write_wav("drawer_bump", drawer_bump())
     write_wav("fridge_alarm", fridge_alarm())
+    write_wav("shade_motor", shade_motor())
+    write_wav("tint_tone", tint_tone())
+    write_wav("vent_latch", vent_latch())
+    write_wav("city_ambience", city_ambience())

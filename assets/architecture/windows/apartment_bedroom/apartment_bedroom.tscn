@@ -1,0 +1,317 @@
+[gd_scene format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/window_glass.gdshader" id="window_glass"]
+[ext_resource type="PackedScene" path="res://assets/architecture/windows/apartment_bedroom/apartment_bedroom_frame.glb" id="apartment_bedroom_frame"]
+[ext_resource type="Script" path="res://core/interaction/named_material_override.gd" id="named_material_override"]
+[ext_resource type="Material" path="res://assets/materials/window_led_warm.tres" id="window_led_warm"]
+[ext_resource type="PackedScene" path="res://assets/architecture/windows/apartment_bedroom/apartment_bedroom_shade_bar.glb" id="apartment_bedroom_shade_bar"]
+[ext_resource type="Material" path="res://assets/materials/shade_fabric.tres" id="shade_fabric"]
+[ext_resource type="Script" uid="uid://c8gx2wc7hsxf5" path="res://addons/godot-xr-tools/interactables/interactable_hinge.gd" id="hinge"]
+[ext_resource type="Script" uid="uid://ccxwohhkuuyo1" path="res://core/interaction/kinematic_follower.gd" id="follower"]
+[ext_resource type="PackedScene" path="res://assets/architecture/windows/apartment_bedroom/apartment_bedroom_sash.glb" id="apartment_bedroom_sash"]
+[ext_resource type="Script" uid="uid://dlojnwxo25bky" path="res://addons/godot-xr-tools/interactables/interactable_handle.gd" id="handle"]
+[ext_resource type="Script" uid="uid://0qo7w8nlh6eu" path="res://core/interaction/hinge_stop_sound.gd" id="stop_sound"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/vent_latch.wav" id="vent_latch"]
+[ext_resource type="Script" path="res://core/interaction/hinge_swing.gd" id="hinge_swing"]
+[ext_resource type="Script" uid="uid://c8otihf11a0u7" path="res://core/interaction/hinge_body_blocker.gd" id="blocker"]
+[ext_resource type="Script" uid="uid://dwnb8l1buro5f" path="res://core/interaction/grab_pass_through.gd" id="pass_through"]
+[ext_resource type="PackedScene" path="res://assets/architecture/windows/apartment_bedroom/apartment_bedroom_shade_bar_vent.glb" id="apartment_bedroom_shade_bar_vent"]
+[ext_resource type="Script" path="res://core/interaction/hinge_ambience.gd" id="hinge_ambience"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/city_ambience.wav" id="city_ambience"]
+[ext_resource type="PackedScene" path="res://assets/architecture/windows/_kit/window_panel.glb" id="window_panel"]
+[ext_resource type="Script" uid="uid://dq042kibpfryy" path="res://addons/godot-xr-tools/interactables/interactable_area_button.gd" id="area_button"]
+[ext_resource type="PackedScene" path="res://assets/architecture/windows/_kit/window_panel_button.glb" id="window_panel_button"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/button_click.wav" id="button_click"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/shade_motor.wav" id="shade_motor"]
+[ext_resource type="Script" path="res://core/interaction/motorized_shade.gd" id="motorized_shade"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/tint_tone.wav" id="tint_tone"]
+[ext_resource type="Script" path="res://core/interaction/smart_glass.gd" id="smart_glass"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_glass"]
+resource_local_to_scene = true
+render_priority = 0
+shader = ExtResource("window_glass")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_frame0"]
+size = Vector3(2.6, 0.045, 0.12)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_frame1"]
+size = Vector3(2.6, 0.045, 0.12)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_frame2"]
+size = Vector3(0.045, 1.91, 0.12)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_frame3"]
+size = Vector3(0.045, 1.91, 0.12)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_frame4"]
+size = Vector3(0.05, 1.91, 0.12)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_frame5"]
+size = Vector3(0.02, 1.98, 0.08)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_frame6"]
+size = Vector3(0.02, 1.98, 0.08)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_frame7"]
+size = Vector3(2.6, 0.02, 0.08)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_frame8"]
+size = Vector3(2.66, 0.03, 0.23)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_frame9"]
+size = Vector3(1.23, 1.91, 0.03)
+
+[sub_resource type="QuadMesh" id="QuadMesh_0"]
+size = Vector2(1.23, 1.91)
+
+[sub_resource type="QuadMesh" id="QuadMesh_1"]
+size = Vector2(1.22, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_sash0"]
+size = Vector3(1.23, 1.91, 0.07)
+
+[sub_resource type="QuadMesh" id="QuadMesh_2"]
+size = Vector2(1.12, 1.8)
+
+[sub_resource type="QuadMesh" id="QuadMesh_3"]
+size = Vector2(1.11, 1)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_grab"]
+radius = 0.05
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_button"]
+radius = 0.018
+
+[node name="ApartmentBedroomWindow" type="Node3D"]
+metadata/_doc = "Window 2.6 x 2 m, 2 bay(s), opening 0.4..2.4 m above the floor. Origin on the room floor at the opening's center on the wall's center line; -Z is outside. GENERATED by tools/props/window.py from tools/props/windows/ (apartment_bedroom); edit the spec, not this file. Bay 1 is a tilt vent (grab its handle, 0..10 degrees, latches shut near closed; city noise while open). Panel on the east side: top button runs the shades (press again to stop, again to reverse), bottom button steps the smart glass tint (clear, half, dark)."
+
+[node name="Frame" type="StaticBody3D" parent="."]
+
+[node name="HeadCollision" type="CollisionShape3D" parent="Frame"]
+position = Vector3(0, 2.3775, -0.04)
+shape = SubResource("BoxShape3D_frame0")
+
+[node name="BottomCollision" type="CollisionShape3D" parent="Frame"]
+position = Vector3(0, 0.4225, -0.04)
+shape = SubResource("BoxShape3D_frame1")
+
+[node name="JambWestCollision" type="CollisionShape3D" parent="Frame"]
+position = Vector3(-1.2775, 1.4, -0.04)
+shape = SubResource("BoxShape3D_frame2")
+
+[node name="JambEastCollision" type="CollisionShape3D" parent="Frame"]
+position = Vector3(1.2775, 1.4, -0.04)
+shape = SubResource("BoxShape3D_frame3")
+
+[node name="Mullion0Collision" type="CollisionShape3D" parent="Frame"]
+position = Vector3(0, 1.4, -0.04)
+shape = SubResource("BoxShape3D_frame4")
+
+[node name="LinerWestCollision" type="CollisionShape3D" parent="Frame"]
+position = Vector3(-1.29, 1.39, 0.06)
+shape = SubResource("BoxShape3D_frame5")
+
+[node name="LinerEastCollision" type="CollisionShape3D" parent="Frame"]
+position = Vector3(1.29, 1.39, 0.06)
+shape = SubResource("BoxShape3D_frame6")
+
+[node name="SoffitCollision" type="CollisionShape3D" parent="Frame"]
+position = Vector3(0, 2.39, 0.06)
+shape = SubResource("BoxShape3D_frame7")
+
+[node name="SillCollision" type="CollisionShape3D" parent="Frame"]
+position = Vector3(0, 0.385, 0.015)
+shape = SubResource("BoxShape3D_frame8")
+
+[node name="Glass0Collision" type="CollisionShape3D" parent="Frame"]
+position = Vector3(-0.64, 1.4, -0.05)
+shape = SubResource("BoxShape3D_frame9")
+
+[node name="FrameModel" parent="." instance=ExtResource("apartment_bedroom_frame")]
+
+[node name="LedMaterial" type="Node" parent="." node_paths=PackedStringArray("root")]
+script = ExtResource("named_material_override")
+root = NodePath("../FrameModel")
+material_name = "window_led"
+material = ExtResource("window_led_warm")
+
+[node name="Glass0" type="MeshInstance3D" parent="."]
+position = Vector3(-0.64, 1.4, -0.05)
+cast_shadow = 0
+mesh = SubResource("QuadMesh_0")
+material_override = SubResource("ShaderMaterial_glass")
+
+[node name="Shade0" type="Node3D" parent="."]
+position = Vector3(-0.64, 2.355, -0.02)
+
+[node name="Bar" parent="Shade0" instance=ExtResource("apartment_bedroom_shade_bar")]
+
+[node name="Fabric" type="MeshInstance3D" parent="Shade0"]
+visible = false
+mesh = SubResource("QuadMesh_1")
+material_override = ExtResource("shade_fabric")
+
+[node name="Vent" type="Node3D" parent="."]
+
+[node name="HingeOrigin" type="Node3D" parent="Vent"]
+position = Vector3(0.64, 0.445, 0)
+
+[node name="InteractableHinge" type="Node3D" parent="Vent/HingeOrigin"]
+script = ExtResource("hinge")
+hinge_limit_min = 0.0
+hinge_limit_max = 10.0
+
+[node name="Leaf" type="Node3D" parent="Vent/HingeOrigin/InteractableHinge"]
+
+[node name="DoorBody" type="AnimatableBody3D" parent="Vent/HingeOrigin/InteractableHinge/Leaf"]
+script = ExtResource("follower")
+
+[node name="SashCollision" type="CollisionShape3D" parent="Vent/HingeOrigin/InteractableHinge/Leaf/DoorBody"]
+position = Vector3(0, 0.955, -0.035)
+shape = SubResource("BoxShape3D_sash0")
+
+[node name="SashModel" parent="Vent/HingeOrigin/InteractableHinge/Leaf/DoorBody" instance=ExtResource("apartment_bedroom_sash")]
+
+[node name="HandleOrigin" type="Node3D" parent="Vent/HingeOrigin/InteractableHinge/Leaf"]
+position = Vector3(-0.5875, 0.855, 0.023)
+
+[node name="InteractableHandle" type="RigidBody3D" parent="Vent/HingeOrigin/InteractableHinge/Leaf/HandleOrigin"]
+collision_layer = 262144
+collision_mask = 0
+freeze = true
+script = ExtResource("handle")
+picked_up_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Vent/HingeOrigin/InteractableHinge/Leaf/HandleOrigin/InteractableHandle"]
+shape = SubResource("SphereShape3D_grab")
+
+[node name="StopSound" type="AudioStreamPlayer3D" parent="Vent/HingeOrigin/InteractableHinge" node_paths=PackedStringArray("hinge")]
+position = Vector3(-0.5875, 0.855, 0.023)
+stream = ExtResource("vent_latch")
+volume_db = -4.0
+script = ExtResource("stop_sound")
+hinge = NodePath("..")
+min_speed = 4.0
+full_volume_speed = 40.0
+
+[node name="Swing" type="Node" parent="Vent" node_paths=PackedStringArray("hinge")]
+script = ExtResource("hinge_swing")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+friction = 60.0
+damping = 3.0
+bounce = 0.1
+max_speed = 120.0
+latch_angle = 2.5
+latch_pull = 60.0
+
+[node name="BodyBlocker" type="Node" parent="Vent" node_paths=PackedStringArray("hinge", "leaf")]
+script = ExtResource("blocker")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+leaf = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+
+[node name="GrabPassThrough" type="Node" parent="Vent" node_paths=PackedStringArray("body", "handles_root")]
+script = ExtResource("pass_through")
+body = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+handles_root = NodePath("../HingeOrigin/InteractableHinge/Leaf")
+
+[node name="Glass1" type="MeshInstance3D" parent="Vent/HingeOrigin/InteractableHinge/Leaf/DoorBody"]
+position = Vector3(0, 0.955, -0.05)
+cast_shadow = 0
+mesh = SubResource("QuadMesh_2")
+material_override = SubResource("ShaderMaterial_glass")
+
+[node name="Shade1" type="Node3D" parent="Vent/HingeOrigin/InteractableHinge/Leaf/DoorBody"]
+position = Vector3(0, 1.855, -0.02)
+
+[node name="Bar" parent="Vent/HingeOrigin/InteractableHinge/Leaf/DoorBody/Shade1" instance=ExtResource("apartment_bedroom_shade_bar_vent")]
+
+[node name="Fabric" type="MeshInstance3D" parent="Vent/HingeOrigin/InteractableHinge/Leaf/DoorBody/Shade1"]
+visible = false
+mesh = SubResource("QuadMesh_3")
+material_override = ExtResource("shade_fabric")
+
+[node name="Ambience" type="AudioStreamPlayer3D" parent="." node_paths=PackedStringArray("hinge")]
+position = Vector3(0.64, 2.164, 0.1)
+stream = ExtResource("city_ambience")
+volume_db = -80.0
+unit_size = 2.0
+max_distance = 25.0
+script = ExtResource("hinge_ambience")
+hinge = NodePath("../Vent/HingeOrigin/InteractableHinge")
+open_db = -4.0
+
+[node name="Panel" type="Node3D" parent="."]
+position = Vector3(1.42, 1.2, 0.1)
+
+[node name="PanelModel" parent="Panel" instance=ExtResource("window_panel")]
+
+[node name="PanelLedMaterial" type="Node" parent="." node_paths=PackedStringArray("root")]
+script = ExtResource("named_material_override")
+root = NodePath("../Panel/PanelModel")
+material_name = "panel_led"
+material = ExtResource("window_led_warm")
+
+[node name="ShadeButton" type="Area3D" parent="Panel"]
+position = Vector3(0, 0.035, 0.005)
+collision_layer = 0
+collision_mask = 131072
+monitorable = false
+script = ExtResource("area_button")
+button = NodePath("Cap")
+displacement = Vector3(0, 0, -0.004)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Panel/ShadeButton"]
+shape = SubResource("SphereShape3D_button")
+
+[node name="Cap" type="Node3D" parent="Panel/ShadeButton"]
+
+[node name="Model" parent="Panel/ShadeButton/Cap" instance=ExtResource("window_panel_button")]
+
+[node name="TintButton" type="Area3D" parent="Panel"]
+position = Vector3(0, -0.035, 0.005)
+collision_layer = 0
+collision_mask = 131072
+monitorable = false
+script = ExtResource("area_button")
+button = NodePath("Cap")
+displacement = Vector3(0, 0, -0.004)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Panel/TintButton"]
+shape = SubResource("SphereShape3D_button")
+
+[node name="Cap" type="Node3D" parent="Panel/TintButton"]
+
+[node name="Model" parent="Panel/TintButton/Cap" instance=ExtResource("window_panel_button")]
+
+[node name="PanelClick" type="AudioStreamPlayer3D" parent="."]
+position = Vector3(1.42, 1.2, 0.12)
+stream = ExtResource("button_click")
+volume_db = -8.0
+
+[node name="ShadeMotor" type="AudioStreamPlayer3D" parent="."]
+position = Vector3(0, 2.3, 0)
+stream = ExtResource("shade_motor")
+volume_db = -14.0
+unit_size = 2.0
+max_distance = 15.0
+
+[node name="Shade" type="Node" parent="." node_paths=PackedStringArray("button", "shades", "motor", "click")]
+script = ExtResource("motorized_shade")
+button = NodePath("../Panel/ShadeButton")
+shades = [NodePath("../Shade0"), NodePath("../Vent/HingeOrigin/InteractableHinge/Leaf/DoorBody/Shade1")]
+drops = PackedFloat32Array(1.888, 1.778)
+motor = NodePath("../ShadeMotor")
+click = NodePath("../PanelClick")
+
+[node name="TintTone" type="AudioStreamPlayer3D" parent="."]
+position = Vector3(1.42, 1.2, 0.12)
+stream = ExtResource("tint_tone")
+volume_db = -12.0
+
+[node name="SmartGlass" type="Node" parent="." node_paths=PackedStringArray("button", "panes", "tone", "click")]
+script = ExtResource("smart_glass")
+button = NodePath("../Panel/TintButton")
+panes = [NodePath("../Glass0"), NodePath("../Vent/HingeOrigin/InteractableHinge/Leaf/DoorBody/Glass1")]
+tone = NodePath("../TintTone")
+click = NodePath("../PanelClick")

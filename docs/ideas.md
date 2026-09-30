@@ -35,12 +35,14 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [later] Bathroom: working tap/shower.
 - [later] Working bathroom mirror. Makes most sense once there's a player avatar. Godot 4.7 has no hardware ray tracing, so the options to measure against the 90 FPS budget are: planar reflection via a SubViewport (renders the room again for both eyes, the expensive but correct one), a box-projected ReflectionProbe updated in real time, or SSR (can't show what's off screen). Good stress test for the budget.
 - [M2] Physical light switches and dimmers per room, and/or a smart-home hub panel (could be the same in-world terminal as the world-state control panel).
+- [M2] Windows (D-033): tilt vent in the bedroom, motorized shades and smart-glass tint per room via a wall panel, HUD readout on the living room glass. Done on placeholders; the artist's frame/sash/panel glbs drop in by rerunning `tools/props/window.py`.
+- [M2] Window HUD: drive it from WorldState (time, temperature, weather) once that exists; maybe more readouts (news ticker, messages).
 
 ## World state and weather
 
 - [M2] Global world state: time of day, weather, automatic cycle at configurable speed, manual override.
 - [M2] Day/night cycle with live lighting in the apartment.
-- [M2] Weather: rain particles, rain-on-glass shader, wet surfaces, fog, lightning, sky crossfade, audio layers.
+- [M2] Weather: rain particles, rain-on-glass shader (the glass shader has `rain_amount` and a `rain()` hook ready, D-033), wet surfaces, fog, lightning, sky crossfade, audio layers.
 - [M2] World-state control panel in the apartment, e.g. a holographic wall terminal with physical buttons and sliders.
 - [M2] Panorama variants: day, dusk, night, rain/fog, crossfaded by time and weather.
 - [M2] Replace the procedural window pattern with prefiltered (mipmapped) facades/impostors; the remaining flicker in the headset is probably aliasing plus stream compression (D-023).
@@ -72,6 +74,8 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - Grappling hook (least satisfying in the XR Tools demo; not a fit).
 
 ## Done
+
+- Windows (2026-09-30): procedural windows from shared JSON specs (D-033): floor-to-ceiling living room window with a glass HUD, bedroom tilt vent with city noise, kitchen window on a 0.9 m sill; motorized shades, smart-glass tint and LED channels per room, all on a physical wall panel; tint and shades darken the room.
 
 - Sofa (2026-09-28): realistic three-seater (Opus 5.5 won the blind A/B for texture realism) with two pickable throw pillows; Fable 5.1's boucle sofa kept as `sofa_boucle` for other apartments. Shared Blender toolkit gained soft-goods geometry and fabric layers.
 

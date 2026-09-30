@@ -43,6 +43,7 @@ func _ready() -> void:
 		shots.set("views", (args["shots"] as String).split(";", false))
 		shots.set("hinges", (args.get("shot-hinge", "") as String).split(",", false))
 		shots.set("ab", args.get("shot-ab", ""))
+		shots.set("calls", (args.get("shot-call", "") as String).split(",", false))
 		add_child(shots)
 
 

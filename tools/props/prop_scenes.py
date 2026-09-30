@@ -20,6 +20,13 @@ A definition builds a Scene and adds components to it in node order:
                   boxes=[("SlabCollision", (0.3, 0.35, 0.01), (0.6, 0.7, 0.02))])
     return {"assets/props/cabinet/cabinet.tscn": s}
 
+Other building blocks: area_button() (a bare fingertip button, e.g. for a panel),
+mesh() with box_mesh() / quad_mesh() (placeholder geometry, glass quads), HINGE_BOTTOM
+(a sash or flap tilting about its bottom edge), TextResource (a generated .tres next
+to the scenes), glb_node_position() / glb_bounds() (read empties and sizes from an
+exported glb, so a scene can follow the artist's file once it exists). See
+tools/props/window.py for all of them.
+
 Conventions it keeps (CLAUDE.md): position/rotation_degrees, never raw
 transforms; metadata/_doc on the root; the physics layers (pickables on 3,
 handles on 19, buttons detect Player Hands on 18); moving bodies are
@@ -49,7 +56,9 @@ from __future__ import annotations
 
 import difflib
 import importlib
+import json
 import math
+import struct
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -64,6 +73,9 @@ BoxSpec = tuple
 # HingeOrigin rotations for a vertical hinge; the leaf opens toward +Z.
 HINGE_LEFT = (0, 0, -90)   # hinge on the leaf's -X edge (leaf extends toward +X)
 HINGE_RIGHT = (0, 0, 90)   # hinge on the leaf's +X edge (leaf extends toward -X)
+# HingeOrigin rotation for a horizontal hinge along X at the leaf's bottom edge
+# (a tilt window sash, a flap): the leaf extends up +Y and its top tilts toward +Z.
+HINGE_BOTTOM = (0, 0, 0)
 # SliderOrigin rotation for a drawer that pulls out toward +Z.
 SLIDE_FRONT = (0, -90, 0)
 
@@ -93,6 +105,12 @@ CATALOG: dict[str, tuple[str, str, str | None]] = {
     "rail_hanger": ("Script", "res://core/interaction/rail_hanger.gd", None),
     "impact_sound": ("Script", "res://core/interaction/impact_sound.gd", None),
     "grab_highlight": ("Script", "res://core/interaction/grab_highlight.gd", None),
+    "motorized_shade": ("Script", "res://core/interaction/motorized_shade.gd", None),
+    "smart_glass": ("Script", "res://core/interaction/smart_glass.gd", None),
+    "window_hud": ("Script", "res://core/interaction/window_hud.gd", None),
+    "window_light": ("Script", "res://core/interaction/window_light.gd", None),
+    "hinge_ambience": ("Script", "res://core/interaction/hinge_ambience.gd", None),
+    "named_material_override": ("Script", "res://core/interaction/named_material_override.gd", None),
 }
 # assets/audio/sfx/<name>.wav referenced as "sfx/<name>"; uid where committed scenes use one.
 SFX_UIDS: dict[str, str | None] = {
@@ -142,6 +160,10 @@ def _g(c: float) -> str:
 
 def v3(t: Sequence[float]) -> str:
     return "Vector3(%s)" % ", ".join(_g(c) for c in t)
+
+
+def v2(x: float, y: float) -> Raw:
+    return Raw(f"Vector2({_g(x)}, {_g(y)})")
 
 
 def _quote(text: str) -> str:
@@ -347,7 +369,10 @@ class Scene:
         path = key if key.startswith("res://") else "res://" + key.lstrip("/")
         suffix = Path(path).suffix
         typ = {".glb": "PackedScene", ".gltf": "PackedScene", ".tscn": "PackedScene", ".scn": "PackedScene",
-               ".gd": "Script", ".wav": "AudioStream", ".ogg": "AudioStream", ".tres": "Resource"}.get(suffix)
+               ".gd": "Script", ".wav": "AudioStream", ".ogg": "AudioStream", ".tres": "Resource",
+               ".gdshader": "Shader", ".png": "Texture2D"}.get(suffix)
+        if suffix == ".tres" and "/materials/" in path:
+            typ = "Material"
         if typ is None:
             raise ValueError(f"unknown resource type for {key}")
         return typ, path, None, Path(path).stem
@@ -474,7 +499,7 @@ class Scene:
             raise ValueError("pass grip (one handle) or grips ({suffix: position})")
         return {"": grip} if grip is not None else dict(grips or {})
 
-    def hinged_door(self, *, glb: str, hinge_position: Vec3, hinge_rotation: Vec3, open_max: float,
+    def hinged_door(self, *, glb: str | None, hinge_position: Vec3, hinge_rotation: Vec3, open_max: float,
                     boxes: Sequence[BoxSpec], grip: Vec3 | None = None, grips: dict[str, Vec3] | None = None,
                     group: str | None = None, model_name: str = "Model", shape_prefix: str | None = None,
                     leaf_rotation: Vec3 | None = None, limit_min: float = 0.0,
@@ -485,25 +510,31 @@ class Scene:
         """A door, lid or flap on an XRToolsInteractableHinge (CLAUDE.md "Add a hinged interactable").
 
         Nodes: [group] / HingeOrigin (hinge_position, hinge_rotation: its local X is the
-        hinge axis; HINGE_LEFT / HINGE_RIGHT for vertical doors) / InteractableHinge
+        hinge axis; HINGE_LEFT / HINGE_RIGHT for vertical doors, HINGE_BOTTOM for a
+        sash or flap tilting about its bottom edge) / InteractableHinge
         (0..open_max degrees) / Leaf (inverse rotation, so the door frame is the glb's)
         / DoorBody (KinematicFollower, `boxes`, the glb as `model_name`), one
         HandleOrigin<suffix>/InteractableHandle per grip; then StopSound (HingeStopSound,
         `stop.position` in hinge space, default at the grip; stop_props = its exports),
         [open_sound], [light.light], Swing (HingeSwing, `swing` = its exports; no_swing
         drops it), [HingeLight], BodyBlocker, GrabPassThrough, [alarm sound, OpenAlarm].
+        glb=None leaves out the model (add placeholder meshes under the returned body).
+        Zero rotations aren't written.
         """
         grip_map = self._grips(grip, grips)
         base = "." if group is None else self.node(group, "Node3D")
-        origin = self.node("HingeOrigin", "Node3D", parent=base, position=tuple(hinge_position),
-                           rotation_degrees=tuple(hinge_rotation))
+        origin_props: dict = {"position": tuple(hinge_position)}
+        if any(hinge_rotation):
+            origin_props["rotation_degrees"] = tuple(hinge_rotation)
+        origin = self.node("HingeOrigin", "Node3D", parent=base, props=origin_props)
         hinge = self.node("InteractableHinge", "Node3D", parent=origin, props={
             "script": self.ext("hinge"), "hinge_limit_min": limit_min, "hinge_limit_max": open_max})
         leaf_rot = tuple(leaf_rotation) if leaf_rotation is not None else _inverse_single_axis(hinge_rotation)
-        leaf = self.node("Leaf", "Node3D", parent=hinge, rotation_degrees=leaf_rot)
+        leaf = self.node("Leaf", "Node3D", parent=hinge, props={"rotation_degrees": leaf_rot} if any(leaf_rot) else None)
         body = self.node("DoorBody", "AnimatableBody3D", parent=leaf, script=self.ext("follower"))
         self.boxes(body, boxes, shape_prefix if shape_prefix is not None else (group or "door"))
-        self.node(model_name, parent=body, instance=self.ext_id(glb))
+        if glb is not None:
+            self.node(model_name, parent=body, instance=self.ext_id(glb))
         self._handles(leaf, grip_map, grab_radius, grab_shape)
         if stop is not None:
             position = stop.position if stop.position is not None else rotate(leaf_rot, next(iter(grip_map.values())))
@@ -575,6 +606,55 @@ class Scene:
                   handles_root=ref(leaf))
         return Joint(group, slider, leaf, body)
 
+    def area_button(self, name: str, *, position: Vec3, radius: float = 0.025, displacement: Vec3 = (0, -0.003, 0),
+                    shape_id: str | None = None, parent: str = ".") -> str:
+        """A fingertip-pressed XRToolsInteractableAreaButton (D-031): Area3D detecting Player
+        Hands with a sphere of `radius` (deferred shape `shape_id`) and a Cap node that moves
+        by `displacement` when pressed (put the button's visuals under <name>/Cap)."""
+        shape = self.sphere(shape_id or f"SphereShape3D_{name}", radius)
+        button = self.node(name, "Area3D", parent=parent, props={
+            "position": tuple(position), "collision_layer": 0, "collision_mask": MASK_PLAYER_HANDS,
+            "monitorable": False, "script": self.ext("area_button"),
+            "button": node_path(f"{parent}/{name}/Cap".removeprefix("./")), "displacement": tuple(displacement)})
+        self.node("CollisionShape3D", "CollisionShape3D", parent=button, shape=shape)
+        self.node("Cap", "Node3D", parent=button)
+        return button
+
+    def mesh(self, name: str, mesh: Raw, *, parent: str = ".", position: Vec3 | None = None,
+             rotation: Vec3 | None = None, material: str | Raw | None = None, override: bool = False,
+             shadow: bool = True, props: dict | None = None) -> str:
+        """A MeshInstance3D with a mesh sub_resource (see box_mesh, quad_mesh). material: a
+        resource ref ("assets/materials/x.tres") or a SubResource, written as
+        surface_material_override/0, or as material_override with override=True.
+        props: more properties, written before the mesh."""
+        values: dict = {}
+        if position is not None and any(position):
+            values["position"] = tuple(position)
+        if rotation is not None and any(rotation):
+            values["rotation_degrees"] = tuple(rotation)
+        if not shadow:
+            values["cast_shadow"] = 0
+        values.update(props or {})
+        values["mesh"] = mesh
+        if material is not None:
+            mat = material if isinstance(material, Raw) else self.ext(material)
+            values["material_override" if override else "surface_material_override/0"] = mat
+        return self.node(name, "MeshInstance3D", parent=parent, props=values)
+
+    def box_mesh(self, size: Vec3) -> Raw:
+        """A BoxMesh sub_resource, shared by size."""
+        return self._sized("BoxMesh", tuple(size), {"size": tuple(size)})
+
+    def quad_mesh(self, width: float, height: float) -> Raw:
+        """A QuadMesh sub_resource (XY plane, facing +Z), shared by size."""
+        return self._sized("QuadMesh", (width, height), {"size": v2(width, height)})
+
+    def _sized(self, typ: str, key: tuple, props: dict) -> Raw:
+        ids = self.__dict__.setdefault("_sized_ids", {})
+        if (typ, key) not in ids:
+            ids[(typ, key)] = f"{typ}_{sum(1 for t, _ in ids if t == typ)}"
+        return self.sub(typ, ids[(typ, key)], props)
+
     def light_switch(self, name: str, *, position: Vec3, lights: Sequence[str], emissive_root: str | None = None,
                      material_name: str | None = None, radius: float = 0.025, displacement: Vec3 = (0, -0.003, 0),
                      click: Sound | None = Sound("sfx/button_click", props={"volume_db": -8.0}),
@@ -583,13 +663,8 @@ class Scene:
         detecting Player Hands, sphere of `radius`, a Cap that moves by `displacement`),
         a click sound (default name <name>Click, at the button) and <name> (LightSwitch
         toggling `lights` and `material_name` under `emissive_root`; switch_props = more exports)."""
-        shape = self.sphere(shape_id or f"SphereShape3D_{name}", radius)
-        button = self.node(f"{name}Button", "Area3D", parent=parent, props={
-            "position": tuple(position), "collision_layer": 0, "collision_mask": MASK_PLAYER_HANDS,
-            "monitorable": False, "script": self.ext("area_button"),
-            "button": node_path(f"{parent}/{name}Button/Cap".removeprefix("./")), "displacement": tuple(displacement)})
-        self.node("CollisionShape3D", "CollisionShape3D", parent=button, shape=shape)
-        self.node("Cap", "Node3D", parent=button)
+        button = self.area_button(f"{name}Button", position=position, radius=radius, displacement=displacement,
+                                  shape_id=shape_id or f"SphereShape3D_{name}", parent=parent)
         props: dict = {"script": self.ext("light_switch"), "button": ref(button), "lights": [ref(p) for p in lights]}
         if emissive_root is not None:
             props["emissive_root"] = ref(emissive_root)
@@ -681,10 +756,83 @@ def pickable_scene(root: str, glb: str, *, mass: float, boxes: Sequence[BoxSpec]
     return s
 
 
+class TextResource:
+    """Any other generated text file (e.g. a .tres) for run(): holds its full text."""
+
+    def __init__(self, content: str) -> None:
+        self._content = content
+
+    def text(self) -> str:
+        return self._content
+
+
+# ---------------------------------------------------------------- glb
+
+def glb_json(path: str) -> dict | None:
+    """The glTF JSON of a repo-relative .glb, or None if the file doesn't exist (yet)."""
+    file = ROOT / path
+    if not file.exists():
+        return None
+    data = file.read_bytes()
+    magic, _version, _length = struct.unpack_from("<4sII", data, 0)
+    if magic != b"glTF":
+        raise ValueError(f"{path} is not a glb")
+    chunk_length, chunk_type = struct.unpack_from("<I4s", data, 12)
+    if chunk_type != b"JSON":
+        raise ValueError(f"{path}: first chunk isn't JSON")
+    return json.loads(data[20:20 + chunk_length])
+
+
+def _glb_walk(gltf: dict):
+    """Yields (node, translation from the scene root) for every node; rotations and scales
+    are taken as identity (true for exported empties and our props' parts)."""
+    scene = gltf.get("scenes", [{}])[gltf.get("scene", 0)]
+    stack = [(i, (0.0, 0.0, 0.0)) for i in scene.get("nodes", [])]
+    nodes = gltf.get("nodes", [])
+    while stack:
+        index, offset = stack.pop()
+        node = nodes[index]
+        t = node.get("translation", (0, 0, 0))
+        at = (offset[0] + t[0], offset[1] + t[1], offset[2] + t[2])
+        yield node, at
+        stack += [(c, at) for c in node.get("children", [])]
+
+
+def glb_node_position(path: str, name: str) -> Vec3 | None:
+    """Position of the node named `name` (e.g. the HandleGrip empty), or None."""
+    gltf = glb_json(path)
+    if gltf is None:
+        return None
+    for node, at in _glb_walk(gltf):
+        if node.get("name") == name:
+            return tuple(round(c, 5) + 0.0 for c in at)  # type: ignore[return-value]
+    return None
+
+
+def glb_bounds(path: str) -> tuple[Vec3, Vec3] | None:
+    """Axis-aligned bounds (min, max) of every mesh in the glb, or None if it doesn't exist."""
+    gltf = glb_json(path)
+    if gltf is None:
+        return None
+    lo, hi = [math.inf] * 3, [-math.inf] * 3
+    for node, at in _glb_walk(gltf):
+        if "mesh" not in node:
+            continue
+        for prim in gltf["meshes"][node["mesh"]]["primitives"]:
+            acc = gltf["accessors"][prim["attributes"]["POSITION"]]
+            for k in range(3):
+                lo[k] = min(lo[k], acc["min"][k] + at[k])
+                hi[k] = max(hi[k], acc["max"][k] + at[k])
+    if lo[0] == math.inf:
+        return None
+    return (tuple(round(c, 5) + 0.0 for c in lo), tuple(round(c, 5) + 0.0 for c in hi))  # type: ignore[return-value]
+
+
 # ---------------------------------------------------------------- CLI
 
-def run(scenes: dict[str, Scene], check: bool) -> int:
-    """Writes (or with check, compares) each {repo-relative path: Scene}. Returns the number that differ."""
+def run(scenes: dict[str, Scene | TextResource], check: bool) -> int:
+    """Writes (or with check, compares) each {repo-relative path: Scene or TextResource}.
+    Returns the number that differ."""
     bad = 0
     for rel, scene in scenes.items():
         path = ROOT / rel
