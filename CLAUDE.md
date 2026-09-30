@@ -149,7 +149,7 @@ Behavior checks that don't need the headset or the editor. Run `interaction` aft
 
 Each prints `TEST PASS/FAIL <name>: <details>` and exits with the failure count (2 if the suite doesn't load, e.g. a parse error).
 
-Visual check without the headset or editor: `--shots` renders 1920×1080 stills to `tools/shots/results/shot-<n>.png` (views are `x,y,z,yaw,pitch[,fov]`, yaw 0 = -Z, 90 = -X; `--shot-hinge=<Props path>:<deg>` opens hinged props first, e.g. `Fridge:80` or `Wardrobe/A/DoorLeft:80`; `--shot-ab=B` shows every A/B pair's B variant):
+Visual check without the headset or editor: `--shots` renders 1920×1080 stills to `tools/shots/results/shot-<n>.png` (views are `x,y,z,yaw,pitch[,fov]`, yaw 0 = -Z, 90 = -X; `--shot-hinge=<Props path>:<deg>` opens hinged props first, e.g. `Fridge:80` or `Wardrobe/A/DoorLeft:80`; `--shot-ab=B` shows every A/B pair's B variant; `--shot-no-player` hides the hands):
 
 ```sh
 "$GODOT4_EDITOR" --path . --xr-mode off -- --shots="4.2,1.5,-2.0,-75,-8,60" --shot-hinge=Fridge:88
