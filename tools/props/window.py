@@ -67,6 +67,7 @@ BUTTONS = (("ShadeButton", 0.03, "SHADE"), ("TintButton", -0.03, "TINT"))   # y 
 KIT_BUTTON_EMPTIES = {"ShadeButton": "ButtonTop", "TintButton": "ButtonBottom"}
 BUTTON_RADIUS = 0.018
 BUTTON_TRAVEL = 0.004
+GLASS_GROUP = ["window_glass"]   # RainOnGlass finds the panes by it
 HUD_MARGIN = 0.08        # readout's right edge from the bay's east edge
 HUD_Y = 1.2              # readout's lower edge above the floor
 LED_STRIP = (0.012, 0.015)
@@ -201,7 +202,7 @@ def window(profile: dict, w: dict) -> Scene:
         if hud and hud["bay"] == i:
             props = hud_props(bay_w, cy)
         panes.append(s.mesh(f"Glass{i}", s.quad_mesh(r(bay_w), r(ch)), position=rv(g["bay_x"][i], cy, g["gz"]),
-                            material=glass_mat, override=True, shadow=False, props=props))
+                            material=glass_mat, override=True, shadow=False, props=props, groups=GLASS_GROUP))
 
     # Shades: a head slot per bay.
     def bar_size(glb: str) -> tuple[float, float] | None:
@@ -268,13 +269,18 @@ def window(profile: dict, w: dict) -> Scene:
             s.mesh("Handle", s.box_mesh(HANDLE), parent=model, position=rv(grip[0], grip[1], HANDLE[2] / 2),
                    material=METAL_MAT)
         panes.append(s.mesh(f"Glass{vent_bay}", s.quad_mesh(r(bay_w - 2 * sf), r(ch - 2 * sf)), parent=body,
-                            position=rv(0, ch / 2, g["gz"] - sz1), material=glass_mat, override=True, shadow=False))
+                            position=rv(0, ch / 2, g["gz"] - sz1), material=glass_mat, override=True, shadow=False,
+                            groups=GLASS_GROUP))
         if w.get("shade"):
             vent_bar_h = (bar_size(p["bar_vent"]) or (0, bar_h))[1]
             shade(body, vent_bay, rv(0, ch - sf, SHADE_Z - sz1), bay_w - 2 * sf, ch - 2 * sf - vent_bar_h, p["bar_vent"])
         s.sound("Ambience", "sfx/city_ambience", position=rv(g["bay_x"][vent_bay], B + ff + ch * 0.9, D / 2),
                 volume_db=-80.0, unit_size=2.0, max_distance=25.0, script=s.ext("hinge_ambience"), hinge=ref(hinge),
                 open_db=-4.0)
+        # The rain outside, louder with the opening and the rain (RainOnGlass sets the gain).
+        s.sound("RainAmbience", "sfx/rain_outside", position=rv(g["bay_x"][vent_bay], B + ff + ch * 0.9, D / 2),
+                groups=["rain_ambience"], volume_db=-80.0, unit_size=2.5, max_distance=25.0,
+                script=s.ext("hinge_ambience"), hinge=ref(hinge), open_db=0.0, gain=0.0)
 
     # Wall panel: top button runs the shades, bottom one steps the tint.
     s.node("Panel", "Node3D", position=rv(panel_x, w["panel"]["y"], D / 2))
@@ -301,6 +307,9 @@ def window(profile: dict, w: dict) -> Scene:
             s.node(f"{name}Label", "Label3D", parent="Panel", props={
                 "position": rv(0, at[1] - 0.021, PANEL[2] + 0.001), "pixel_size": 0.0003,
                 "modulate": raw("Color(0.75, 0.78, 0.8, 1)"), "font_size": 32, "outline_size": 0, "text": label})
+    # Rain on the glass; RainOnGlass plays it and scales it by the rain (this volume = full rain).
+    s.sound("RainPatter", "sfx/rain_patter", position=rv(0, cy, g["gz"]), groups=["rain_patter"], volume_db=-16.0,
+            unit_size=2.0, max_distance=15.0)
     s.sound("PanelClick", "sfx/button_click", position=rv(panel_x, w["panel"]["y"], D / 2 + 0.02), volume_db=-8.0)
 
     if w.get("shade"):

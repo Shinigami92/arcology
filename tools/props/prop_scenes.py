@@ -461,14 +461,14 @@ class Scene:
             self.node(name, "CollisionShape3D", parent=parent, props=props)
 
     def sound(self, name: str, stream: str, *, parent: str = ".", position: Vec3 | None = None,
-              before: str | None = None, **props: object) -> str:
+              before: str | None = None, groups: Sequence[str] = (), **props: object) -> str:
         """An AudioStreamPlayer3D; props after `stream` in order (volume_db, autoplay, max_distance, ...)."""
         values: dict = {}
         if position is not None:
             values["position"] = tuple(position)
         values["stream"] = self.ext(stream)
         values.update(props)
-        return self.node(name, "AudioStreamPlayer3D", parent=parent, props=values, before=before)
+        return self.node(name, "AudioStreamPlayer3D", parent=parent, props=values, before=before, groups=groups)
 
     def _sound(self, spec: Sound, parent: str, default_name: str) -> str:
         return self.sound(spec.name or default_name, spec.stream, parent=parent, position=spec.position, **spec.props)
@@ -622,7 +622,7 @@ class Scene:
 
     def mesh(self, name: str, mesh: Raw, *, parent: str = ".", position: Vec3 | None = None,
              rotation: Vec3 | None = None, material: str | Raw | None = None, override: bool = False,
-             shadow: bool = True, props: dict | None = None) -> str:
+             shadow: bool = True, props: dict | None = None, groups: Sequence[str] = ()) -> str:
         """A MeshInstance3D with a mesh sub_resource (see box_mesh, quad_mesh). material: a
         resource ref ("assets/materials/x.tres") or a SubResource, written as
         surface_material_override/0, or as material_override with override=True.
@@ -639,7 +639,7 @@ class Scene:
         if material is not None:
             mat = material if isinstance(material, Raw) else self.ext(material)
             values["material_override" if override else "surface_material_override/0"] = mat
-        return self.node(name, "MeshInstance3D", parent=parent, props=values)
+        return self.node(name, "MeshInstance3D", parent=parent, props=values, groups=groups)
 
     def box_mesh(self, size: Vec3) -> Raw:
         """A BoxMesh sub_resource, shared by size."""

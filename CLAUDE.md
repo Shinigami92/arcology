@@ -38,9 +38,9 @@ blender/                  .blend sources (LFS) + their build scripts, exported t
 core/
   player/                 ArcologyPlayer rig (player.tscn), StickSprint, GrabRay, player_physics.tres (jump height), Fingertip press areas (D-031)
   interaction/            ImpactSound, TrashReceiver, HingeStopSound, HingeBodyBlocker, HingeSwing, HingeLight, SliderSwing, KinematicFollower, GrabPassThrough, Seat, GrabHighlight, LightSwitch, EmissiveMaterials, OpenAlarm, HangingRail, RailHanger; windows: MotorizedShade, SmartGlass, WindowLight, WindowHud, HingeAmbience, NamedMaterialOverride
-  debug/                  ABSwitch + ABPanel: blind A/B variants in one spot, flipped by a wall button (D-030)
+  debug/                  ABSwitch + ABPanel: blind A/B variants in one spot, flipped by a wall button (D-030); RainDebugButton (temporary "RAIN" button in the living room)
   world_state/            (M2) time of day, weather, overrides
-  weather/                (M2)
+  weather/                RainOnGlass (rain on the windows: smoothing, wetness, shader swap, rain sounds; set_rain() is the entry point, D-034); more in M2
   zones/                  (M3) zone loader
   persistence/            (M3)
 zones/
@@ -143,7 +143,7 @@ Rules of thumb:
 Behavior checks that don't need the headset or the editor. Run `interaction` after any change to the player, props or apartment layout; add a check when fixing a bug found in the headset.
 
 ```sh
-"$GODOT4_EDITOR" --path . --xr-mode off -- --test=interaction   # doors, blocker, pass-through, jump, ranged grab, props, windows
+"$GODOT4_EDITOR" --path . --xr-mode off -- --test=interaction   # doors, blocker, pass-through, jump, ranged grab, props, windows, rain
 "$GODOT4_EDITOR" --path . --xr-mode off -- --test=skyline       # window shimmer (D-020, D-023)
 ```
 
@@ -228,12 +228,13 @@ Edit `tools/blockout/apartment.py` (walls, openings, furniture boxes, props, sea
 
 Windows are specs, not scenes (D-033). Add an entry to a `tools/props/windows/*.json` file (width, bottom, top, bays, sill `stone`/`floor`, optional `vent`, `shade`, `tint`, `led` `warm`/`cyan`, `hud`, `panel` side and height); the shared `profile` block fixes frame, mullion, glass and sash depths, and bays follow from it. Brief `blender-artist` with the same JSON (frame, sash and shade-bar glbs into `assets/architecture/windows/<name>/`, the vent's own `<name>_shade_bar_vent.glb`; shared panel, button, trim and fabric in `_kit/`). When the glbs land, run `python tools/props/window.py --imports` **before** the editor scans them (maps their `window_trim` to the shared `assets/materials/window_trim.tres` and drops the embedded texture copies), scan, then `python tools/props/window.py` (placeholder boxes until the glbs exist). Then place it: in the apartment, add it to `WINDOWS` in the generator, which cuts the opening from the spec and wires the room's spill light (`WindowLight`). Constants the contract doesn't pin (sill slab, shade plane, panel layout) are at the top of `window.py`.
 
-- **Glass:** `assets/shaders/window_glass.gdshader`, one transparent layer per pane (premultiplied alpha, so reflections and the HUD keep their strength), one `ShaderMaterial` per window (`resource_local_to_scene`). Uniforms: `tint` (SmartGlass), the HUD (`hud_*`, drawn procedurally; `hud_enabled`/`hud_anchor` are per-pane instance uniforms), `rain_amount` (reserved: fill in `rain()`).
+- **Glass:** `assets/shaders/window_glass.gdshaderinc`, compiled as `window_glass.gdshader` (dry) and `window_glass_wet.gdshader` (rain, D-034). One transparent layer per pane (premultiplied alpha, so reflections and the HUD keep their strength), one `ShaderMaterial` per window (`resource_local_to_scene`). Uniforms: `tint` (SmartGlass), the HUD (`hud_*`, drawn procedurally; `hud_enabled`/`hud_anchor` are per-pane instance uniforms), `rain_*` (RainOnGlass).
+- **Rain:** panes are in the `window_glass` group, each window has a `RainPatter` player (`rain_patter` group) and a vent a `RainAmbience` (`rain_ambience` group, a `HingeAmbience` whose `gain` follows the rain); `RainOnGlass` (in `main.tscn` under `Weather`) finds them by group. `--rain=<0..1>` starts wet (tests, shots, perf), `--rain-delay=<s>` lets it set in later (hitch checks). The living room's temporary `RainDebugButton` cycles 0 → 0.4 → 1 → 0.
 - **Stills:** `--shot-hinge=Windows/BedroomWindow/Vent:10` tilts the vent; `--shot-call=Windows/LivingWindow/Shade:set_closure:0.6,Windows/LivingWindow/SmartGlass:set_tint:0.9` sets shades and tint.
 
 ### Add or regenerate sounds
 
-Placeholder SFX come from `python tools/audio/synth_sfx.py` (deterministic). Replace a file with a better sound under the same name to upgrade it everywhere. Loops (`fridge_hum`, `fridge_alarm`, `shade_motor`, `city_ambience`) need `edit/loop_mode=2` in their `.import`; write it before the first scan.
+Placeholder SFX come from `python tools/audio/synth_sfx.py` (deterministic). Replace a file with a better sound under the same name to upgrade it everywhere. Loops (`fridge_hum`, `fridge_alarm`, `shade_motor`, `city_ambience`, `rain_patter`, `rain_outside`) need `edit/loop_mode=2` in their `.import`; write it before the first scan.
 
 ## Subagents
 

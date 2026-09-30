@@ -312,6 +312,55 @@ def city_ambience() -> list[float]:
     return out
 
 
+def _ticks(rng: random.Random, n: int, rate_hz: float, dur: float, lo: float, hi: float, gain: float) -> list[float]:
+    """Random short noise ticks (drops hitting something), wrapped around the end so the loop stays seamless."""
+    out = [0.0] * n
+    length = int(RATE * dur)
+    for _ in range(int(rate_hz * n / RATE)):
+        start = rng.randrange(n)
+        amp = gain * rng.uniform(0.2, 1.0) ** 2
+        f = rng.uniform(lo, hi)
+        phase = rng.uniform(0, 2 * math.pi)
+        for k in range(length):
+            t = k / RATE
+            e = math.exp(-t / (dur * 0.25))
+            v = amp * e * (math.sin(2 * math.pi * f * t + phase) * 0.6 + rng.uniform(-1, 1) * 0.4)
+            out[(start + k) % n] += v
+    return out
+
+
+def rain_patter() -> list[float]:
+    """Rain on a window pane from inside: dense soft ticks on the glass over a
+    muffled hiss; 5 s seamless loop (import with loop mode Forward)."""
+    rng = random.Random(17)
+    hiss = _loop_noise(rng, int(RATE * 5.5), 0.12)
+    n = len(hiss)
+    ticks = _ticks(random.Random(18), n, 260.0, 0.012, 1800, 4200, 0.35)
+    heavy = _ticks(random.Random(19), n, 18.0, 0.03, 500, 1200, 0.6)
+    return [1.4 * hiss[i] + lowpass_one(ticks[i] + heavy[i]) for i in range(n)]
+
+
+def rain_outside() -> list[float]:
+    """Heavy rain outside an open window: broadband roar, splashes and drips on
+    the sill; 6 s seamless loop (import with loop mode Forward)."""
+    rng = random.Random(20)
+    roar = _loop_noise(rng, int(RATE * 6.5), 0.35)
+    n = len(roar)
+    body = _loop_noise(random.Random(21), int(RATE * 6.5), 0.04)
+    splashes = _ticks(random.Random(22), n, 120.0, 0.02, 900, 3000, 0.4)
+    drips = _ticks(random.Random(23), n, 3.0, 0.06, 350, 700, 0.8)
+    return [0.9 * roar[i] + 2.0 * body[i] + splashes[i] + drips[i] for i in range(n)]
+
+
+_lp_state = [0.0]
+
+
+def lowpass_one(x: float, alpha: float = 0.45) -> float:
+    """One-pole lowpass with module state (softens the glass ticks)."""
+    _lp_state[0] += alpha * (x - _lp_state[0])
+    return _lp_state[0]
+
+
 if __name__ == "__main__":
     write_wav("ball_bounce", ball_bounce())
     write_wav("can_hit", can_hit())
@@ -328,3 +377,5 @@ if __name__ == "__main__":
     write_wav("tint_tone", tint_tone())
     write_wav("vent_latch", vent_latch())
     write_wav("city_ambience", city_ambience())
+    write_wav("rain_patter", rain_patter())
+    write_wav("rain_outside", rain_outside())

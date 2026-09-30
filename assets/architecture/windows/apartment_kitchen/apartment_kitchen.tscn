@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" path="res://assets/architecture/windows/_kit/window_panel.glb" id="window_panel"]
 [ext_resource type="Script" uid="uid://dq042kibpfryy" path="res://addons/godot-xr-tools/interactables/interactable_area_button.gd" id="area_button"]
 [ext_resource type="PackedScene" path="res://assets/architecture/windows/_kit/window_panel_button.glb" id="window_panel_button"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/rain_patter.wav" id="rain_patter"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/button_click.wav" id="button_click"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/shade_motor.wav" id="shade_motor"]
 [ext_resource type="Script" path="res://core/interaction/motorized_shade.gd" id="motorized_shade"]
@@ -105,7 +106,7 @@ root = NodePath("../FrameModel")
 material_name = "window_led"
 material = ExtResource("window_led_cyan")
 
-[node name="Glass0" type="MeshInstance3D" parent="."]
+[node name="Glass0" type="MeshInstance3D" parent="." groups=["window_glass"]]
 position = Vector3(0, 1.65, -0.05)
 cast_shadow = 0
 mesh = SubResource("QuadMesh_0")
@@ -163,6 +164,13 @@ shape = SubResource("SphereShape3D_button")
 [node name="Cap" type="Node3D" parent="Panel/TintButton"]
 
 [node name="Model" parent="Panel/TintButton/Cap" instance=ExtResource("window_panel_button")]
+
+[node name="RainPatter" type="AudioStreamPlayer3D" parent="." groups=["rain_patter"]]
+position = Vector3(0, 1.65, -0.05)
+stream = ExtResource("rain_patter")
+volume_db = -16.0
+unit_size = 2.0
+max_distance = 15.0
 
 [node name="PanelClick" type="AudioStreamPlayer3D" parent="."]
 position = Vector3(-1.07, 1.2, 0.12)

@@ -7,7 +7,8 @@ extends Node
 ## The state comes from [member source] when set (any object with
 ## `get_hud_state() -> Dictionary` returning hour, minute, temperature and
 ## weather, e.g. the M2 WorldState later), else from the system clock with
-## the fixed placeholder [member temperature] and [member weather].
+## the fixed placeholder [member temperature] and [member weather] (rain while
+## [RainOnGlass] has rain).
 
 enum Weather { CLEAR_NIGHT, CLOUDY, RAIN }
 
@@ -59,4 +60,9 @@ func _state() -> Dictionary:
 	if source and source.has_method("get_hud_state"):
 		return source.call("get_hud_state")
 	var now := Time.get_time_dict_from_system()
-	return {"hour": now.hour, "minute": now.minute, "temperature": temperature, "weather": weather}
+	var shown_weather := weather
+	# Placeholder until WorldState: the rain on the glass (RainOnGlass) shows as rain.
+	var rain := get_tree().get_first_node_in_group(RainOnGlass.GROUP) as RainOnGlass
+	if rain and rain.target > 0.0:
+		shown_weather = Weather.RAIN
+	return {"hour": now.hour, "minute": now.minute, "temperature": temperature, "weather": shown_weather}

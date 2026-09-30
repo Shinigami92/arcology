@@ -54,6 +54,8 @@ func _ready() -> void:
 	await _test_window_tint()
 	await _test_window_hud()
 	await _test_window_glass_collision()
+	await _test_rain_button()
+	await _test_rain_wetness()
 	print("TEST DONE: %d failure(s)" % _failures)
 	get_tree().quit(_failures)
 
@@ -1029,3 +1031,103 @@ func _test_window_glass_collision() -> void:
 	_check("window_glass_stops_player", fraction < 1.0 and stop_z > -3.17 and player_z > -3.1,
 			"capsule front stops at z %.2f (glass -3.15), player walking into the window ends at z %.2f" % [
 				stop_z, player_z])
+
+
+# ---------------------------------------------------------------- rain on the glass (D-034)
+
+func _rain_materials() -> Array[ShaderMaterial]:
+	var out: Array[ShaderMaterial] = []
+	for node in get_tree().get_nodes_in_group(RainOnGlass.GROUP_GLASS):
+		var mat := (node as GeometryInstance3D).material_override as ShaderMaterial
+		if mat and not out.has(mat):
+			out.append(mat)
+	return out
+
+
+## Every window material is in the shader's early-out state (rain 0, dry).
+func _rain_uniforms_dry() -> bool:
+	for mat in _rain_materials():
+		var amount: Variant = mat.get_shader_parameter("rain_amount")
+		var wet: Variant = mat.get_shader_parameter("rain_wet")
+		if (amount != null and float(amount) != 0.0) or (wet != null and float(wet) != 0.0):
+			return false
+	return true
+
+
+## The living room debug button cycles the rain 0 -> 0.4 -> 1 -> 0.
+func _test_rain_button() -> void:
+	var rain: RainOnGlass = _main.get_node("Weather/RainOnGlass")
+	rain.set_rain(0.0, true)
+	var button: Node3D = _main.get_node("Zones/Apartment/Props/RainDebugButton/Button")
+	var targets: Array[String] = []
+	for i in 3:
+		await _press(button)
+		targets.append("%.1f" % rain.target)
+	rain.set_rain(0.0, true)
+	await _frames(2)
+	_check("rain_button_cycles", targets == ["0.4", "1.0", "0.0"], "rain after each press: %s" % [targets])
+
+
+## Wetness lags behind the rain; after the rain stops the runners stop first,
+## then the beads dry off; patter and the vent rain follow; fully dry, every
+## window material is back at the early-out state and RainOnGlass idles.
+## Runs 10x faster (time_scale).
+func _test_rain_wetness() -> void:
+	var rain: RainOnGlass = _main.get_node("Weather/RainOnGlass")
+	var hinge: XRToolsInteractableHinge = _main.get_node(WINDOWS + "BedroomWindow/Vent/HingeOrigin/InteractableHinge")
+	var patter: AudioStreamPlayer3D = _main.get_node(WINDOWS + "LivingWindow/RainPatter")
+	var outside: HingeAmbience = _main.get_node(WINDOWS + "BedroomWindow/RainAmbience")
+	var mats := _rain_materials()
+	rain.set_rain(0.0, true)
+	await _frames(2)
+	var dry_at_start := _rain_uniforms_dry() and not rain.is_processing() and not rain.is_wet_shader()
+	var living_glass: SmartGlass = _main.get_node(WINDOWS + "LivingWindow/SmartGlass")
+	living_glass.set_tint(0.5)
+	var saved := rain.time_scale
+	rain.time_scale = 10.0
+	_move_hinge(hinge, hinge.hinge_limit_max)
+
+	rain.set_rain(1.0)
+	await _frames(3)
+	var early := "amount %.2f wet %.2f" % [rain.amount, rain.wetness]
+	var early_ok := rain.amount < 0.3 and rain.wetness < 0.2
+	await _frames(270)
+	var full_ok := rain.amount > 0.99 and rain.wetness > 0.95 and rain.slide > 0.9
+	var shader_wet: float = mats[0].get_shader_parameter("rain_wet")
+	var shader_ok := mats.size() == 3 and absf(shader_wet - rain.wetness) < 0.001
+	var full := "amount %.2f wet %.2f slide %.2f" % [rain.amount, rain.wetness, rain.slide]
+	var hud_pane: GeometryInstance3D = _main.get_node(WINDOWS + "LivingWindow/Glass2")
+	var hud_mat := hud_pane.material_override as ShaderMaterial
+	var kept_tint: float = hud_mat.get_shader_parameter("tint")
+	var kept_hud: bool = hud_pane.get_instance_shader_parameter("hud_enabled")
+	var swap_ok := rain.is_wet_shader() and hud_mat.shader == RainOnGlass.WET_SHADER and absf(kept_tint - 0.5) < 0.001 			and kept_hud and hud_mat.get_shader_parameter("hud_time") != null
+	living_glass.set_tint(0.0)
+	_check("rain_wetness_lags", dry_at_start and early_ok and full_ok and shader_ok,
+			"dry at start %s; 0.3 s of rain: %s; 30 s: %s; %d window materials, rain_wet %.2f" % [
+				dry_at_start, early, full, mats.size(), shader_wet])
+	_check("rain_wet_shader", swap_ok, "wet shader while raining %s; tint %.2f and the HUD kept across the swap" % [
+			rain.is_wet_shader(), kept_tint])
+	var patter_db := patter.volume_db
+	var sounds_on := patter.playing and outside.playing
+	var outside_open_db := outside.volume_db
+	_move_hinge(hinge, 2.0)
+	var outside_tilted_db := outside.volume_db
+
+	rain.set_rain(0.0)
+	await _frames(90)
+	var after := "slide %.2f wet %.2f, patter %.1f dB (full %.1f)" % [rain.slide, rain.wetness, patter.volume_db, patter_db]
+	var stops_first := rain.slide < 0.01 and rain.wetness > 0.5 and patter.volume_db < patter_db - 12.0
+	for i in 1200:
+		if not rain.is_processing():
+			break
+		await get_tree().physics_frame
+	var dried := rain.is_dry() and not rain.is_processing() and _rain_uniforms_dry() and not rain.is_wet_shader() 			and mats[0].shader == RainOnGlass.DRY_SHADER
+	var sounds_off := not patter.playing and not outside.playing
+	rain.time_scale = saved
+	_move_hinge(hinge, 0.0)
+	await _frames(2)
+	_check("rain_dries_after", stops_first and dried,
+			"10 s after the rain: %s; later dry, idle and every material at the early-out state %s" % [after, dried])
+	_check("rain_sounds_follow", sounds_on and outside_open_db > outside_tilted_db + 6.0 and sounds_off,
+			"raining: patter and vent rain playing %s, vent rain open %.1f dB, nearly shut %.1f dB; dry: silent %s" % [
+				sounds_on, outside_open_db, outside_tilted_db, sounds_off])

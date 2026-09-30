@@ -61,6 +61,7 @@ SCENES = {
     "bed": "res://assets/props/bed/bed.tscn",
     "wardrobe": "res://assets/props/wardrobe/wardrobe.tscn",
     "nightstand": "res://assets/props/nightstand/nightstand.tscn",
+    "rain_debug": "res://core/debug/rain_debug_button.tscn",
 }
 SEAT_SCRIPT = "res://core/interaction/seat.gd"
 AB_SCRIPT = "res://core/debug/ab_switch.gd"
@@ -203,6 +204,8 @@ INSTANCES = [
     ("Wardrobe", "wardrobe", (-5.9, 0, 1.70), (0, 180, 0)),
     ("Nightstand", "nightstand", (-6.60, 0, 0.35), (0, 90, 0)),
     ("CanSink", "can", (1.7, 0.912, 4.75), (0, 0, 0)),
+    # Temporary rain debug button (D-034), on the wall west of the living room window panel.
+    ("RainDebugButton", "rain_debug", (-2.74, 1.2, -3.0), (0, 0, 0)),
 ]
 
 # Blind A/B pairs (core/debug/ab_switch.gd): name, scene A, scene B, position, rotation.

@@ -9,6 +9,8 @@ extends Node3D
 ##   --perf-hide=<a,b>    zone-relative node paths to hide (A/B cost tests)
 ##   --test=<suite>       run tools/tests/<suite>_tests.gd and quit with the failure count
 ##   --shots=<views>      render still images and quit (see tools/shots/shots.gd)
+##   --rain=<0..1>        start with rain on the glass (wet at once; RainOnGlass)
+##   --rain-delay=<s>     with --rain: start dry and let the rain set in after s seconds
 
 const PERF_SCRIPT := "res://tools/perf/perf_flythrough.gd"
 const SHOTS_SCRIPT := "res://tools/shots/shots.gd"
@@ -27,6 +29,12 @@ func _ready() -> void:
 		push_warning("Entry marker not found: %s" % entry)
 
 	var args := _user_args()
+	if args.has("rain"):
+		var rain := $Weather/RainOnGlass as RainOnGlass
+		if args.has("rain-delay"):
+			get_tree().create_timer(float(args["rain-delay"])).timeout.connect(rain.set_rain.bind(float(args["rain"])))
+		else:
+			rain.set_rain(float(args["rain"]), true)
 	if args.has("perf"):
 		_start_perf(args)
 	elif args.has("test"):

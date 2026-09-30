@@ -18,9 +18,11 @@
 [ext_resource type="PackedScene" path="res://assets/architecture/windows/apartment_bedroom/apartment_bedroom_shade_bar_vent.glb" id="apartment_bedroom_shade_bar_vent"]
 [ext_resource type="Script" path="res://core/interaction/hinge_ambience.gd" id="hinge_ambience"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/city_ambience.wav" id="city_ambience"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/rain_outside.wav" id="rain_outside"]
 [ext_resource type="PackedScene" path="res://assets/architecture/windows/_kit/window_panel.glb" id="window_panel"]
 [ext_resource type="Script" uid="uid://dq042kibpfryy" path="res://addons/godot-xr-tools/interactables/interactable_area_button.gd" id="area_button"]
 [ext_resource type="PackedScene" path="res://assets/architecture/windows/_kit/window_panel_button.glb" id="window_panel_button"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/rain_patter.wav" id="rain_patter"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/button_click.wav" id="button_click"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/shade_motor.wav" id="shade_motor"]
 [ext_resource type="Script" path="res://core/interaction/motorized_shade.gd" id="motorized_shade"]
@@ -136,7 +138,7 @@ root = NodePath("../FrameModel")
 material_name = "window_led"
 material = ExtResource("window_led_warm")
 
-[node name="Glass0" type="MeshInstance3D" parent="."]
+[node name="Glass0" type="MeshInstance3D" parent="." groups=["window_glass"]]
 position = Vector3(-0.64, 1.4, -0.05)
 cast_shadow = 0
 mesh = SubResource("QuadMesh_0")
@@ -215,7 +217,7 @@ script = ExtResource("pass_through")
 body = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
 handles_root = NodePath("../HingeOrigin/InteractableHinge/Leaf")
 
-[node name="Glass1" type="MeshInstance3D" parent="Vent/HingeOrigin/InteractableHinge/Leaf/DoorBody"]
+[node name="Glass1" type="MeshInstance3D" parent="Vent/HingeOrigin/InteractableHinge/Leaf/DoorBody" groups=["window_glass"]]
 position = Vector3(0, 0.955, -0.05)
 cast_shadow = 0
 mesh = SubResource("QuadMesh_2")
@@ -240,6 +242,17 @@ max_distance = 25.0
 script = ExtResource("hinge_ambience")
 hinge = NodePath("../Vent/HingeOrigin/InteractableHinge")
 open_db = -4.0
+
+[node name="RainAmbience" type="AudioStreamPlayer3D" parent="." node_paths=PackedStringArray("hinge") groups=["rain_ambience"]]
+position = Vector3(0.64, 2.164, 0.1)
+stream = ExtResource("rain_outside")
+volume_db = -80.0
+unit_size = 2.5
+max_distance = 25.0
+script = ExtResource("hinge_ambience")
+hinge = NodePath("../Vent/HingeOrigin/InteractableHinge")
+open_db = 0.0
+gain = 0.0
 
 [node name="Panel" type="Node3D" parent="."]
 position = Vector3(1.42, 1.2, 0.1)
@@ -283,6 +296,13 @@ shape = SubResource("SphereShape3D_button")
 [node name="Cap" type="Node3D" parent="Panel/TintButton"]
 
 [node name="Model" parent="Panel/TintButton/Cap" instance=ExtResource("window_panel_button")]
+
+[node name="RainPatter" type="AudioStreamPlayer3D" parent="." groups=["rain_patter"]]
+position = Vector3(0, 1.4, -0.05)
+stream = ExtResource("rain_patter")
+volume_db = -16.0
+unit_size = 2.0
+max_distance = 15.0
 
 [node name="PanelClick" type="AudioStreamPlayer3D" parent="."]
 position = Vector3(1.42, 1.2, 0.12)

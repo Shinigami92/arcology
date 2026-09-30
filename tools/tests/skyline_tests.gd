@@ -33,6 +33,13 @@ func _ready() -> void:
 	env.glow_enabled = false
 	print("SHIMMER without_glow: %.2f %%" % await _shimmer())
 	env.glow_enabled = true
+	# Rain on the glass, frozen (the sliding itself isn't shimmer): only the view moves.
+	var rain: RainOnGlass = _main.get_node("Weather/RainOnGlass")
+	rain.set_rain(1.0, true)
+	rain.set_process(false)
+	await get_tree().create_timer(0.3).timeout
+	print("SHIMMER rain_static: %.2f %%" % await _shimmer())
+	rain.set_rain(0.0, true)
 
 	var ok := default_pct <= MAX_SHIMMER_PCT
 	print("TEST %s skyline_shimmer: %.2f %% (max %.1f %%)" % ["PASS" if ok else "FAIL", default_pct, MAX_SHIMMER_PCT])

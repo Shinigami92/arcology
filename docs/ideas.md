@@ -42,7 +42,8 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 
 - [M2] Global world state: time of day, weather, automatic cycle at configurable speed, manual override.
 - [M2] Day/night cycle with live lighting in the apartment.
-- [M2] Weather: rain particles, rain-on-glass shader (the glass shader has `rain_amount` and a `rain()` hook ready, D-033), wet surfaces, fog, lightning, sky crossfade, audio layers.
+- [M2] Weather: rain particles, wet surfaces, fog, lightning, sky crossfade, audio layers. Rain on the glass is done (D-034); the weather system drives it through `RainOnGlass.set_rain()` and replaces the living room's temporary RAIN button.
+- [later] Rain on glass: wind-blown slanted runners, drops gathering on the sill and dripping, splashes on the stone sill outside the bedroom vent; better rain sounds than the synth placeholders.
 - [M2] World-state control panel in the apartment, e.g. a holographic wall terminal with physical buttons and sliders.
 - [M2] Panorama variants: day, dusk, night, rain/fog, crossfaded by time and weather.
 - [M2] Replace the procedural window pattern with prefiltered (mipmapped) facades/impostors; the remaining flicker in the headset is probably aliasing plus stream compression (D-023).
@@ -74,6 +75,8 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - Grappling hook (least satisfying in the XR Tools demo; not a fit).
 
 ## Done
+
+- Rain on the glass (2026-09-30): Heartfelt-style beads, runners with trails and a wet mist on every window, drops refracting the city through the screen texture, wetness that lingers and dries after the rain, patter on the glass and louder rain through the open vent; temporary RAIN button and `--rain` (D-034).
 
 - Windows (2026-09-30): procedural windows from shared JSON specs (D-033): floor-to-ceiling living room window with a glass HUD, bedroom tilt vent with city noise, kitchen window on a 0.9 m sill; motorized shades, smart-glass tint and LED channels per room, all on a physical wall panel; tint and shades darken the room.
 

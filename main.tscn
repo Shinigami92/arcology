@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" path="res://zones/skyline/skyline.tscn" id="3_skyline"]
 [ext_resource type="PackedScene" path="res://zones/apartment/apartment.tscn" id="4_apartment"]
 [ext_resource type="PackedScene" path="res://core/player/player.tscn" id="5_player"]
+[ext_resource type="Script" path="res://core/weather/rain_on_glass.gd" id="6_rain"]
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
@@ -19,3 +20,8 @@ target_refresh_rate = 90.0
 [node name="Apartment" parent="Zones" instance=ExtResource("4_apartment")]
 
 [node name="Player" parent="." instance=ExtResource("5_player")]
+
+[node name="Weather" type="Node" parent="."]
+
+[node name="RainOnGlass" type="Node" parent="Weather"]
+script = ExtResource("6_rain")
