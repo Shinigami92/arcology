@@ -21,6 +21,7 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [later] In-world settings panel for comfort options (no flat menus).
 - [later] Hand tracking (Steam Frame) in addition to controllers.
 - [later] Player avatar / body (IK from head and hands); prerequisite for a meaningful mirror.
+- [later] Footstep sounds while walking (smooth locomotion and real steps), chosen by the floor under the player: vinyl, carpet, concrete, later street surfaces; quieter or none while seated.
 
 ## Interaction
 
@@ -33,6 +34,7 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [later] Drawers and cabinets (sliders); wardrobe doors. The fridge's crisper drawer is a separate object ready to slide; first lower its front panel, which reaches 6 mm into the cover trim when closed (see `blender/props/fridge/fridge_common.py`).
 - [later] Use the Frame's left D-pad and bumpers (free for now): e.g. quick comfort toggles.
 - [later] Bathroom: working tap/shower.
+- [later] Impact sounds per surface: a falling or thrown object sounds different on vinyl, carpet (muffled), concrete and furniture. Needs a surface tag on static bodies (e.g. a group or metadata per floor material, set by the apartment generator) that `ImpactSound` looks up on contact, plus sound sets per object and surface.
 - [later] Door hardware: levers press down while grabbed (latch: the door opens only with the lever down), bathroom thumb-turn and entrance deadbolt lock the door, smart-lock LED red/green; latch and deadbolt sounds. The glbs already have the levers and turns as separate parts on their axes (D-035).
 - [later] Trim kit: skirting boards along the walls, maybe a ceiling shadow gap with an LED strip.
 - [later] Working bathroom mirror. Makes most sense once there's a player avatar. Godot 4.7 has no hardware ray tracing, so the options to measure against the 90 FPS budget are: planar reflection via a SubViewport (renders the room again for both eyes, the expensive but correct one), a box-projected ReflectionProbe updated in real time, or SSR (can't show what's off screen). Good stress test for the budget.
