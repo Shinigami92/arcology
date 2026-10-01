@@ -36,7 +36,7 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [later] Bathroom: working tap/shower.
 - [later] Impact sounds per surface: a falling or thrown object sounds different on vinyl, carpet (muffled), concrete and furniture. Needs a surface tag on static bodies (e.g. a group or metadata per floor material, set by the apartment generator) that `ImpactSound` looks up on contact, plus sound sets per object and surface.
 - [later] Door hardware: levers press down while grabbed (latch: the door opens only with the lever down), bathroom thumb-turn and entrance deadbolt lock the door, smart-lock LED red/green; latch and deadbolt sounds. The glbs already have the levers and turns as separate parts on their axes (D-035).
-- [later] Trim kit: skirting boards along the walls, maybe a ceiling shadow gap with an LED strip.
+- [later] Ceiling trim: maybe a shadow gap with an LED strip. Bathroom wall finish (tiles or a wet-room skirting).
 - [later] Working bathroom mirror. Makes most sense once there's a player avatar. Godot 4.7 has no hardware ray tracing, so the options to measure against the 90 FPS budget are: planar reflection via a SubViewport (renders the room again for both eyes, the expensive but correct one), a box-projected ReflectionProbe updated in real time, or SSR (can't show what's off screen). Good stress test for the budget.
 - [M2] Physical light switches and dimmers per room, and/or a smart-home hub panel (could be the same in-world terminal as the world-state control panel).
 - [M2] Windows (D-033): tilt vent in the bedroom, motorized shades and smart-glass tint per room via a wall panel, HUD readout on the living room glass. Done on placeholders; the artist's frame/sash/panel glbs drop in by rerunning `tools/props/window.py`.
@@ -79,6 +79,8 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - Grappling hook (least satisfying in the XR Tools demo; not a fit).
 
 ## Done
+
+- Skirting boards (2026-10-01): painted skirting along every wall, wrapping the archways and butting the door casings, swept in Blender along runs the apartment generator computes (D-036).
 
 - Surfaces and doors (2026-10-01): tileable vinyl, carpet, polished concrete and plaster on the apartment shell (D-035); realistic interior doors (bathroom with a privacy thumb-turn) and a security entrance door with peephole, unit plate and smart-lock LED, each with its own frame.
 

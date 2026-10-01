@@ -7,6 +7,7 @@ says what to rename). Richer examples: `fridge` (hinged door, display), `nightst
 lamp with emission, per-board veneer), `bed` (cloth simulation, heightfield collider),
 `wardrobe_lit` (sweeps, shared props atlas, `Spread`), `blender/architecture/windows/` (spec-driven
 builder: many assets from one JSON, shared trim sheet instead of a per-part bake, `trim`),
+`blender/architecture/skirting/` (skirting swept along generated runs, `TrimMesh.polyline_sweep`),
 `blender/surfaces/` (seamless tileable floor/wall/ceiling texture sets, `surface`).
 
 ## Stage scripts
@@ -146,6 +147,9 @@ from the repo root (Blender 5.2: `"C:/Program Files/Blender Foundation/Blender 5
 - numpy, tileable along U: `noise(h, w, size_u, size_v, seed)`, `fbm(...)`, `warp(field, du, dv)`, `smoothstep`, `height_to_normal(height_m, px_m, strength)`, `linear_to_srgb`
 - `TrimSheet(width, height, px_per_m, pad)`: `add_band(name, rows)`, `fill(name, fn(h, w, px_m, v_m, seed) -> {albedo, rough, metal, height, ao})`, `images(prefix)` packed albedo/normal/ORM (wire with `bake.final_material`), `uv(band, u_m, v_m)`
 - `TrimMesh(sheet, basis, origin, band_mats, u_offset)` faces with a band each, real-world UVs (U along the member): `poly`, `quad_strip`, `rect_sweep(rect, profile, bands, side_offset, sides, skip)` (profile mitered around a rectangle: frames, gaskets, sashes), `extrude` (straight member), `loft(rings, center="rings")`, `bridge(inner, outer)` (planar ring between loops, no T-junctions), `grid(cuts, cell)` (planar face with holes: slots, inlays), `to_object(name, coll, {slot: Material})`
+- `TrimMesh.polyline_sweep(path, profile, bands, up, sides, u_offsets, ease, ease_bands, margin, margin_bands, caps)`
+  profile along a planar polyline with true miters, U along each segment + offset, an optional eased arris and a
+  rubbed-band margin on convex corners, square capped ends (skirting, dados, picture rails)
 - `GODOT_TO_BLENDER` basis for authoring in Godot axes; `image_from_array`, `image_pixels`, `write_png(path, rgb)` (8-bit PNG, no color management)
 
 ### surface (seamless square tiles for floors, walls, ceilings; numpy, periodic in U and V)
@@ -215,6 +219,10 @@ from the repo root (Blender 5.2: `"C:/Program Files/Blender Foundation/Blender 5
   process (the vertices don't), so the glb changes on every rebuild. Build spheres and bulbs
   with `curves.lathe` (a half-circle profile) instead.
 - **Bash reads a running script lazily:** don't edit a shell runner while it runs.
+- **glTF import into a baked .blend fails** (`KeyError: "Iridescence Factor"`): the importer reuses the
+  node group "glTF Material Output", and `bake.final_material`'s copy only has Occlusion. Rename it
+  before importing context glbs in a stage that doesn't save (see `import_glb` in
+  `blender/architecture/skirting/skirting_common.py`).
 
 ## Rebuild checks (byte identity)
 

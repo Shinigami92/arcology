@@ -14,7 +14,8 @@ and `bake.final_material` wires them the way the glTF exporter expects.
 
 `TrimMesh` collects faces with a band each and writes the UVs; its sweeps
 build members from 2D profiles: `rect_sweep` (a profile mitered around a
-rectangle: frames, gaskets, sashes), `extrude` (a straight member), `loft`
+rectangle: frames, gaskets, sashes), `polyline_sweep` (a profile along a
+planar polyline: skirting, rails), `extrude` (a straight member), `loft`
 (rings of equal length: plates, knobs), `grid` (a planar face cut into cells,
 each with its own band or none: a soffit with slots). Profiles are 2D point
 lists, counter-clockwise with the solid on the left; the outward normal of a
@@ -403,6 +404,148 @@ class TrimMesh:
             self.poly(ring, cap_band, A, -D)
         if caps[1]:
             self.poly([p + D * length for p in ring], cap_band, A, D)
+
+    def polyline_sweep(self, path, profile, bands, up=(0.0, 0.0, 1.0), sides=None, closed=False,
+                       u_offsets=None, ease=None, ease_steps=4, ease_bands=None, margin=0.0,
+                       margin_bands=None, caps=(True, True), cap_band=None, stretch=()):
+        """Sweep a closed 2D profile (s, v) along a polyline lying in a plane, with
+        true miters (constant width on both legs) and real-world UVs: skirting,
+        dados, picture rails, coving, kerbs. s offsets toward the segment's side
+        vector (`sides[i]`, unit, in the plane; default `direction x up`), v runs
+        along `up`; the profile is counter-clockwise in (s, v) with the solid on the
+        left (the convention above), so the path is the profile's back line (s = 0).
+
+        U per segment = distance along the segment from its start point (projected
+        onto its direction) + u_offsets[i] (place joints, vary the finish); V = arc
+        length along the profile, restarting at each run of equal bands. bands: one
+        per profile segment (str or callable(normal)). stretch: profile segment
+        indices whose V spans the band.
+
+        Convex corners (the path turns away from the profile side) get an eased
+        arris when `ease` = s0: profile points with s > s0 round about the miter
+        point of s0 with radius s - s0 (ease_steps facets); points with s <= s0 stay
+        mitered. Those faces use ease_bands[band] (a dict; bands not in it keep
+        their own) with U continuing from the incoming segment. `margin` > 0 adds a
+        ring that far from the arris on both legs; faces between use
+        margin_bands[band] (rubbed paint fading off a corner). Concave corners
+        stay sharp miters. Open paths end square at their end points; caps
+        (start, end) close them with the profile polygon in `cap_band` (U across s).
+        Zero-length faces (points with s <= s0 on an arris) are dropped."""
+        up = Vector(up).normalized()
+        P = [Vector(p) for p in path]
+        n = len(P)
+        nseg = n if closed else n - 1
+        D, L = [], []
+        for i in range(nseg):
+            d = P[(i + 1) % n] - P[i]
+            L.append(d.length)
+            D.append(d.normalized())
+        S = [Vector(s).normalized() for s in sides] if sides is not None else [d.cross(up).normalized() for d in D]
+        uo = list(u_offsets) if u_offsets is not None else [0.0] * nseg
+        ease_bands = dict(ease_bands or {})
+        margin_bands = dict(margin_bands or {})
+        segs = self._segments(profile, True)
+        seg_bands = [bands[k] for k in range(len(segs))]
+        arcs = self._arc(profile, segs, seg_bands)
+        prof = [(float(s), float(v)) for s, v in profile]
+
+        def corner(i):
+            """(kind, a, b) at path vertex i: kind in end / sharp / ease; a, b = adjacent segments."""
+            if not closed and (i == 0 or i == n - 1):
+                return ("end", None, 0 if i == 0 else nseg - 1)
+            a, b = (i - 1) % nseg, i % nseg
+            convex = D[b].dot(S[a]) < -1e-6
+            return ("ease" if convex and ease is not None else "sharp", a, b)
+
+        def miter(i, a, b, s):
+            m = (S[a] + S[b]).normalized()
+            return P[i] + m * (s / max(m.dot(S[a]), 1e-3))
+
+        def leg_ring(i, seg):
+            """Points of segment `seg`'s ring at path vertex i (square end, miter, or arris tangent)."""
+            kind, a, b = corner(i)
+            ring = []
+            for s, v in prof:
+                if kind == "end":
+                    p = P[i] + S[seg] * s
+                elif kind == "sharp" or s <= ease:
+                    p = miter(i, a, b, s)
+                else:
+                    p = miter(i, a, b, ease) + S[seg] * (s - ease)
+                ring.append(p + up * v)
+            return ring
+
+        def band_of(k, normal, table):
+            band = self._band(seg_bands[k], normal)
+            return table.get(band, band) if table is not None else band
+
+        def strip(r0, r1, u0, u1, side0, side1, along, table=None):
+            """Faces between two rings (per-point U lists); side vectors orient the normals."""
+            for k, (a, b) in enumerate(segs):
+                (sa, va_), (sb, vb_) = prof[a], prof[b]
+                t2 = (sb - sa, vb_ - va_)
+                side = (side0 + side1).normalized()
+                normal = side * t2[1] - up * t2[0]
+                va, vb = arcs[k]
+                pts = [r0[a], r1[a], r1[b], r0[b]]
+                us = [u0[a], u1[a], u1[b], u0[b]]
+                vs = [va, va, vb, vb]
+                keep = [j for j in range(4) if (pts[j] - pts[j - 1]).length > 1e-9]
+                if len(keep) < 3:
+                    continue
+                self.poly([pts[j] for j in keep], band_of(k, normal, table), along, normal,
+                          v=[vs[j] for j in keep], stretch=k in stretch, u=[us[j] for j in keep])
+
+        def u_of(ring, seg):
+            return [(p - P[seg]).dot(D[seg]) + uo[seg] for p in ring]
+
+        for seg in range(nseg):
+            i0, i1 = seg, (seg + 1) % n
+            r0, r1 = leg_ring(i0, seg), leg_ring(i1, seg)
+            k0, k1 = corner(i0)[0], corner(i1)[0]
+            m0 = margin if k0 == "ease" and margin > 0 else 0.0
+            m1 = margin if k1 == "ease" and margin > 0 else 0.0
+            if m0 + m1 >= L[seg] * 0.8:  # short leg (a reveal): no margin rings
+                m0 = m1 = 0.0
+            rings, tables = [r0], []  # tables[k]: band remap between rings k and k + 1
+            if m0:
+                rings.append([p + D[seg] * m0 for p in r0])
+                tables.append(margin_bands)
+            if m1:
+                rings.append([p - D[seg] * m1 for p in r1])
+                tables.append(None)
+            rings.append(r1)
+            tables.append(margin_bands if m1 else None)
+            for ra, rb, table in zip(rings[:-1], rings[1:], tables):
+                strip(ra, rb, u_of(ra, seg), u_of(rb, seg), S[seg], S[seg], D[seg], table)
+            # eased arris at the segment's end vertex (U continues from this segment)
+            if k1 == "ease":
+                _, a, b = corner(i1)
+                w = S[b] - S[a] * S[b].dot(S[a])
+                w = w.normalized() if w.length > 1e-9 else D[a]
+                phi = math.acos(max(-1.0, min(1.0, S[a].dot(S[b]))))
+                u_end = u_of(r1, seg)
+                prev_ring, prev_u, prev_side = r1, u_end, S[a]
+                for j in range(1, ease_steps + 1):
+                    th = phi * j / ease_steps
+                    rdir = S[a] * math.cos(th) + w * math.sin(th)
+                    ring, us = [], []
+                    for (s, v), u_e in zip(prof, u_end):
+                        if s <= ease:
+                            ring.append(miter(i1, a, b, s) + up * v)
+                            us.append(u_e)
+                        else:
+                            ring.append(miter(i1, a, b, ease) + rdir * (s - ease) + up * v)
+                            us.append(u_e + (s - ease) * th)
+                    strip(prev_ring, ring, prev_u, us, prev_side, rdir, D[a], ease_bands)
+                    prev_ring, prev_u, prev_side = ring, us, rdir
+        if not closed:
+            for end, (seg, i) in enumerate(((0, 0), (nseg - 1, n - 1))):
+                if not caps[end]:
+                    continue
+                ring = leg_ring(i, seg)
+                normal = -D[seg] if end == 0 else D[seg]
+                self.poly(ring, cap_band, S[seg], normal, v=[v for _, v in prof], u=[s for s, _ in prof])
 
     def loft(self, rings, bands, along, closed=True, cap_start=None, cap_end=None, center=None):
         """Quads between consecutive rings (equal point counts): plates with
