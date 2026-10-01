@@ -43,15 +43,18 @@ WINDOWS = [
 WINDOW_LIGHT_SCRIPT = "res://core/interaction/window_light.gd"
 
 MATS = {
-    "floor": "blockout_floor", "wall": "blockout_wall", "ceiling": "blockout_ceiling",
+    "vinyl": "vinyl_plank", "carpet": "carpet", "concrete": "polished_concrete",
+    "wall": "wall_plaster", "ceiling": "ceiling_plaster",
     "gunmetal": "gunmetal", "steel": "brushed_steel", "dark": "furniture_dark",
     "sofa": "fabric_sofa", "magenta": "neon_magenta",
-    "cyan": "neon_cyan", "lamp": "ceiling_lamp", "tile": "bathroom_tile",
+    "cyan": "neon_cyan", "lamp": "ceiling_lamp",
     "mirror": "mirror", "linen": "bed_linen", "wood": "wood_dark", "ceramic": "ceramic",
 }
 UNSHADOWED = {"magenta", "cyan", "lamp"}
 SCENES = {
-    "door": "res://assets/props/door/door.tscn",
+    "door": "res://assets/props/door_interior/door_interior.tscn",
+    "door_bath": "res://assets/props/door_interior/door_interior_bath.tscn",
+    "door_entrance": "res://assets/props/door_entrance/door_entrance.tscn",
     "ball": "res://assets/props/ball/ball.tscn",
     "can": "res://assets/props/beverage_can/beverage_can.tscn",
     "trash": "res://assets/props/trash_can/trash_can.tscn",
@@ -115,9 +118,13 @@ def window_gap(spec_name, x):
 
 
 # --- Shell -----------------------------------------------------------------
-box("Shell", "Floor", (-0.2, -0.1, 0.3), (13.6, 0.2, 7.0), "floor")
+# Floors split at the wall center lines: vinyl in the living room, kitchen and hallway,
+# fitted carpet in the bedroom (edge under its door), polished concrete in the bathroom.
+box("Shell", "Floor", (1.75, -0.1, 0.3), (9.7, 0.2, 7.0), "vinyl")
+box("Shell", "HallWestFloor", (-5.05, -0.1, 2.95), (3.9, 0.2, 1.7), "vinyl")
+box("Shell", "BedroomFloor", (-5.05, -0.1, -0.55), (3.9, 0.2, 5.3), "carpet")
 box("Shell", "Ceiling", (-0.2, H + 0.1, 0.3), (13.6, 0.2, 7.0), "ceiling")
-box("Shell", "BathFloor", (0.5, -0.1, 5.1), (3.4, 0.2, 2.6), "tile")
+box("Shell", "BathFloor", (0.5, -0.1, 5.1), (3.4, 0.2, 2.6), "concrete")
 box("Shell", "BathCeiling", (0.5, H + 0.1, 5.1), (3.4, 0.2, 2.6), "ceiling")
 
 wall("Shell", "North", "x", NORTH, (-7.0, 6.6), [window_gap(spec, x) for spec, _, x, _ in WINDOWS])
@@ -133,7 +140,7 @@ wall("Shell", "BathEast", "z", 2.1, (3.8, 6.2))
 wall("Shell", "BathSouth", "x", 6.3, (-1.2, 2.2))
 
 # Vestibule behind the entrance (placeholder for the M3 building corridor).
-box("Vestibule", "VestFloor", (7.4, -0.1, 2.9), (1.8, 0.2, 1.6), "floor")
+box("Vestibule", "VestFloor", (7.4, -0.1, 2.9), (1.8, 0.2, 1.6), "vinyl")
 box("Vestibule", "VestCeiling", (7.4, H + 0.1, 2.9), (1.8, 0.2, 1.6), "ceiling")
 wall("Vestibule", "VestNorth", "x", 2.1, (6.6, 8.4))
 wall("Vestibule", "VestSouth", "x", 3.7, (6.6, 8.4))
@@ -178,12 +185,13 @@ for i, x in enumerate((-4.5, 0.0, 4.5)):
     box("Hallway", f"LampDisc{i}", (x, 2.585, 2.9), (0.3, 0.03, 0.3), "lamp", False)
 
 # --- Instances -------------------------------------------------------------
-# Doors: origin at the hinge; leaf extends along local +X and opens toward local -Z.
+# Doors (frame + leaf): origin at the opening's bottom center on the wall's center plane, the leaf opens toward
+# local +Z (into the room), hinge on the local -X jamb.
 INSTANCES = [
-    ("DoorLiving", "door", (1.62, 0, 1.98), (0, 0, 0)),
-    ("DoorBedroom", "door", (-4.38, 0, 1.98), (0, 0, 0)),
-    ("DoorBathroom", "door", (0.98, 0, 3.82), (0, 180, 0)),
-    ("DoorEntrance", "door", (6.38, 0, 3.33), (0, 90, 0)),
+    ("DoorLiving", "door", (2.05, 0, 2.1), (0, 180, 0)),
+    ("DoorBedroom", "door", (-3.95, 0, 2.1), (0, 180, 0)),
+    ("DoorBathroom", "door_bath", (0.55, 0, 3.7), (0, 0, 0)),
+    ("DoorEntrance", "door_entrance", (6.5, 0, 2.9), (0, -90, 0)),
     ("TrashCan", "trash", (6.15, 0, 1.6), (0, 0, 0)),
     # Origin bottom center of the cabinet, front +Z, hinge on local -X: NE corner, faces west, hinge north.
     ("Fridge", "fridge", (6.055, 0, -2.53), (0, -90, 0)),

@@ -1,0 +1,14 @@
+[gd_resource type="ShaderMaterial" load_steps=5 format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/world_surface_soft.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" path="res://assets/materials/surfaces/wall_plaster/wall_plaster_albedo.png" id="2_albedo"]
+[ext_resource type="Texture2D" path="res://assets/materials/surfaces/wall_plaster/wall_plaster_orm.png" id="3_orm"]
+[ext_resource type="Texture2D" path="res://assets/materials/surfaces/wall_plaster/wall_plaster_normal.png" id="4_normal"]
+
+[resource]
+resource_name = "wall_plaster"
+shader = ExtResource("1_shader")
+shader_parameter/albedo_texture = ExtResource("2_albedo")
+shader_parameter/orm_texture = ExtResource("3_orm")
+shader_parameter/normal_texture = ExtResource("4_normal")
+shader_parameter/tile_size = 4.0

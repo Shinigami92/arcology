@@ -6,47 +6,66 @@
     "gpu_ms_p95": 8.0,
     "primitives_max": 1500000.0
   },
-  "cpu_ms_p95": 1.77100002765656,
-  "date": "2026-09-30T19:17:34",
-  "draw_calls_max": 298,
+  "cpu_ms_p95": 1.87800002098084,
+  "date": "2026-10-01T20:55:38",
+  "draw_calls_max": 319,
   "failures": [],
-  "frame_ms_avg": 4.14672647884067,
-  "frame_ms_max": 6.58699989318848,
-  "frame_ms_p95": 5.11100006103516,
-  "frame_ms_p99": 5.70599985122681,
-  "frames": 4826,
-  "frames_dropped": 0,
-  "frames_dropped_at": [],
-  "frames_dropped_pct": 0.0,
-  "frames_over_budget_pct": 0.0,
+  "frame_ms_avg": 4.67088095007602,
+  "frame_ms_max": 64.6149978637695,
+  "frame_ms_p95": 5.84499979019165,
+  "frame_ms_p99": 6.25299978256226,
+  "frames": 4284,
+  "frames_dropped": 1,
+  "frames_dropped_at": [
+    {
+      "cpu_ms": 1.2,
+      "gpu_ms": 4.5,
+      "marker": "P3",
+      "ms": 64.6,
+      "pipeline_compiles": 0,
+      "t": 5.6
+    }
+  ],
+  "frames_dropped_pct": 0.0233426704014939,
+  "frames_over_budget_pct": 0.0233426704014939,
   "gpu": "NVIDIA GeForce RTX 4080 SUPER",
-  "gpu_ms_avg": 3.97835764719943,
-  "gpu_ms_p95": 4.34000015258789,
+  "gpu_ms_avg": 4.28429342061977,
+  "gpu_ms_p95": 4.84200000762939,
   "hidden": [],
   "mode": "desktop-approx",
-  "objects_max": 332,
+  "objects_max": 355,
   "pass": true,
-  "physics_ms_p95": 1.22800004482269,
-  "pipeline_compiles": 54,
+  "physics_ms_p95": 1.13100004196167,
+  "pipeline_compiles": 67,
   "pipeline_compiles_at": [
     {
-      "ms": 4.9,
-      "n": 51,
+      "ms": 5.1,
+      "n": 61,
       "t": 3.0
     },
     {
-      "ms": 4.1,
+      "ms": 3.9,
+      "n": 1,
+      "t": 3.25
+    },
+    {
+      "ms": 4.8,
+      "n": 2,
+      "t": 3.42
+    },
+    {
+      "ms": 4.7,
       "n": 2,
       "t": 9.2
     },
     {
-      "ms": 3.6,
+      "ms": 5.7,
       "n": 1,
       "t": 9.57
     }
   ],
-  "primitives_max": 208662,
-  "process_ms_p95": 0.14300000667572,
-  "render_cpu_ms_p95": 0.591000020503998,
+  "primitives_max": 218506,
+  "process_ms_p95": 0.174999997019768,
+  "render_cpu_ms_p95": 0.726000010967255,
   "zone": "apartment"
 }

@@ -34,6 +34,8 @@ Modules:
     cloth      cloth simulation (grid, settle, thicken), analytic drapes, garments, height helpers
     trim       trim sheets (numpy bands tiling along U), real-world trim UVs, a face builder with
                profile sweeps around rectangles, extrusions, lofts, slotted planar faces
+    surface    seamless square texture tiles (numpy, periodic in U and V): oriented noise, Worley cells,
+               staggered plank layouts, cracks, cavity AO, normals, PNG sets, seam checks
     collision  collision boxes and heightfield trimesh colliders for Godot
     bake       UV unwrap and Cycles bake of src_ materials into one PBR atlas set per part
                (texel weighting, emission atlases, spreading parts apart for AO)

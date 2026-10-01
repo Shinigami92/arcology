@@ -6,7 +6,8 @@ by copying `blender/props/_template/` (a working five-stage skeleton; its `templ
 says what to rename). Richer examples: `fridge` (hinged door, display), `nightstand` (drawer,
 lamp with emission, per-board veneer), `bed` (cloth simulation, heightfield collider),
 `wardrobe_lit` (sweeps, shared props atlas, `Spread`), `blender/architecture/windows/` (spec-driven
-builder: many assets from one JSON, shared trim sheet instead of a per-part bake, `trim`).
+builder: many assets from one JSON, shared trim sheet instead of a per-part bake, `trim`),
+`blender/surfaces/` (seamless tileable floor/wall/ceiling texture sets, `surface`).
 
 ## Stage scripts
 
@@ -146,6 +147,15 @@ from the repo root (Blender 5.2: `"C:/Program Files/Blender Foundation/Blender 5
 - `TrimSheet(width, height, px_per_m, pad)`: `add_band(name, rows)`, `fill(name, fn(h, w, px_m, v_m, seed) -> {albedo, rough, metal, height, ao})`, `images(prefix)` packed albedo/normal/ORM (wire with `bake.final_material`), `uv(band, u_m, v_m)`
 - `TrimMesh(sheet, basis, origin, band_mats, u_offset)` faces with a band each, real-world UVs (U along the member): `poly`, `quad_strip`, `rect_sweep(rect, profile, bands, side_offset, sides, skip)` (profile mitered around a rectangle: frames, gaskets, sashes), `extrude` (straight member), `loft(rings, center="rings")`, `bridge(inner, outer)` (planar ring between loops, no T-junctions), `grid(cuts, cell)` (planar face with holes: slots, inlays), `to_object(name, coll, {slot: Material})`
 - `GODOT_TO_BLENDER` basis for authoring in Godot axes; `image_from_array`, `image_pixels`, `write_png(path, rgb)` (8-bit PNG, no color management)
+
+### surface (seamless square tiles for floors, walls, ceilings; numpy, periodic in U and V)
+- `trim.noise` / `trim.fbm` / `trim.warp` are already 2D-periodic; `trim.height_to_normal` isn't along V: use `height_to_normal_2d(height_m, px_m, strength)` here
+- `oriented_noise(h, w, size_along, size_across, angle_deg, seed)` streaks at any angle (scuffs, trowel strokes); `blur(field, sigma_px)` periodic Gaussian
+- `cavity_ao(height, radius_px, depth_m, strength)` AO from height; `contour_lines(field, width_px)` antialiased zero contours (cracks, veins)
+- `cells(h, w, cell_px, seed, jitter)` periodic Worley: (f1, f2, cell index, cell value) for aggregate, tufts, pores; polygons from `f2 - f1`
+- `running_bond(size, tile_m, course_m, piece_m, seed, min_shift_m, start_offsets, course_phase)` staggered planks/bricks: per-pixel `id`, `along`, `across`, `d_side`, `d_end`
+- `write_set(folder, name, albedo, normal, ao, rough, metal)` `<name>_albedo` (sRGB) / `_normal` / `_orm` PNGs; `seam_ratio(img)` (<= ~1 = seamless), `downsample`, `shade_normal` (grazing-light preview)
+- Example: `blender/surfaces/` (the apartment's floor, wall and ceiling sets)
 
 ### collision
 - `collision_box` (from geo); `heightfield(objs, lo, hi, spacing, floor_z)`;

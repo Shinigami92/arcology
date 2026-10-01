@@ -1,0 +1,108 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/props/door_interior/door_interior_frame.glb" id="door_interior_frame"]
+[ext_resource type="Script" uid="uid://c8gx2wc7hsxf5" path="res://addons/godot-xr-tools/interactables/interactable_hinge.gd" id="hinge"]
+[ext_resource type="Script" uid="uid://ccxwohhkuuyo1" path="res://core/interaction/kinematic_follower.gd" id="follower"]
+[ext_resource type="PackedScene" path="res://assets/props/door_interior/door_interior_leaf.glb" id="door_interior_leaf"]
+[ext_resource type="Script" uid="uid://dlojnwxo25bky" path="res://addons/godot-xr-tools/interactables/interactable_handle.gd" id="handle"]
+[ext_resource type="Script" uid="uid://0qo7w8nlh6eu" path="res://core/interaction/hinge_stop_sound.gd" id="stop_sound"]
+[ext_resource type="AudioStream" uid="uid://dgrgkkkb7rd03" path="res://assets/audio/sfx/door_bump.wav" id="door_bump"]
+[ext_resource type="Script" path="res://core/interaction/hinge_swing.gd" id="hinge_swing"]
+[ext_resource type="Script" uid="uid://c8otihf11a0u7" path="res://core/interaction/hinge_body_blocker.gd" id="blocker"]
+[ext_resource type="Script" uid="uid://dwnb8l1buro5f" path="res://core/interaction/grab_pass_through.gd" id="pass_through"]
+[ext_resource type="PackedScene" path="res://assets/props/door_interior/door_interior_lever.glb" id="door_interior_lever"]
+[ext_resource type="PackedScene" path="res://assets/props/door_interior/door_interior_thumbturn.glb" id="door_interior_thumbturn"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_door0"]
+size = Vector3(0.85, 2.066, 0.04)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_grab"]
+radius = 0.06
+
+[node name="DoorInteriorBath" type="Node3D"]
+metadata/_doc = "Interior door: painted frame and 40 mm leaf (0.85 x 2.07 m) for a 0.90 x 2.10 m opening in a 0.20 m wall. Origin = bottom center of the opening on the wall's center plane; the leaf opens toward +Z (0..100 degrees), hinge on the -X jamb. Levers at 1.1 m on both faces. Grab a lever to swing it; let go while moving and it swings on; the latch catches it within 3 degrees of closed. Privacy thumb-turn on the +Z face (inside, the swing side), coin release on the -Z face. Built by blender/props/door_interior/ (D-026)."
+
+[node name="Frame" parent="." instance=ExtResource("door_interior_frame")]
+
+[node name="HingeOrigin" type="Node3D" parent="."]
+position = Vector3(-0.4265, 0, 0.1075)
+rotation_degrees = Vector3(0, 0, -90)
+
+[node name="InteractableHinge" type="Node3D" parent="HingeOrigin"]
+script = ExtResource("hinge")
+hinge_limit_min = 0.0
+hinge_limit_max = 100.0
+
+[node name="Leaf" type="Node3D" parent="HingeOrigin/InteractableHinge"]
+rotation_degrees = Vector3(0, 0, 90)
+
+[node name="DoorBody" type="AnimatableBody3D" parent="HingeOrigin/InteractableHinge/Leaf"]
+script = ExtResource("follower")
+
+[node name="LeafCollision" type="CollisionShape3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody"]
+position = Vector3(0.4265, 1.042, -0.0275)
+shape = SubResource("BoxShape3D_door0")
+
+[node name="Model" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody" instance=ExtResource("door_interior_leaf")]
+
+[node name="HandleOriginFront" type="Node3D" parent="HingeOrigin/InteractableHinge/Leaf"]
+position = Vector3(0.7215, 1.1, 0.0525)
+
+[node name="InteractableHandle" type="RigidBody3D" parent="HingeOrigin/InteractableHinge/Leaf/HandleOriginFront"]
+collision_layer = 262144
+collision_mask = 0
+freeze = true
+script = ExtResource("handle")
+picked_up_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HingeOrigin/InteractableHinge/Leaf/HandleOriginFront/InteractableHandle"]
+shape = SubResource("SphereShape3D_grab")
+
+[node name="HandleOriginBack" type="Node3D" parent="HingeOrigin/InteractableHinge/Leaf"]
+position = Vector3(0.7215, 1.1, -0.1075)
+
+[node name="InteractableHandle" type="RigidBody3D" parent="HingeOrigin/InteractableHinge/Leaf/HandleOriginBack"]
+collision_layer = 262144
+collision_mask = 0
+freeze = true
+script = ExtResource("handle")
+picked_up_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HingeOrigin/InteractableHinge/Leaf/HandleOriginBack/InteractableHandle"]
+shape = SubResource("SphereShape3D_grab")
+
+[node name="StopSound" type="AudioStreamPlayer3D" parent="HingeOrigin/InteractableHinge" node_paths=PackedStringArray("hinge")]
+position = Vector3(-1.1, 0.7215, 0.0525)
+stream = ExtResource("door_bump")
+script = ExtResource("stop_sound")
+hinge = NodePath("..")
+
+[node name="Swing" type="Node" parent="." node_paths=PackedStringArray("hinge")]
+script = ExtResource("hinge_swing")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+friction = 60.0
+damping = 0.8
+bounce = 0.25
+latch_angle = 3.0
+latch_pull = 200.0
+
+[node name="BodyBlocker" type="Node" parent="." node_paths=PackedStringArray("hinge", "leaf")]
+script = ExtResource("blocker")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+leaf = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+
+[node name="GrabPassThrough" type="Node" parent="." node_paths=PackedStringArray("body", "handles_root")]
+script = ExtResource("pass_through")
+body = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+handles_root = NodePath("../HingeOrigin/InteractableHinge/Leaf")
+
+[node name="LeverFront" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody" instance=ExtResource("door_interior_lever")]
+position = Vector3(0.7915, 1.1, -0.0075)
+
+[node name="LeverBack" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody" instance=ExtResource("door_interior_lever")]
+position = Vector3(0.7915, 1.1, -0.0475)
+rotation_degrees = Vector3(180, 0, 0)
+
+[node name="ThumbTurn" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody" instance=ExtResource("door_interior_thumbturn")]
+position = Vector3(0.7915, 1.022, -0.0475)
+rotation_degrees = Vector3(0, 180, 0)
