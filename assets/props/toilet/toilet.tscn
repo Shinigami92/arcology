@@ -1,0 +1,238 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/props/toilet/toilet_body.glb" id="toilet_body"]
+[ext_resource type="Script" uid="uid://c8gx2wc7hsxf5" path="res://addons/godot-xr-tools/interactables/interactable_hinge.gd" id="hinge"]
+[ext_resource type="Script" uid="uid://ccxwohhkuuyo1" path="res://core/interaction/kinematic_follower.gd" id="follower"]
+[ext_resource type="PackedScene" path="res://assets/props/toilet/toilet_lid.glb" id="toilet_lid"]
+[ext_resource type="Script" uid="uid://dlojnwxo25bky" path="res://addons/godot-xr-tools/interactables/interactable_handle.gd" id="handle"]
+[ext_resource type="Script" uid="uid://0qo7w8nlh6eu" path="res://core/interaction/hinge_stop_sound.gd" id="stop_sound"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/drawer_bump.wav" id="drawer_bump"]
+[ext_resource type="Script" path="res://core/interaction/hinge_swing.gd" id="hinge_swing"]
+[ext_resource type="Script" uid="uid://c8otihf11a0u7" path="res://core/interaction/hinge_body_blocker.gd" id="blocker"]
+[ext_resource type="Script" uid="uid://dwnb8l1buro5f" path="res://core/interaction/grab_pass_through.gd" id="pass_through"]
+[ext_resource type="PackedScene" path="res://assets/props/toilet/toilet_seat.glb" id="toilet_seat"]
+[ext_resource type="Script" path="res://core/interaction/hinge_coupling.gd" id="hinge_coupling"]
+[ext_resource type="Script" uid="uid://dq042kibpfryy" path="res://addons/godot-xr-tools/interactables/interactable_area_button.gd" id="area_button"]
+[ext_resource type="PackedScene" path="res://assets/props/toilet/toilet_flush_small.glb" id="toilet_flush_small"]
+[ext_resource type="PackedScene" path="res://assets/props/toilet/toilet_flush_large.glb" id="toilet_flush_large"]
+[ext_resource type="Script" path="res://core/interaction/press_sound.gd" id="press_sound"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/toilet_flush_short.wav" id="toilet_flush_short"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/toilet_flush_full.wav" id="toilet_flush_full"]
+[ext_resource type="PackedScene" path="res://assets/props/toilet/toilet_roll.tscn" id="toilet_roll"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_lid0"]
+size = Vector3(0.356, 0.027, 0.4825)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_seat0"]
+size = Vector3(0.354, 0.0345, 0.4805)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_FlushSmall"]
+size = Vector3(0.07, 0.13, 0.016)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_FlushLarge"]
+size = Vector3(0.145, 0.13, 0.016)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_grab"]
+radius = 0.05
+
+[node name="Toilet" type="Node3D"]
+metadata/_doc = "Wall-hung toilet in front of a 1.20 x 1.25 x 0.20 m box with a marble shelf (top 1.25 m). Origin = floor at the wall plane, on the bowl's axis; front +Z. Lid and seat lift by their front edges (0..97 degrees, one axis): the seat's grip is under the lid, so it can be grabbed once the lid is open past 60 degrees, it can't rise past the lid, and the lid can't close while the seat is up. Both soft-close: let go below 80 degrees and they sink shut slowly; above, they rest open. Press the small or large flush button on the plate (one flush at a time). The roll sits on the holder until grabbed; put it back near the bar and it hangs again."
+
+[node name="Body" parent="." instance=ExtResource("toilet_body")]
+
+[node name="Lid" type="Node3D" parent="."]
+
+[node name="HingeOrigin" type="Node3D" parent="Lid"]
+position = Vector3(0, 0.425, 0.275)
+rotation_degrees = Vector3(0, 180, 0)
+
+[node name="InteractableHinge" type="Node3D" parent="Lid/HingeOrigin"]
+script = ExtResource("hinge")
+hinge_limit_min = 0.0
+hinge_limit_max = 97.0
+
+[node name="Leaf" type="Node3D" parent="Lid/HingeOrigin/InteractableHinge"]
+rotation_degrees = Vector3(0, -180, 0)
+
+[node name="DoorBody" type="AnimatableBody3D" parent="Lid/HingeOrigin/InteractableHinge/Leaf"]
+script = ExtResource("follower")
+
+[node name="LidCollision" type="CollisionShape3D" parent="Lid/HingeOrigin/InteractableHinge/Leaf/DoorBody"]
+position = Vector3(0, 0.004, 0.2317)
+shape = SubResource("BoxShape3D_lid0")
+
+[node name="Model" parent="Lid/HingeOrigin/InteractableHinge/Leaf/DoorBody" instance=ExtResource("toilet_lid")]
+
+[node name="HandleOrigin" type="Node3D" parent="Lid/HingeOrigin/InteractableHinge/Leaf"]
+position = Vector3(0, 0.006, 0.469)
+
+[node name="InteractableHandle" type="RigidBody3D" parent="Lid/HingeOrigin/InteractableHinge/Leaf/HandleOrigin"]
+collision_layer = 262144
+collision_mask = 0
+freeze = true
+script = ExtResource("handle")
+picked_up_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Lid/HingeOrigin/InteractableHinge/Leaf/HandleOrigin/InteractableHandle"]
+shape = SubResource("SphereShape3D_grab")
+
+[node name="StopSound" type="AudioStreamPlayer3D" parent="Lid/HingeOrigin/InteractableHinge" node_paths=PackedStringArray("hinge")]
+position = Vector3(0, 0.006, -0.469)
+stream = ExtResource("drawer_bump")
+volume_db = -10.0
+script = ExtResource("stop_sound")
+hinge = NodePath("..")
+min_speed = 30.0
+
+[node name="Swing" type="Node" parent="Lid" node_paths=PackedStringArray("hinge")]
+script = ExtResource("hinge_swing")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+friction = 120.0
+damping = 2.5
+bounce = 0.0
+max_speed = 240.0
+latch_angle = 80.0
+latch_pull = 60.0
+
+[node name="BodyBlocker" type="Node" parent="Lid" node_paths=PackedStringArray("hinge", "leaf")]
+script = ExtResource("blocker")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+leaf = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+
+[node name="GrabPassThrough" type="Node" parent="Lid" node_paths=PackedStringArray("body", "handles_root")]
+script = ExtResource("pass_through")
+body = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+handles_root = NodePath("../HingeOrigin/InteractableHinge/Leaf")
+
+[node name="Seat" type="Node3D" parent="."]
+
+[node name="HingeOrigin" type="Node3D" parent="Seat"]
+position = Vector3(0, 0.425, 0.275)
+rotation_degrees = Vector3(0, 180, 0)
+
+[node name="InteractableHinge" type="Node3D" parent="Seat/HingeOrigin"]
+script = ExtResource("hinge")
+hinge_limit_min = 0.0
+hinge_limit_max = 97.0
+
+[node name="Leaf" type="Node3D" parent="Seat/HingeOrigin/InteractableHinge"]
+rotation_degrees = Vector3(0, -180, 0)
+
+[node name="DoorBody" type="AnimatableBody3D" parent="Seat/HingeOrigin/InteractableHinge/Leaf"]
+script = ExtResource("follower")
+
+[node name="SeatCollision" type="CollisionShape3D" parent="Seat/HingeOrigin/InteractableHinge/Leaf/DoorBody"]
+position = Vector3(0, -0.0078, 0.2307)
+shape = SubResource("BoxShape3D_seat0")
+
+[node name="Model" parent="Seat/HingeOrigin/InteractableHinge/Leaf/DoorBody" instance=ExtResource("toilet_seat")]
+
+[node name="HandleOrigin" type="Node3D" parent="Seat/HingeOrigin/InteractableHinge/Leaf"]
+position = Vector3(0, -0.01325, 0.467)
+
+[node name="InteractableHandle" type="RigidBody3D" parent="Seat/HingeOrigin/InteractableHinge/Leaf/HandleOrigin"]
+collision_layer = 262144
+collision_mask = 0
+freeze = true
+script = ExtResource("handle")
+picked_up_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Seat/HingeOrigin/InteractableHinge/Leaf/HandleOrigin/InteractableHandle"]
+shape = SubResource("SphereShape3D_grab")
+
+[node name="StopSound" type="AudioStreamPlayer3D" parent="Seat/HingeOrigin/InteractableHinge" node_paths=PackedStringArray("hinge")]
+position = Vector3(0, -0.01325, -0.467)
+stream = ExtResource("drawer_bump")
+volume_db = -10.0
+script = ExtResource("stop_sound")
+hinge = NodePath("..")
+min_speed = 30.0
+
+[node name="Swing" type="Node" parent="Seat" node_paths=PackedStringArray("hinge")]
+script = ExtResource("hinge_swing")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+friction = 120.0
+damping = 2.5
+bounce = 0.0
+max_speed = 240.0
+latch_angle = 80.0
+latch_pull = 60.0
+
+[node name="BodyBlocker" type="Node" parent="Seat" node_paths=PackedStringArray("hinge", "leaf")]
+script = ExtResource("blocker")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+leaf = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+
+[node name="GrabPassThrough" type="Node" parent="Seat" node_paths=PackedStringArray("body", "handles_root")]
+script = ExtResource("pass_through")
+body = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+handles_root = NodePath("../HingeOrigin/InteractableHinge/Leaf")
+
+[node name="Coupling" type="Node" parent="." node_paths=PackedStringArray("outer", "inner", "inner_handles")]
+script = ExtResource("hinge_coupling")
+outer = NodePath("../Lid/HingeOrigin/InteractableHinge")
+inner = NodePath("../Seat/HingeOrigin/InteractableHinge")
+inner_handles = NodePath("../Seat/HingeOrigin/InteractableHinge/Leaf")
+unlock_angle = 60.0
+
+[node name="FlushSmall" type="Area3D" parent="."]
+position = Vector3(-0.074, 1.1, 0.2105)
+collision_layer = 0
+collision_mask = 131072
+monitorable = false
+script = ExtResource("area_button")
+button = NodePath("Cap")
+displacement = Vector3(0, 0, -0.004)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="FlushSmall"]
+position = Vector3(0, 0, -0.002)
+shape = SubResource("BoxShape3D_FlushSmall")
+
+[node name="Cap" type="Node3D" parent="FlushSmall"]
+
+[node name="Model" parent="FlushSmall/Cap" instance=ExtResource("toilet_flush_small")]
+
+[node name="FlushLarge" type="Area3D" parent="."]
+position = Vector3(0.0365, 1.1, 0.2105)
+collision_layer = 0
+collision_mask = 131072
+monitorable = false
+script = ExtResource("area_button")
+button = NodePath("Cap")
+displacement = Vector3(0, 0, -0.004)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="FlushLarge"]
+position = Vector3(0, 0, -0.002)
+shape = SubResource("BoxShape3D_FlushLarge")
+
+[node name="Cap" type="Node3D" parent="FlushLarge"]
+
+[node name="Model" parent="FlushLarge/Cap" instance=ExtResource("toilet_flush_large")]
+
+[node name="FlushSmallSound" type="AudioStreamPlayer3D" parent="." node_paths=PackedStringArray("button", "exclusive_with")]
+position = Vector3(0, 0.35, 0.42)
+stream = ExtResource("toilet_flush_short")
+volume_db = -4.0
+unit_size = 3.0
+max_distance = 20.0
+script = ExtResource("press_sound")
+button = NodePath("../FlushSmall")
+exclusive_with = [NodePath("../FlushLargeSound")]
+
+[node name="FlushLargeSound" type="AudioStreamPlayer3D" parent="." node_paths=PackedStringArray("button", "exclusive_with")]
+position = Vector3(0, 0.35, 0.42)
+stream = ExtResource("toilet_flush_full")
+volume_db = -4.0
+unit_size = 3.0
+max_distance = 20.0
+script = ExtResource("press_sound")
+button = NodePath("../FlushLarge")
+exclusive_with = [NodePath("../FlushSmallSound")]
+
+[node name="RollHolder" type="Marker3D" parent="." groups=["toilet_roll_holder"]]
+position = Vector3(0.323, 0.6846, 0.272)
+rotation_degrees = Vector3(0, 0, -90)
+
+[node name="Roll" parent="." instance=ExtResource("toilet_roll")]
+position = Vector3(0.323, 0.6846, 0.272)
+rotation_degrees = Vector3(0, 0, -90)

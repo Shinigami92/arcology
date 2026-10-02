@@ -13,8 +13,15 @@ extends Node
 @export var emission_energy := -1.0
 @export var on := true
 @export var click: AudioStreamPlayer3D
+## Optional indicator (a touch sensor's ring) under [member emissive_root]:
+## bright while on, dim while off, so it can be found in the dark.
+@export var indicator_material := ""
+## Indicator energy when on; < 0 keeps the imported energy.
+@export var indicator_energy_on := -1.0
+@export var indicator_energy_off := 0.3
 
 var _materials: EmissiveMaterials
+var _indicator: EmissiveMaterials
 
 
 func _ready() -> void:
@@ -24,6 +31,10 @@ func _ready() -> void:
 	_materials = EmissiveMaterials.new(emissive_root, material_name, emission_energy)
 	if emissive_root and material_name and _materials.is_empty():
 		push_warning("LightSwitch: no material named '%s' under %s" % [material_name, emissive_root.get_path()])
+	if emissive_root and indicator_material:
+		_indicator = EmissiveMaterials.new(emissive_root, indicator_material, indicator_energy_on, indicator_energy_off)
+		if _indicator.is_empty():
+			push_warning("LightSwitch: no indicator material '%s' under %s" % [indicator_material, emissive_root.get_path()])
 	button.button_pressed.connect(_on_pressed)
 	_apply()
 
@@ -43,3 +54,5 @@ func _apply() -> void:
 	for light in lights:
 		light.visible = on
 	_materials.set_on(on)
+	if _indicator:
+		_indicator.set_on(on)

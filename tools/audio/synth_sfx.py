@@ -361,21 +361,88 @@ def lowpass_one(x: float, alpha: float = 0.45) -> float:
     return _lp_state[0]
 
 
+def _flush(seed: int, dur: float, rush: float) -> list[float]:
+    """Concealed-cistern flush: the button's clack and the valve's thunk, a rush of water
+    into the bowl with a swirl, gurgling bubbles as the bowl siphons empty, then the
+    cistern refilling (a fading hiss). `rush` = seconds of full water flow."""
+    rng = random.Random(seed)
+    n = int(RATE * dur)
+    white = [rng.uniform(-1, 1) for _ in range(n)]
+    roar = lowpass(white, 0.16)
+    low = lowpass(lowpass(white, 0.025), 0.05)
+    hiss = [w - r for w, r in zip(white, lowpass(white, 0.5))]  # highpassed: the refill valve
+    # Bubbles: short chirps (rising pitch), densest as the bowl siphons empty.
+    bubbles = [0.0] * n
+    for _ in range(int(9 * rush)):
+        start_t = rng.uniform(0.4 * rush, rush + 0.9)
+        f0 = rng.uniform(170, 480)
+        length = rng.uniform(0.03, 0.08)
+        amp = rng.uniform(0.2, 1.0) ** 2
+        start = int(start_t * RATE)
+        for k in range(int(length * RATE)):
+            if start + k >= n:
+                break
+            t = k / RATE
+            bubbles[start + k] += amp * math.sin(2 * math.pi * f0 * (t + t * t / length)) * env(t, 0.003, length / 3)
+    out = []
+    t_rush = 0.15
+    for i in range(n):
+        t = i / RATE
+        s = 0.5 * white[i] * env(t, 0.0005, 0.006) + 0.5 * math.sin(2 * math.pi * 420 * t) * env(t, 0.001, 0.02)
+        t2 = t - 0.11
+        if t2 > 0:
+            s += 0.7 * math.sin(2 * math.pi * 85 * t2) * env(t2, 0.003, 0.07)
+        tr = t - t_rush
+        if tr > 0:
+            if tr < 0.35:
+                flow = tr / 0.35
+            elif tr < rush:
+                flow = 1.0
+            else:
+                flow = math.exp(-(tr - rush) / 0.55)
+            swirl = 1.0 + 0.22 * math.sin(2 * math.pi * 2.7 * t + 0.6 * math.sin(2 * math.pi * 0.7 * t))
+            s += flow * swirl * (2.2 * roar[i] + 5.0 * low[i])
+            # The siphon: a deep gurgle swelling at the end of the rush.
+            gurgle = math.exp(-((tr - rush) / 0.5) ** 2)
+            s += gurgle * (7.0 * low[i] * (0.6 + 0.4 * math.sin(2 * math.pi * 6.5 * t)) + 0.5 * bubbles[i])
+            s += 0.25 * bubbles[i] * flow
+            # Refill: starts with the rush, fades out by the end.
+            refill = min(1.0, tr / 0.5) * max(0.0, 1.0 - tr / (dur - t_rush))
+            s += 0.12 * refill * hiss[i]
+        fade = min(1.0, (dur - t) / 0.3)
+        out.append(s * fade)
+    return out
+
+
+def toilet_flush_short() -> list[float]:
+    """Small (half) flush: about 1.5 s of water, 4 s with the refill."""
+    return _flush(24, 4.0, 1.5)
+
+
+def toilet_flush_full() -> list[float]:
+    """Large (full) flush: about 3 s of water, 7 s with the refill."""
+    return _flush(25, 7.0, 3.0)
+
+
+# In this order (rain_patter's lowpass keeps state across calls).
+SOUNDS = [
+    ("ball_bounce", ball_bounce), ("can_hit", can_hit), ("trash_accept", trash_accept), ("door_bump", door_bump),
+    ("fridge_seal", fridge_seal), ("fridge_close", fridge_close), ("fridge_hum", fridge_hum),
+    ("pillow_thud", pillow_thud), ("button_click", button_click), ("drawer_bump", drawer_bump),
+    ("fridge_alarm", fridge_alarm), ("shade_motor", shade_motor), ("tint_tone", tint_tone),
+    ("vent_latch", vent_latch), ("city_ambience", city_ambience), ("rain_patter", rain_patter),
+    ("rain_outside", rain_outside), ("toilet_flush_short", toilet_flush_short),
+    ("toilet_flush_full", toilet_flush_full),
+]
+
+
 if __name__ == "__main__":
-    write_wav("ball_bounce", ball_bounce())
-    write_wav("can_hit", can_hit())
-    write_wav("trash_accept", trash_accept())
-    write_wav("door_bump", door_bump())
-    write_wav("fridge_seal", fridge_seal())
-    write_wav("fridge_close", fridge_close())
-    write_wav("fridge_hum", fridge_hum())
-    write_wav("pillow_thud", pillow_thud())
-    write_wav("button_click", button_click())
-    write_wav("drawer_bump", drawer_bump())
-    write_wav("fridge_alarm", fridge_alarm())
-    write_wav("shade_motor", shade_motor())
-    write_wav("tint_tone", tint_tone())
-    write_wav("vent_latch", vent_latch())
-    write_wav("city_ambience", city_ambience())
-    write_wav("rain_patter", rain_patter())
-    write_wav("rain_outside", rain_outside())
+    # python tools/audio/synth_sfx.py [name ...]: all sounds, or only the named ones.
+    import sys
+    wanted = set(sys.argv[1:])
+    unknown = wanted - {name for name, _ in SOUNDS}
+    if unknown:
+        sys.exit(f"unknown sound(s): {', '.join(sorted(unknown))}")
+    for name, make in SOUNDS:
+        if not wanted or name in wanted:
+            write_wav(name, make())

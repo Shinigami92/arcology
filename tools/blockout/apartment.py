@@ -11,7 +11,7 @@ Layout (x = east, z = south, window facade faces -Z), interior extents:
     living   x -3..3        z -3..2      window north, sofa seat
     kitchen  x  3.2..6.4    z -3..2      window north, archways to living and hallway, trash can
     hallway  x -6.8..6.4    z  2.2..3.6  connects everything, entrance at the east end
-    bathroom x -1..2        z  3.8..6.2  no window
+    bathroom x -1.6..2.6    z  3.8..6.6  no window; walk-in shower (west), vanity + mirror (south), toilet (east)
     vestibule x 6.6..8.2    z  2.2..3.6  dead end behind the entrance (building corridor in M3)
 
 Windows (D-033) come from tools/props/windows/apartment.json, the spec shared with
@@ -68,6 +68,11 @@ SCENES = {
     "wardrobe": "res://assets/props/wardrobe/wardrobe.tscn",
     "nightstand": "res://assets/props/nightstand/nightstand.tscn",
     "rain_debug": "res://core/debug/rain_debug_button.tscn",
+    "shower": "res://assets/props/shower/shower.tscn",
+    "vanity": "res://assets/props/vanity/vanity.tscn",
+    "bath_mirror": "res://assets/props/bath_mirror/bath_mirror.tscn",
+    "bath_magnifier": "res://assets/props/bath_mirror_magnifier/bath_mirror_magnifier.tscn",
+    "toilet": "res://assets/props/toilet/toilet.tscn",
 }
 SEAT_SCRIPT = "res://core/interaction/seat.gd"
 AB_SCRIPT = "res://core/debug/ab_switch.gd"
@@ -127,8 +132,8 @@ box("Shell", "Floor", (1.75, -0.1, 0.3), (9.7, 0.2, 7.0), "vinyl")
 box("Shell", "HallWestFloor", (-5.05, -0.1, 2.95), (3.9, 0.2, 1.7), "vinyl")
 box("Shell", "BedroomFloor", (-5.05, -0.1, -0.55), (3.9, 0.2, 5.3), "carpet")
 box("Shell", "Ceiling", (-0.2, H + 0.1, 0.3), (13.6, 0.2, 7.0), "ceiling")
-box("Shell", "BathFloor", (0.5, -0.1, 5.1), (3.4, 0.2, 2.6), "concrete")
-box("Shell", "BathCeiling", (0.5, H + 0.1, 5.1), (3.4, 0.2, 2.6), "ceiling")
+box("Shell", "BathFloor", (0.5, -0.1, 5.25), (4.6, 0.2, 2.9), "concrete")
+box("Shell", "BathCeiling", (0.5, H + 0.1, 5.25), (4.6, 0.2, 2.9), "ceiling")
 
 wall("Shell", "North", "x", NORTH, (-7.0, 6.6), [window_gap(spec, x) for spec, _, x, _ in WINDOWS])
 wall("Shell", "West", "z", -6.9, (-3.2, 3.8))
@@ -138,9 +143,9 @@ wall("Shell", "LivingKitchen", "z", 3.1, (-3.0, 2.0), [door_gap(-1.2, 0.6)])
 wall("Shell", "HallNorth", "x", 2.1, (-7.0, 6.6), [
     door_gap(-4.4, -3.5), door_gap(1.6, 2.5), door_gap(4.2, 5.2)])
 wall("Shell", "HallSouth", "x", 3.7, (-7.0, 6.6), [door_gap(0.1, 1.0)])
-wall("Shell", "BathWest", "z", -1.1, (3.8, 6.2))
-wall("Shell", "BathEast", "z", 2.1, (3.8, 6.2))
-wall("Shell", "BathSouth", "x", 6.3, (-1.2, 2.2))
+wall("Shell", "BathWest", "z", -1.7, (3.8, 6.6))
+wall("Shell", "BathEast", "z", 2.7, (3.8, 6.6))
+wall("Shell", "BathSouth", "x", 6.7, (-1.8, 2.8))
 
 # Vestibule behind the entrance (placeholder for the M3 building corridor).
 box("Vestibule", "VestFloor", (7.4, -0.1, 2.9), (1.8, 0.2, 1.6), "vinyl")
@@ -174,13 +179,8 @@ box("Bedroom", "BedNeon", (-6.79, 1.7, -0.9), (0.02, 0.03, 1.4), "cyan", False)
 box("Bedroom", "LampDisc", (-5.0, 2.585, -0.5), (0.5, 0.03, 0.5), "lamp", False)
 
 # --- Bathroom --------------------------------------------------------------
-box("Bathroom", "SinkCabinet", (1.75, 0.425, 5.0), (0.5, 0.85, 0.8), "ceramic")
-box("Bathroom", "Mirror", (1.99, 1.45, 5.0), (0.02, 0.7, 0.6), "mirror", False)
-box("Bathroom", "ToiletBase", (-0.75, 0.21, 5.85), (0.4, 0.42, 0.55), "ceramic")
-box("Bathroom", "ToiletTank", (-0.75, 0.62, 6.1), (0.4, 0.4, 0.18), "ceramic")
-box("Bathroom", "ShowerTray", (-0.55, 0.03, 4.3), (0.9, 0.06, 0.9), "ceramic")
-box("Bathroom", "ShowerHead", (-0.55, 2.2, 4.0), (0.15, 0.03, 0.15), "steel", False)
-box("Bathroom", "LampDisc", (0.5, 2.585, 5.0), (0.4, 0.03, 0.4), "lamp", False)
+# The luxury bathroom set (shower, vanity, mirror, magnifier, toilet) is in INSTANCES.
+box("Bathroom", "LampDisc", (0.5, 2.585, 5.2), (0.4, 0.03, 0.4), "lamp", False)
 
 # --- Hallway ---------------------------------------------------------------
 box("Hallway", "ShoeBench", (4.6, 0.225, 3.4), (0.9, 0.45, 0.35), "wood")
@@ -214,7 +214,16 @@ INSTANCES = [
     ("Bed", "bed", (-5.70, 0, -0.9), (0, 90, 0)),
     ("Wardrobe", "wardrobe", (-5.9, 0, 1.70), (0, 180, 0)),
     ("Nightstand", "nightstand", (-6.60, 0, 0.35), (0, 90, 0)),
-    ("CanSink", "can", (1.7, 0.912, 4.75), (0, 0, 0)),
+    # Bathroom (contract placements): walk-in shower on the west wall (back wall local -Z), vanity and
+    # backlit mirror on the south wall, the magnifier beside the mirror (its arm folds away from it,
+    # west), the wall-hung toilet on the east wall facing west.
+    ("Shower", "shower", (-0.9, 0, 5.2), (0, 90, 0)),
+    ("Vanity", "vanity", (1.4, 0, 6.6), (0, 180, 0)),
+    ("BathMirror", "bath_mirror", (1.4, 1.18, 6.6), (0, 180, 0)),
+    ("BathMagnifier", "bath_magnifier", (0.5, 1.45, 6.6), (0, 180, 0)),
+    ("Toilet", "toilet", (2.6, 0, 5.1), (0, -90, 0)),
+    # On the vanity top (0.86 m), east of the basin; the soap dispenser stands on the west side.
+    ("CanSink", "can", (1.9, 0.922, 6.35), (0, 0, 0)),
     # Temporary rain debug button (D-034), on the wall west of the living room window panel.
     ("RainDebugButton", "rain_debug", (-2.74, 1.2, -3.0), (0, 0, 0)),
 ]
@@ -227,6 +236,8 @@ AB_INSTANCES = []
 SEATS = [
     ("SofaSeat", (-1.6, 1.0, 0.15), (2.2, 2.0, 1.2), (-1.6, 1.15, 0.85), 0, (-1.6, 0, 0.1), 0, (-1.6, 0.9, 0.9)),
     ("BedSeat", (-5.3, 1.0, -2.25), (1.6, 2.0, 1.3), (-5.3, 1.2, -1.5), 0, (-5.3, 0, -2.3), 0, (-5.3, 0.85, -1.6)),
+    # Toilet (seat top 0.42 m, front at x 1.85): sit facing west, away from the wall; get up in front of it.
+    ("ToiletSeat", (1.55, 1.0, 5.1), (0.9, 2.0, 0.9), (2.12, 1.12, 5.1), 90, (1.45, 0, 5.1), 90, (2.05, 0.75, 5.1)),
 ]
 
 LIGHTS = [
@@ -242,19 +253,21 @@ LIGHTS = [
     ("Hall0", "Omni", (-4.5, 2.4, 2.9), None, (0.75, 0.88, 1), 0.45, 3.0, False, ""),
     ("Hall1", "Omni", (0.0, 2.4, 2.9), None, (0.75, 0.88, 1), 0.45, 3.0, False, ""),
     ("Hall2", "Omni", (4.5, 2.4, 2.9), None, (0.75, 0.88, 1), 0.45, 3.0, False, ""),
-    ("BathCeiling", "Omni", (0.5, 2.4, 5.0), None, (0.9, 0.95, 1), 0.9, 3.5, False, ""),
+    ("BathCeiling", "Omni", (0.5, 2.4, 5.2), None, (0.9, 0.95, 1), 0.9, 4.2, False, ""),
     ("VestibuleLight", "Omni", (7.4, 2.35, 2.9), None, (0.6, 0.85, 1), 0.4, 2.2, False, ""),
 ]
 
 PROBES = [
-    # name, center, size
+    # name, center, size[, blend distance (default 1 m)]
     # Room probes reach 1.2 m past the window wall: the glass (z -3.15) is inside their 1 m
     # blend distance and reflects the room at full weight.
+    # The bathroom mirror hangs 6 cm off the wall: the bathroom probe reaches 0.1 m past the walls
+    # and blends over 0.1 m only, so the mirror gets the room at full weight (not the sky).
     ("LivingProbe", (0, 1.3, -1.1), (6.2, 2.7, 6.4)),
     ("KitchenProbe", (4.8, 1.3, -1.1), (3.4, 2.7, 6.4)),
     ("BedroomProbe", (-5.0, 1.3, -1.1), (3.8, 2.7, 6.4)),
     ("HallwayProbe", (-0.2, 1.3, 2.9), (13.4, 2.7, 1.6)),
-    ("BathroomProbe", (0.5, 1.3, 5.0), (3.2, 2.7, 2.6)),
+    ("BathroomProbe", (0.5, 1.3, 5.2), (4.4, 2.8, 3.0), 0.1),
 ]
 
 ENTRIES = [
@@ -287,7 +300,7 @@ SKIRTING_JSON = ROOT / "tools" / "blockout" / "apartment_skirting.json"
 SKIRTING_GLB = "assets/architecture/skirting/apartment_skirting.glb"
 SKIRTING_PROFILE = {"height": 0.08, "thickness": 0.01}
 SKIRTING_SKIP = [
-    (-1.0, 3.8, 2.0, 6.2),   # bathroom: wet room, gets its own wall finish later
+    (-1.6, 3.8, 2.6, 6.6),   # bathroom: wet room, gets its own wall finish later
     (6.6, 2.0, 8.5, 3.8),    # vestibule: building corridor placeholder (M3)
 ]
 # Instance keys whose frame glb cuts the skirting (frame origin = the instance origin).
@@ -459,9 +472,10 @@ def main():
                      f'light = NodePath("../{light}")\n'
                      f'glass = NodePath("../../Windows/{name}/SmartGlass")\n'
                      f'shade = NodePath("../../Windows/{name}/Shade")\n')
-    for name, center, size in PROBES:
+    for name, center, size, *blend in PROBES:
+        blend_line = f"blend_distance = {blend[0]:g}\n" if blend else ""
         nodes.append(f'[node name="{name}" type="ReflectionProbe" parent="Lighting"]\nposition = {v3(center)}\n'
-                     f"size = {v3(size)}\nbox_projection = true\ninterior = true\nambient_mode = 0\n")
+                     f"size = {v3(size)}\n{blend_line}box_projection = true\ninterior = true\nambient_mode = 0\n")
 
     nodes.append('[node name="Entries" type="Node3D" parent="."]\n')
     for name, pos, yaw in ENTRIES:

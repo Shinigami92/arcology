@@ -1,0 +1,331 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/props/vanity/vanity_body.glb" id="vanity_body"]
+[ext_resource type="Script" uid="uid://cloxfr8r3b00u" path="res://addons/godot-xr-tools/interactables/interactable_slider.gd" id="slider"]
+[ext_resource type="Script" uid="uid://ccxwohhkuuyo1" path="res://core/interaction/kinematic_follower.gd" id="follower"]
+[ext_resource type="PackedScene" path="res://assets/props/vanity/vanity_drawer_top.glb" id="vanity_drawer_top"]
+[ext_resource type="Script" uid="uid://dlojnwxo25bky" path="res://addons/godot-xr-tools/interactables/interactable_handle.gd" id="handle"]
+[ext_resource type="Script" path="res://core/interaction/slider_swing.gd" id="slider_swing"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/drawer_bump.wav" id="drawer_bump"]
+[ext_resource type="Script" uid="uid://dwnb8l1buro5f" path="res://core/interaction/grab_pass_through.gd" id="pass_through"]
+[ext_resource type="PackedScene" path="res://assets/props/vanity/vanity_drawer_bottom.glb" id="vanity_drawer_bottom"]
+[ext_resource type="Script" uid="uid://c8gx2wc7hsxf5" path="res://addons/godot-xr-tools/interactables/interactable_hinge.gd" id="hinge"]
+[ext_resource type="PackedScene" path="res://assets/props/vanity/vanity_lever.glb" id="vanity_lever"]
+[ext_resource type="Script" uid="uid://0qo7w8nlh6eu" path="res://core/interaction/hinge_stop_sound.gd" id="stop_sound"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/button_click.wav" id="button_click"]
+[ext_resource type="Script" uid="uid://c8otihf11a0u7" path="res://core/interaction/hinge_body_blocker.gd" id="blocker"]
+[ext_resource type="PackedScene" path="res://assets/props/vanity/vanity_soap_dispenser.tscn" id="vanity_soap_dispenser"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Top0"]
+size = Vector3(1.386, 0.16, 0.019)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Top1"]
+size = Vector3(1.3, 0.015, 0.147)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Top2"]
+size = Vector3(0.571, 0.015, 0.265)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Top3"]
+size = Vector3(0.571, 0.015, 0.265)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Top4"]
+size = Vector3(0.014, 0.143, 0.426)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Top5"]
+size = Vector3(0.014, 0.143, 0.426)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Top6"]
+size = Vector3(0.374, 0.143, 0.014)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Top7"]
+size = Vector3(0.374, 0.143, 0.014)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Top8"]
+size = Vector3(0.197, 0.058, 0.014)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Top9"]
+size = Vector3(0.197, 0.058, 0.014)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Top10"]
+size = Vector3(0.014, 0.143, 0.412)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Top11"]
+size = Vector3(0.014, 0.143, 0.412)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Top12"]
+size = Vector3(0.014, 0.058, 0.279)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Top13"]
+size = Vector3(0.014, 0.058, 0.279)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Top14"]
+size = Vector3(0.13, 0.058, 0.014)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Bottom0"]
+size = Vector3(1.386, 0.27, 0.019)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Bottom1"]
+size = Vector3(1.3, 0.015, 0.412)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Bottom2"]
+size = Vector3(0.014, 0.233, 0.426)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Bottom3"]
+size = Vector3(0.014, 0.233, 0.426)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Bottom4"]
+size = Vector3(1.3, 0.233, 0.014)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_lever0"]
+size = Vector3(0.02, 0.0207, 0.116)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_grab"]
+radius = 0.05
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_lever"]
+radius = 0.04
+
+[node name="Vanity" type="Node3D"]
+metadata/_doc = "Floating vanity 1.40 x 0.52 m, walnut drawers under a marble top (0.86 m) with an integrated basin. Origin = floor below the back center, on the wall plane; front +Z. Both drawers slide out 0.40 m by their pulls, slide on after release and soft-close; things put inside ride along. Lift the mixer lever (0..30 degrees; it stays where it's left). A warm LED strip under the cabinet lights the floor. The soap dispenser is a pickable."
+
+[node name="Body" parent="." instance=ExtResource("vanity_body")]
+
+[node name="DrawerTop" type="Node3D" parent="."]
+
+[node name="SliderOrigin" type="Node3D" parent="DrawerTop"]
+position = Vector3(0, 0.625, 0.505)
+rotation_degrees = Vector3(0, -90, 0)
+
+[node name="InteractableSlider" type="Node3D" parent="DrawerTop/SliderOrigin"]
+script = ExtResource("slider")
+slider_limit_max = 0.4
+
+[node name="Leaf" type="Node3D" parent="DrawerTop/SliderOrigin/InteractableSlider"]
+rotation_degrees = Vector3(0, 90, 0)
+
+[node name="DrawerBody" type="AnimatableBody3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf"]
+script = ExtResource("follower")
+
+[node name="FrontCollision" type="CollisionShape3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0, 0.08, -0.009)
+shape = SubResource("BoxShape3D_Top0")
+
+[node name="FloorFront" type="CollisionShape3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0, 0.015, -0.093)
+shape = SubResource("BoxShape3D_Top1")
+
+[node name="FloorL" type="CollisionShape3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(-0.364, 0.015, -0.299)
+shape = SubResource("BoxShape3D_Top2")
+
+[node name="FloorR" type="CollisionShape3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0.364, 0.015, -0.299)
+shape = SubResource("BoxShape3D_Top3")
+
+[node name="SideL" type="CollisionShape3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(-0.657, 0.079, -0.232)
+shape = SubResource("BoxShape3D_Top4")
+
+[node name="SideR" type="CollisionShape3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0.657, 0.079, -0.232)
+shape = SubResource("BoxShape3D_Top5")
+
+[node name="BackL" type="CollisionShape3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(-0.463, 0.079, -0.438)
+shape = SubResource("BoxShape3D_Top6")
+
+[node name="BackR" type="CollisionShape3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0.463, 0.079, -0.438)
+shape = SubResource("BoxShape3D_Top7")
+
+[node name="BackLowL" type="CollisionShape3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(-0.177, 0.036, -0.438)
+shape = SubResource("BoxShape3D_Top8")
+
+[node name="BackLowR" type="CollisionShape3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0.177, 0.036, -0.438)
+shape = SubResource("BoxShape3D_Top9")
+
+[node name="DividerL" type="CollisionShape3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(-0.283, 0.079, -0.225)
+shape = SubResource("BoxShape3D_Top10")
+
+[node name="DividerR" type="CollisionShape3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0.283, 0.079, -0.225)
+shape = SubResource("BoxShape3D_Top11")
+
+[node name="NotchWallL" type="CollisionShape3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(-0.072, 0.036, -0.306)
+shape = SubResource("BoxShape3D_Top12")
+
+[node name="NotchWallR" type="CollisionShape3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0.072, 0.036, -0.306)
+shape = SubResource("BoxShape3D_Top13")
+
+[node name="NotchFront" type="CollisionShape3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0, 0.036, -0.173)
+shape = SubResource("BoxShape3D_Top14")
+
+[node name="Model" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf/DrawerBody" instance=ExtResource("vanity_drawer_top")]
+
+[node name="HandleOrigin" type="Node3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf"]
+position = Vector3(0, 0.154, -0.01)
+
+[node name="InteractableHandle" type="RigidBody3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf/HandleOrigin"]
+collision_layer = 262144
+collision_mask = 0
+freeze = true
+script = ExtResource("handle")
+picked_up_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DrawerTop/SliderOrigin/InteractableSlider/Leaf/HandleOrigin/InteractableHandle"]
+shape = SubResource("SphereShape3D_grab")
+
+[node name="StopSound" type="AudioStreamPlayer3D" parent="DrawerTop"]
+position = Vector3(0, 0.625, 0.505)
+stream = ExtResource("drawer_bump")
+
+[node name="Swing" type="Node" parent="DrawerTop" node_paths=PackedStringArray("slider", "stop_sound")]
+script = ExtResource("slider_swing")
+slider = NodePath("../SliderOrigin/InteractableSlider")
+stop_sound = NodePath("../StopSound")
+soft_close = 0.05
+soft_close_pull = 1.2
+
+[node name="GrabPassThrough" type="Node" parent="DrawerTop" node_paths=PackedStringArray("body", "handles_root")]
+script = ExtResource("pass_through")
+body = NodePath("../SliderOrigin/InteractableSlider/Leaf/DrawerBody")
+handles_root = NodePath("../SliderOrigin/InteractableSlider/Leaf")
+
+[node name="DrawerBottom" type="Node3D" parent="."]
+
+[node name="SliderOrigin" type="Node3D" parent="DrawerBottom"]
+position = Vector3(0, 0.32, 0.505)
+rotation_degrees = Vector3(0, -90, 0)
+
+[node name="InteractableSlider" type="Node3D" parent="DrawerBottom/SliderOrigin"]
+script = ExtResource("slider")
+slider_limit_max = 0.4
+
+[node name="Leaf" type="Node3D" parent="DrawerBottom/SliderOrigin/InteractableSlider"]
+rotation_degrees = Vector3(0, 90, 0)
+
+[node name="DrawerBody" type="AnimatableBody3D" parent="DrawerBottom/SliderOrigin/InteractableSlider/Leaf"]
+script = ExtResource("follower")
+
+[node name="FrontCollision" type="CollisionShape3D" parent="DrawerBottom/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0, 0.135, -0.009)
+shape = SubResource("BoxShape3D_Bottom0")
+
+[node name="Floor" type="CollisionShape3D" parent="DrawerBottom/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0, 0.032, -0.225)
+shape = SubResource("BoxShape3D_Bottom1")
+
+[node name="SideL" type="CollisionShape3D" parent="DrawerBottom/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(-0.657, 0.141, -0.232)
+shape = SubResource("BoxShape3D_Bottom2")
+
+[node name="SideR" type="CollisionShape3D" parent="DrawerBottom/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0.657, 0.141, -0.232)
+shape = SubResource("BoxShape3D_Bottom3")
+
+[node name="Back" type="CollisionShape3D" parent="DrawerBottom/SliderOrigin/InteractableSlider/Leaf/DrawerBody"]
+position = Vector3(0, 0.141, -0.438)
+shape = SubResource("BoxShape3D_Bottom4")
+
+[node name="Model" parent="DrawerBottom/SliderOrigin/InteractableSlider/Leaf/DrawerBody" instance=ExtResource("vanity_drawer_bottom")]
+
+[node name="HandleOrigin" type="Node3D" parent="DrawerBottom/SliderOrigin/InteractableSlider/Leaf"]
+position = Vector3(0, 0.264, -0.01)
+
+[node name="InteractableHandle" type="RigidBody3D" parent="DrawerBottom/SliderOrigin/InteractableSlider/Leaf/HandleOrigin"]
+collision_layer = 262144
+collision_mask = 0
+freeze = true
+script = ExtResource("handle")
+picked_up_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DrawerBottom/SliderOrigin/InteractableSlider/Leaf/HandleOrigin/InteractableHandle"]
+shape = SubResource("SphereShape3D_grab")
+
+[node name="StopSound" type="AudioStreamPlayer3D" parent="DrawerBottom"]
+position = Vector3(0, 0.32, 0.505)
+stream = ExtResource("drawer_bump")
+
+[node name="Swing" type="Node" parent="DrawerBottom" node_paths=PackedStringArray("slider", "stop_sound")]
+script = ExtResource("slider_swing")
+slider = NodePath("../SliderOrigin/InteractableSlider")
+stop_sound = NodePath("../StopSound")
+soft_close = 0.05
+soft_close_pull = 1.2
+
+[node name="GrabPassThrough" type="Node" parent="DrawerBottom" node_paths=PackedStringArray("body", "handles_root")]
+script = ExtResource("pass_through")
+body = NodePath("../SliderOrigin/InteractableSlider/Leaf/DrawerBody")
+handles_root = NodePath("../SliderOrigin/InteractableSlider/Leaf")
+
+[node name="Lever" type="Node3D" parent="."]
+
+[node name="HingeOrigin" type="Node3D" parent="Lever"]
+position = Vector3(0, 1.0225, 0.072)
+rotation_degrees = Vector3(0, 180, 0)
+
+[node name="InteractableHinge" type="Node3D" parent="Lever/HingeOrigin"]
+script = ExtResource("hinge")
+hinge_limit_min = 0.0
+hinge_limit_max = 30.0
+
+[node name="Leaf" type="Node3D" parent="Lever/HingeOrigin/InteractableHinge"]
+rotation_degrees = Vector3(0, -180, 0)
+
+[node name="DoorBody" type="AnimatableBody3D" parent="Lever/HingeOrigin/InteractableHinge/Leaf"]
+script = ExtResource("follower")
+
+[node name="LeverCollision" type="CollisionShape3D" parent="Lever/HingeOrigin/InteractableHinge/Leaf/DoorBody"]
+position = Vector3(0, 0.0039, 0.0515)
+shape = SubResource("BoxShape3D_lever0")
+
+[node name="Model" parent="Lever/HingeOrigin/InteractableHinge/Leaf/DoorBody" instance=ExtResource("vanity_lever")]
+
+[node name="HandleOrigin" type="Node3D" parent="Lever/HingeOrigin/InteractableHinge/Leaf"]
+position = Vector3(0, 0.008, 0.08)
+
+[node name="InteractableHandle" type="RigidBody3D" parent="Lever/HingeOrigin/InteractableHinge/Leaf/HandleOrigin"]
+collision_layer = 262144
+collision_mask = 0
+freeze = true
+script = ExtResource("handle")
+picked_up_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Lever/HingeOrigin/InteractableHinge/Leaf/HandleOrigin/InteractableHandle"]
+shape = SubResource("SphereShape3D_lever")
+
+[node name="StopSound" type="AudioStreamPlayer3D" parent="Lever/HingeOrigin/InteractableHinge" node_paths=PackedStringArray("hinge")]
+position = Vector3(0, 0.008, -0.08)
+stream = ExtResource("button_click")
+volume_db = -20.0
+script = ExtResource("stop_sound")
+hinge = NodePath("..")
+min_speed = 10.0
+full_volume_speed = 90.0
+
+[node name="BodyBlocker" type="Node" parent="Lever" node_paths=PackedStringArray("hinge", "leaf")]
+script = ExtResource("blocker")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+leaf = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+
+[node name="GrabPassThrough" type="Node" parent="Lever" node_paths=PackedStringArray("body", "handles_root")]
+script = ExtResource("pass_through")
+body = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+handles_root = NodePath("../HingeOrigin/InteractableHinge/Leaf")
+
+[node name="UnderLight" type="SpotLight3D" parent="."]
+position = Vector3(0, 0.3, 0.467)
+rotation_degrees = Vector3(-90, 0, 0)
+light_color = Color(1, 0.77, 0.56, 1)
+light_energy = 0.6
+spot_range = 0.8
+spot_angle = 75.0
+
+[node name="SoapDispenser" parent="." instance=ExtResource("vanity_soap_dispenser")]
+position = Vector3(0.42, 0.86, 0.24)

@@ -7,10 +7,13 @@ extends RefCounted
 
 var _materials: Array[BaseMaterial3D] = []
 var _energy_on: Array[float] = []
+var _energy_off := 0.0
 
 
-## on_energy < 0 keeps each material's imported energy as its "on" level.
-func _init(root: Node, material_name: String, on_energy := -1.0) -> void:
+## on_energy < 0 keeps each material's imported energy as its "on" level;
+## off_energy is the "off" level (0 = dark; a little keeps an indicator findable).
+func _init(root: Node, material_name: String, on_energy := -1.0, off_energy := 0.0) -> void:
+	_energy_off = off_energy
 	if root:
 		_collect(root, material_name, on_energy)
 
@@ -21,7 +24,7 @@ func is_empty() -> bool:
 
 func set_on(on: bool) -> void:
 	for i in _materials.size():
-		_materials[i].emission_energy_multiplier = _energy_on[i] if on else 0.0
+		_materials[i].emission_energy_multiplier = _energy_on[i] if on else _energy_off
 
 
 func _collect(node: Node, material_name: String, on_energy: float) -> void:

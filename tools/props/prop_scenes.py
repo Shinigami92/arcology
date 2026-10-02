@@ -25,7 +25,12 @@ mesh() with box_mesh() / quad_mesh() (placeholder geometry, glass quads), HINGE_
 (a sash or flap tilting about its bottom edge), TextResource (a generated .tres next
 to the scenes), glb_node_position() / glb_bounds() (read empties and sizes from an
 exported glb, so a scene can follow the artist's file once it exists). See
-tools/props/window.py for all of them.
+tools/props/window.py for all of them. area_button() / light_switch() also take a box
+press field (box=, shape_position=: flush plates, touch sensors); pickable_scene() takes
+cylinder colliders and a HolderSnap (holder=: a roll on its bar, a hand shower in its
+cradle); cylinders() adds CylinderShape3Ds anywhere. glb_images() / glb_import_text() /
+write_new_file() let a definition share one material between several glbs (see
+tools/props/shower.py --imports).
 
 Conventions it keeps (CLAUDE.md): position/rotation_degrees, never raw
 transforms; metadata/_doc on the root; the physics layers (pickables on 3,
@@ -111,6 +116,10 @@ CATALOG: dict[str, tuple[str, str, str | None]] = {
     "window_light": ("Script", "res://core/interaction/window_light.gd", None),
     "hinge_ambience": ("Script", "res://core/interaction/hinge_ambience.gd", None),
     "named_material_override": ("Script", "res://core/interaction/named_material_override.gd", None),
+    "hinge_coupling": ("Script", "res://core/interaction/hinge_coupling.gd", None),
+    "hinge_detents": ("Script", "res://core/interaction/hinge_detents.gd", None),
+    "press_sound": ("Script", "res://core/interaction/press_sound.gd", None),
+    "holder_snap": ("Script", "res://core/interaction/holder_snap.gd", None),
 }
 # assets/audio/sfx/<name>.wav referenced as "sfx/<name>"; uid where committed scenes use one.
 SFX_UIDS: dict[str, str | None] = {
@@ -408,6 +417,18 @@ class Scene:
         """A deferred SphereShape3D (grab points, switches)."""
         return self.sub("SphereShape3D", sub_id, {"radius": radius}, deferred=True)
 
+    def cylinders(self, parent: str, cylinders: Sequence[tuple], prefix: str = "") -> None:
+        """CollisionShape3D + CylinderShape3D (along local Y) per (name, center, radius, height[, sub id])."""
+        for i, cyl in enumerate(cylinders):
+            name, center, radius, height = cyl[:4]
+            sub_id = cyl[4] if len(cyl) > 4 else f"CylinderShape3D_{prefix}{i}"
+            shape = self.sub("CylinderShape3D", sub_id, {"height": height, "radius": radius})
+            props: dict = {}
+            if any(center):
+                props["position"] = tuple(center)
+            props["shape"] = shape
+            self.node(name, "CollisionShape3D", parent=parent, props=props)
+
     def flush_subs(self) -> None:
         """Writes the deferred sphere shapes at this point of the sub_resource list."""
         self._subs += self._deferred
@@ -607,16 +628,25 @@ class Scene:
         return Joint(group, slider, leaf, body)
 
     def area_button(self, name: str, *, position: Vec3, radius: float = 0.025, displacement: Vec3 = (0, -0.003, 0),
-                    shape_id: str | None = None, parent: str = ".") -> str:
+                    shape_id: str | None = None, parent: str = ".", box: Vec3 | None = None,
+                    shape_position: Vec3 | None = None) -> str:
         """A fingertip-pressed XRToolsInteractableAreaButton (D-031): Area3D detecting Player
-        Hands with a sphere of `radius` (deferred shape `shape_id`) and a Cap node that moves
-        by `displacement` when pressed (put the button's visuals under <name>/Cap)."""
-        shape = self.sphere(shape_id or f"SphereShape3D_{name}", radius)
+        Hands with a sphere of `radius` (deferred shape `shape_id`), or a box of size `box`
+        (a flat plate, a touch field), optionally offset by `shape_position`, and a Cap node
+        that moves by `displacement` when pressed (put the button's visuals under <name>/Cap)."""
+        if box is not None:
+            shape = self.sub("BoxShape3D", shape_id or f"BoxShape3D_{name}", {"size": tuple(box)})
+        else:
+            shape = self.sphere(shape_id or f"SphereShape3D_{name}", radius)
         button = self.node(name, "Area3D", parent=parent, props={
             "position": tuple(position), "collision_layer": 0, "collision_mask": MASK_PLAYER_HANDS,
             "monitorable": False, "script": self.ext("area_button"),
             "button": node_path(f"{parent}/{name}/Cap".removeprefix("./")), "displacement": tuple(displacement)})
-        self.node("CollisionShape3D", "CollisionShape3D", parent=button, shape=shape)
+        shape_props: dict = {}
+        if shape_position is not None and any(shape_position):
+            shape_props["position"] = tuple(shape_position)
+        shape_props["shape"] = shape
+        self.node("CollisionShape3D", "CollisionShape3D", parent=button, props=shape_props)
         self.node("Cap", "Node3D", parent=button)
         return button
 
@@ -658,13 +688,17 @@ class Scene:
     def light_switch(self, name: str, *, position: Vec3, lights: Sequence[str], emissive_root: str | None = None,
                      material_name: str | None = None, radius: float = 0.025, displacement: Vec3 = (0, -0.003, 0),
                      click: Sound | None = Sound("sfx/button_click", props={"volume_db": -8.0}),
-                     shape_id: str | None = None, parent: str = ".", switch_props: dict | None = None) -> str:
+                     shape_id: str | None = None, parent: str = ".", switch_props: dict | None = None,
+                     box: Vec3 | None = None, shape_position: Vec3 | None = None) -> str:
         """A fingertip-pressed switch (D-031): <name>Button (XRToolsInteractableAreaButton
         detecting Player Hands, sphere of `radius`, a Cap that moves by `displacement`),
         a click sound (default name <name>Click, at the button) and <name> (LightSwitch
-        toggling `lights` and `material_name` under `emissive_root`; switch_props = more exports)."""
+        toggling `lights` and `material_name` under `emissive_root`; switch_props = more exports).
+        box / shape_position: a box press field instead of the sphere (see area_button)."""
+        default_id = f"BoxShape3D_{name}" if box is not None else f"SphereShape3D_{name}"
         button = self.area_button(f"{name}Button", position=position, radius=radius, displacement=displacement,
-                                  shape_id=shape_id or f"SphereShape3D_{name}", parent=parent)
+                                  shape_id=shape_id or default_id, parent=parent, box=box,
+                                  shape_position=shape_position)
         props: dict = {"script": self.ext("light_switch"), "button": ref(button), "lights": [ref(p) for p in lights]}
         if emissive_root is not None:
             props["emissive_root"] = ref(emissive_root)
@@ -716,14 +750,19 @@ def pickable_scene(root: str, glb: str, *, mass: float, boxes: Sequence[BoxSpec]
                    linear_damp: float = 0.2, angular_damp: float = 1.0, continuous_cd: bool = False,
                    release_unfrozen: bool = False, hook: Vec3 | None = None, groups: Sequence[str] = (),
                    material_id: str = "PhysicsMaterial_1", shape_prefix: str = "",
-                   impact: dict | None = None, ext_ids: dict[str, str] | None = None) -> Scene:
+                   impact: dict | None = None, ext_ids: dict[str, str] | None = None,
+                   cylinders: Sequence[tuple] = (), holder: str | None = None,
+                   holder_props: dict | None = None) -> Scene:
     """An XRToolsPickable (CLAUDE.md "Add a pickable"): RigidBody3D on layer 3 with the
     pickable mask, freeze_mode kinematic, LERP ranged grab, second-hand grab, a
-    PhysicsMaterial, box colliders, the glb as Model, an ImpactSound, a GrabHighlight.
+    PhysicsMaterial, box colliders (then `cylinders`: (name, center, radius, height)),
+    the glb as Model, an ImpactSound, a GrabHighlight.
     hook: adds Hook (Marker3D) + RailHanger, which needs release_unfrozen (D-031).
-    groups: tags (CLAUDE.md Tags table). impact: ImpactSound player/script props."""
-    if hook is not None and not release_unfrozen:
-        raise ValueError("a RailHanger needs release_unfrozen=True (release_mode = UNFROZEN)")
+    holder: adds a HolderSnap for that holder group (sits frozen in a holder until
+    grabbed, snaps back when dropped near one; holder_props = its exports), which also
+    needs release_unfrozen. groups: tags (CLAUDE.md Tags table). impact: ImpactSound props."""
+    if (hook is not None or holder is not None) and not release_unfrozen:
+        raise ValueError("a RailHanger / HolderSnap needs release_unfrozen=True (release_mode = UNFROZEN)")
     ids = {"pickable": "1_pickable", "impact_sound": "2_impact", sound: "3_sound", "grab_highlight": "4_highlight",
            glb: "5_model", "rail_hanger": "6_hanger"}
     ids.update(ext_ids or {})
@@ -744,6 +783,7 @@ def pickable_scene(root: str, glb: str, *, mass: float, boxes: Sequence[BoxSpec]
     props.update({"ranged_grab_method": 2, "second_hand_grab": 1, "metadata/_doc": doc})
     s.set_root_props(props)
     s.boxes(".", boxes, shape_prefix)
+    s.cylinders(".", cylinders, shape_prefix)
     s.instance("Model", glb)
     impact_props = {"unit_size": 3.0, "max_polyphony": 2, "script": s.ext("impact_sound"), "min_speed": 0.6,
                     "max_speed": 5.0}
@@ -753,6 +793,9 @@ def pickable_scene(root: str, glb: str, *, mass: float, boxes: Sequence[BoxSpec]
     if hook is not None:
         s.node("Hook", "Marker3D", props={"position": tuple(hook)} if any(hook) else None)
         s.node("RailHanger", "Node", script=s.ext("rail_hanger"), hook=ref("Hook"))
+    if holder is not None:
+        s.node("HolderSnap", "Node", props={"script": s.ext("holder_snap"), "holder_group": holder,
+                                            **(holder_props or {})})
     return s
 
 
@@ -826,6 +869,94 @@ def glb_bounds(path: str) -> tuple[Vec3, Vec3] | None:
     if lo[0] == math.inf:
         return None
     return (tuple(round(c, 5) + 0.0 for c in lo), tuple(round(c, 5) + 0.0 for c in hi))  # type: ignore[return-value]
+
+
+def glb_images(path: str) -> dict[str, bytes]:
+    """The embedded images of a repo-relative .glb: {image name: encoded bytes (png/jpeg)}."""
+    data = (ROOT / path).read_bytes()
+    gltf = glb_json(path) or {}
+    json_length = struct.unpack_from("<I", data, 12)[0]
+    bin_start = 20 + json_length + 8   # after the JSON chunk and the BIN chunk's header
+    out: dict[str, bytes] = {}
+    for i, image in enumerate(gltf.get("images", [])):
+        view = gltf["bufferViews"][image["bufferView"]]
+        start = bin_start + view.get("byteOffset", 0)
+        out[image.get("name", f"image_{i}")] = data[start:start + view["byteLength"]]
+    return out
+
+
+GLB_IMPORT = """[remap]
+
+importer="scene"
+importer_version=1
+type="PackedScene"
+
+[deps]
+
+source_file="res://{path}"
+
+[params]
+
+nodes/root_type=""
+nodes/root_name=""
+nodes/root_script=null
+mesh_library/use_node_names_as_mesh_names=false
+array_mesh/deduplicate_surfaces=true
+nodes/apply_root_scale=true
+nodes/root_scale=1.0
+nodes/import_as_skeleton_bones=false
+nodes/use_name_suffixes=true
+nodes/use_node_type_suffixes=true
+meshes/ensure_tangents=true
+meshes/generate_lods=true
+meshes/create_shadow_meshes=true
+meshes/light_baking=1
+meshes/lightmap_texel_size=0.2
+meshes/force_disable_compression=false
+skins/use_named_skins=true
+animation/import=true
+animation/fps=30
+animation/trimming=false
+animation/remove_immutable_tracks=true
+animation/import_rest_as_RESET=false
+import_script/path=""
+materials/extract=0
+materials/extract_format=0
+materials/extract_path=""
+_subresources={subresources}
+gltf/naming_version=2
+gltf/embedded_image_handling={images}
+gltf/texture_map_mode=1
+"""
+
+
+def glb_import_text(path: str, materials: dict[str, str], embedded_images: int = 1) -> str:
+    """A scene .import for a glb whose materials {name: repo path of a .tres} are external,
+    shared resources. embedded_images: 0 discards the glb's embedded textures (when every
+    textured material is external), 1 extracts them next to the glb (Godot's default)."""
+    if materials:
+        entries = ",\n".join(
+            f'"{name}": {{\n"use_external/enabled": true,\n"use_external/fallback_path": "res://{tres}",\n'
+            f'"use_external/path": "res://{tres}"\n}}' for name, tres in materials.items())
+        subresources = '{\n"materials": {\n' + entries + "\n}\n}"
+    else:
+        subresources = "{}"
+    return GLB_IMPORT.format(path=path, subresources=subresources, images=embedded_images)
+
+
+def write_new_file(rel: str, content: str | bytes) -> bool:
+    """Writes a repo-relative file only if it doesn't exist yet (Godot owns .import files
+    once it has imported them, adding uids). Returns whether it wrote."""
+    path = ROOT / rel
+    if path.exists():
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if isinstance(content, bytes):
+        path.write_bytes(content)
+    else:
+        path.write_text(content, encoding="utf-8", newline="\n")
+    print(f"wrote {rel}")
+    return True
 
 
 # ---------------------------------------------------------------- CLI

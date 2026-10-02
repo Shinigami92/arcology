@@ -1,0 +1,170 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/props/shower/shower_body.glb" id="shower_body"]
+[ext_resource type="Script" path="res://core/interaction/named_material_override.gd" id="named_material_override"]
+[ext_resource type="Material" path="res://assets/materials/shower_glass.tres" id="shower_glass"]
+[ext_resource type="Script" uid="uid://c8gx2wc7hsxf5" path="res://addons/godot-xr-tools/interactables/interactable_hinge.gd" id="hinge"]
+[ext_resource type="Script" uid="uid://ccxwohhkuuyo1" path="res://core/interaction/kinematic_follower.gd" id="follower"]
+[ext_resource type="PackedScene" path="res://assets/props/shower/shower_mixer_flow.glb" id="shower_mixer_flow"]
+[ext_resource type="Script" uid="uid://dlojnwxo25bky" path="res://addons/godot-xr-tools/interactables/interactable_handle.gd" id="handle"]
+[ext_resource type="Script" uid="uid://c8otihf11a0u7" path="res://core/interaction/hinge_body_blocker.gd" id="blocker"]
+[ext_resource type="Script" uid="uid://dwnb8l1buro5f" path="res://core/interaction/grab_pass_through.gd" id="pass_through"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/vent_latch.wav" id="vent_latch"]
+[ext_resource type="Script" path="res://core/interaction/hinge_detents.gd" id="hinge_detents"]
+[ext_resource type="PackedScene" path="res://assets/props/shower/shower_mixer_temp.glb" id="shower_mixer_temp"]
+[ext_resource type="Script" uid="uid://0qo7w8nlh6eu" path="res://core/interaction/hinge_stop_sound.gd" id="stop_sound"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/button_click.wav" id="button_click"]
+[ext_resource type="PackedScene" path="res://assets/props/shower/shower_handheld.tscn" id="shower_handheld"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_flow0"]
+size = Vector3(0.047, 0.11, 0.03)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_temp0"]
+size = Vector3(0.06, 0.06, 0.04)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_mixer"]
+radius = 0.035
+
+[node name="Shower" type="Node3D"]
+metadata/_doc = "Walk-in shower 2.80 x 1.40 m with a frameless glass screen (entry at the -X end), rain head, slide rail, wall mixer and a marble shelf. Origin = footprint center on the floor; the back wall is at z -0.70, +Z points into the room. The flow lever turns ±90 degrees (+ rain head, - hand shower) and clicks into off and both ends; the thermostat dial turns ±120 degrees with a click at 38 °C (indicator up). The hand shower sits in its holder until grabbed; put it back near the holder and it clicks in again. No water yet."
+
+[node name="Body" parent="." instance=ExtResource("shower_body")]
+
+[node name="GlassMaterial" type="Node" parent="." node_paths=PackedStringArray("root")]
+script = ExtResource("named_material_override")
+root = NodePath("../Body")
+material_name = "shower_glass"
+material = ExtResource("shower_glass")
+cast_shadow = 0
+
+[node name="FlowLever" type="Node3D" parent="."]
+
+[node name="HingeOrigin" type="Node3D" parent="FlowLever"]
+position = Vector3(-0.6, 1.175, -0.69)
+rotation_degrees = Vector3(0, -90, 0)
+
+[node name="InteractableHinge" type="Node3D" parent="FlowLever/HingeOrigin"]
+script = ExtResource("hinge")
+hinge_limit_min = -90.0
+hinge_limit_max = 90.0
+
+[node name="Leaf" type="Node3D" parent="FlowLever/HingeOrigin/InteractableHinge"]
+rotation_degrees = Vector3(0, 90, 0)
+
+[node name="DoorBody" type="AnimatableBody3D" parent="FlowLever/HingeOrigin/InteractableHinge/Leaf"]
+script = ExtResource("follower")
+
+[node name="LeverCollision" type="CollisionShape3D" parent="FlowLever/HingeOrigin/InteractableHinge/Leaf/DoorBody"]
+position = Vector3(0, -0.0315, 0.015)
+shape = SubResource("BoxShape3D_flow0")
+
+[node name="Model" parent="FlowLever/HingeOrigin/InteractableHinge/Leaf/DoorBody" instance=ExtResource("shower_mixer_flow")]
+
+[node name="HandleOrigin" type="Node3D" parent="FlowLever/HingeOrigin/InteractableHinge/Leaf"]
+position = Vector3(0, -0.052, 0.027)
+
+[node name="InteractableHandle" type="RigidBody3D" parent="FlowLever/HingeOrigin/InteractableHinge/Leaf/HandleOrigin"]
+collision_layer = 262144
+collision_mask = 0
+freeze = true
+script = ExtResource("handle")
+picked_up_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="FlowLever/HingeOrigin/InteractableHinge/Leaf/HandleOrigin/InteractableHandle"]
+shape = SubResource("SphereShape3D_mixer")
+
+[node name="BodyBlocker" type="Node" parent="FlowLever" node_paths=PackedStringArray("hinge", "leaf")]
+script = ExtResource("blocker")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+leaf = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+
+[node name="GrabPassThrough" type="Node" parent="FlowLever" node_paths=PackedStringArray("body", "handles_root")]
+script = ExtResource("pass_through")
+body = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+handles_root = NodePath("../HingeOrigin/InteractableHinge/Leaf")
+
+[node name="FlowClick" type="AudioStreamPlayer3D" parent="FlowLever"]
+position = Vector3(-0.6, 1.175, -0.69)
+stream = ExtResource("vent_latch")
+volume_db = -16.0
+
+[node name="Detents" type="Node" parent="FlowLever" node_paths=PackedStringArray("hinge", "click")]
+script = ExtResource("hinge_detents")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+detents = PackedFloat32Array(-90, 0, 90)
+capture = 15.0
+click = NodePath("../FlowClick")
+
+[node name="TempDial" type="Node3D" parent="."]
+
+[node name="HingeOrigin" type="Node3D" parent="TempDial"]
+position = Vector3(-0.6, 1.025, -0.69)
+rotation_degrees = Vector3(0, -90, 0)
+
+[node name="InteractableHinge" type="Node3D" parent="TempDial/HingeOrigin"]
+script = ExtResource("hinge")
+hinge_limit_min = -120.0
+hinge_limit_max = 120.0
+
+[node name="Leaf" type="Node3D" parent="TempDial/HingeOrigin/InteractableHinge"]
+rotation_degrees = Vector3(0, 90, 0)
+
+[node name="DoorBody" type="AnimatableBody3D" parent="TempDial/HingeOrigin/InteractableHinge/Leaf"]
+script = ExtResource("follower")
+
+[node name="DialCollision" type="CollisionShape3D" parent="TempDial/HingeOrigin/InteractableHinge/Leaf/DoorBody"]
+position = Vector3(0, 0, 0.02)
+shape = SubResource("BoxShape3D_temp0")
+
+[node name="Model" parent="TempDial/HingeOrigin/InteractableHinge/Leaf/DoorBody" instance=ExtResource("shower_mixer_temp")]
+
+[node name="HandleOrigin" type="Node3D" parent="TempDial/HingeOrigin/InteractableHinge/Leaf"]
+position = Vector3(0, 0.035, 0.022)
+
+[node name="InteractableHandle" type="RigidBody3D" parent="TempDial/HingeOrigin/InteractableHinge/Leaf/HandleOrigin"]
+collision_layer = 262144
+collision_mask = 0
+freeze = true
+script = ExtResource("handle")
+picked_up_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TempDial/HingeOrigin/InteractableHinge/Leaf/HandleOrigin/InteractableHandle"]
+shape = SubResource("SphereShape3D_mixer")
+
+[node name="StopSound" type="AudioStreamPlayer3D" parent="TempDial/HingeOrigin/InteractableHinge" node_paths=PackedStringArray("hinge")]
+position = Vector3(0.022, 0.035, 0)
+stream = ExtResource("button_click")
+volume_db = -20.0
+script = ExtResource("stop_sound")
+hinge = NodePath("..")
+min_speed = 10.0
+
+[node name="BodyBlocker" type="Node" parent="TempDial" node_paths=PackedStringArray("hinge", "leaf")]
+script = ExtResource("blocker")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+leaf = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+
+[node name="GrabPassThrough" type="Node" parent="TempDial" node_paths=PackedStringArray("body", "handles_root")]
+script = ExtResource("pass_through")
+body = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+handles_root = NodePath("../HingeOrigin/InteractableHinge/Leaf")
+
+[node name="TempClick" type="AudioStreamPlayer3D" parent="TempDial"]
+position = Vector3(-0.6, 1.025, -0.69)
+stream = ExtResource("button_click")
+volume_db = -14.0
+
+[node name="Detents" type="Node" parent="TempDial" node_paths=PackedStringArray("hinge", "click")]
+script = ExtResource("hinge_detents")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+detents = PackedFloat32Array(0)
+capture = 6.0
+click = NodePath("../TempClick")
+
+[node name="HandShowerHolder" type="Marker3D" parent="." groups=["shower_hand_holder"]]
+position = Vector3(-0.05, 1.55, -0.585)
+rotation_degrees = Vector3(12, 0, 0)
+
+[node name="HandShower" parent="." instance=ExtResource("shower_handheld")]
+position = Vector3(-0.05, 1.55, -0.585)
+rotation_degrees = Vector3(12, 0, 0)
