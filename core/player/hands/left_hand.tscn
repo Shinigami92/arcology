@@ -1,0 +1,30 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" uid="uid://b4kad2kuba1yn" path="res://addons/godot-xr-tools/hands/scenes/lowpoly/left_hand_low.tscn" id="1_hand"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_fingertip"]
+radius = 0.012
+
+[node name="LeftHand" instance=ExtResource("1_hand")]
+metadata/_doc = "Player's visible left hand: XR Tools low-poly model posed by grip/trigger, with the index Fingertip press area. Swapped for the avatar's hand in D-037."
+
+[node name="Hand_Nails_low_L" parent="." index="0"]
+transform = Transform3D(1, 0, 0, 0, 0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, -0.01, 0.03535534, 0.03535534)
+
+[node name="AnimationTree" parent="." index="1"]
+root_node = NodePath("../Hand_Nails_low_L")
+
+[node name="IndexTip" type="BoneAttachment3D" parent="Hand_Nails_low_L/Armature/Skeleton3D"]
+bone_name = "Index_Distal_L"
+
+[node name="Fingertip" type="Area3D" parent="Hand_Nails_low_L/Armature/Skeleton3D/IndexTip"]
+position = Vector3(0, 0.02, 0)
+collision_layer = 131072
+collision_mask = 0
+monitoring = false
+metadata/_doc = "Detection-only fingertip on the Player Hands layer: presses XR Tools area buttons (ABPanel, switches) without adding finger collision."
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hand_Nails_low_L/Armature/Skeleton3D/IndexTip/Fingertip"]
+shape = SubResource("SphereShape3D_fingertip")
+
+[editable path="Hand_Nails_low_L"]

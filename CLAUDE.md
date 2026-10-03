@@ -19,7 +19,7 @@ A first-class VR experience in a cyberpunk megacity. It starts as one apartment 
 ## Layout
 
 ```
-CLAUDE.md, docs/          project docs (ideas, style guide, decisions)
+CLAUDE.md, docs/          project docs (ideas, style guide, decisions); characters/ = character specs + reference images
 main.tscn / main.gd       entry scene: StartXR, Skyline, Zones, Player; --perf args
 openxr_action_map.tres    OpenXR actions (from the XR Tools demo; covers Index, Touch, Vive, WMR, Pico, …)
 addons/godot-xr-tools/    XR Tools 4.6.0-dev1, unmodified (D-004)
@@ -39,7 +39,7 @@ blender/                  .blend sources (LFS) + their build scripts, exported t
   props/<name>/           one asset's build/bake/export/render/verify scripts (e.g. fridge)
   surfaces/               tileable surface texture generator (vinyl, carpet, concrete, plaster) -> assets/materials/surfaces/
 core/
-  player/                 ArcologyPlayer rig (player.tscn), StickSprint, GrabRay, player_physics.tres (jump height), Fingertip press areas (D-031)
+  player/                 ArcologyPlayer rig (player.tscn), hands/ (visible hand scenes with the Fingertip, swapped for the avatar's in D-037), StickSprint, GrabRay, player_physics.tres (jump height), Fingertip press areas (D-031)
   interaction/            ImpactSound, TrashReceiver, HingeStopSound, HingeBodyBlocker, HingeSwing, HingeLight, SliderSwing, KinematicFollower, GrabPassThrough, Seat, GrabHighlight, LightSwitch, EmissiveMaterials, OpenAlarm, HangingRail, RailHanger; windows: MotorizedShade, SmartGlass, WindowLight, WindowHud, HingeAmbience, NamedMaterialOverride
   debug/                  ABSwitch + ABPanel: blind A/B variants in one spot, flipped by a wall button (D-030); RainDebugButton (temporary "RAIN" button in the living room)
   world_state/            (M2) time of day, weather, overrides
