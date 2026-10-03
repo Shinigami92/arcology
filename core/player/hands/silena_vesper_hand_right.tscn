@@ -1,7 +1,8 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://core/player/hands/avatar_hand.gd" id="1_hand"]
-[ext_resource type="PackedScene" path="res://assets/characters/silena_vesper/silena_vesper_hand_right.glb" id="2_model"]
+[ext_resource type="PackedScene" path="res://assets/characters/silena_vesper/silena_vesper_arm_right.glb" id="2_model"]
+[ext_resource type="Script" path="res://core/player/hands/arm_ik.gd" id="3_arm_ik"]
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_open"]
 animation = &"Open"
@@ -68,7 +69,7 @@ metadata/_doc = "Moved to the controller's palm offset by XR Tools at runtime."
 
 [node name="Model" parent="Offset" instance=ExtResource("2_model")]
 position = Vector3(-1.1497, -0.3752, -0.4299)
-rotation_degrees = Vector3(-41.0949, 161.1761, 51.9784)
+rotation_degrees = Vector3(-41.0949, 161.1761, 51.9786)
 
 [node name="IndexTip" type="BoneAttachment3D" parent="Offset/Model/Armature/Skeleton3D"]
 bone_name = "RightIndexTip"
@@ -81,6 +82,12 @@ metadata/_doc = "Detection-only fingertip on the Player Hands layer: presses XR 
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Offset/Model/Armature/Skeleton3D/IndexTip/Fingertip"]
 shape = SubResource("SphereShape3D_fingertip")
+
+[node name="ArmIK" type="SkeletonModifier3D" parent="Offset/Model/Armature/Skeleton3D"]
+script = ExtResource("3_arm_ik")
+side = "Right"
+shoulder_offset = Vector3(0.1793, -0.2589, 0.1039)
+elbow_hint = Vector3(0.35, -1, 0.3)
 
 [node name="AnimationTree" type="AnimationTree" parent="."]
 root_node = NodePath("../Offset/Model")

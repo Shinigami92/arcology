@@ -656,6 +656,61 @@ func _test_hand_rig() -> void:
 					"index / middle tip travel: trigger %s, grip %s" % [trigger_only.snappedf(0.001), grip_only.snappedf(0.001)])
 		hand.force_grip_trigger()
 		await _frames(2)
+		await _test_arm_ik(side, skeleton)
+
+
+## The arm reaches the hand from a shoulder near the headset without moving
+## the hand or stretching the bones, the elbow below the arm line (D-040).
+func _test_arm_ik(side: String, skeleton: Skeleton3D) -> void:
+	var ik := skeleton.get_node_or_null("ArmIK") as ArmIK
+	if ik == null:
+		return
+	await skeleton.skeleton_updated
+	var bones: Array[Transform3D] = []
+	var rests: Array[Transform3D] = []
+	for part: String in ["UpperArm", "LowerArm", "Hand"]:
+		var bone := skeleton.find_bone("%s%s" % [side, part])
+		bones.append(skeleton.get_bone_global_pose(bone))
+		rests.append(skeleton.get_bone_global_rest(bone))
+	var to_world := skeleton.global_transform
+	var camera := get_viewport().get_camera_3d()
+	var shoulder := to_world * bones[0].origin
+	var hand_drift := bones[2].origin.distance_to(rests[2].origin)
+	var stretch := absf(bones[0].origin.distance_to(bones[1].origin) - rests[0].origin.distance_to(rests[1].origin)) \
+			+ absf(bones[1].origin.distance_to(bones[2].origin) - rests[1].origin.distance_to(rests[2].origin))
+	var sag := ((to_world * bones[0].origin + to_world * bones[2].origin) * 0.5).y - (to_world * bones[1].origin).y
+	var from_head := shoulder.distance_to(camera.global_position)
+	_check("arm_ik_%s" % side.to_lower(),
+			hand_drift < 0.001 and stretch < 0.001 and sag > 0.0 and from_head < 0.6,
+			"hand drift %.4f m, bone stretch %.4f m, elbow %.3f m below the arm line, shoulder %.2f m from the eyes" % [hand_drift, stretch, sag, from_head])
+
+	# Rolling the wrist (the controller about the forearm) moves the twist bone
+	# smoothly and leaves the upper arm and forearm alone (headset bug: both
+	# flipped half a turn at about -110 degrees of roll).
+	var controller := _main.get_node("Player/%sHand" % side) as Node3D
+	var saved := controller.transform
+	var lower_bone := skeleton.find_bone("%sLowerArm" % side)
+	var axis := (to_world * bones[2].origin - to_world * bones[1].origin).normalized()
+	var pivot := to_world * bones[2].origin
+	var parts: Array[int] = [skeleton.find_bone("%sUpperArm" % side), lower_bone, skeleton.find_bone("%sLowerArmTwist" % side)]
+	var worst: Array[float] = [0.0, 0.0, 0.0]
+	var last: Array[Quaternion] = []
+	ik.set("_roll_tracked", NAN)
+	for step in range(-30, 31):
+		var roll := Transform3D(Basis(axis, deg_to_rad(step * 5.0)), Vector3.ZERO)
+		controller.global_transform = roll.translated_local(-pivot).translated(pivot) * (controller.get_parent() as Node3D).global_transform * saved
+		await get_tree().physics_frame
+		await skeleton.skeleton_updated
+		var now: Array[Quaternion] = []
+		for i in parts.size():
+			now.append((skeleton.global_transform * skeleton.get_bone_global_pose(parts[i])).basis.get_rotation_quaternion())
+			if last:
+				worst[i] = maxf(worst[i], rad_to_deg(now[i].angle_to(last[i])))
+		last = now
+	controller.transform = saved
+	await _frames(2)
+	_check("arm_ik_%s_roll" % side.to_lower(), worst[0] < 2.0 and worst[1] < 2.0 and worst[2] < 6.0,
+			"largest change per 5 degrees of wrist roll: upper arm %.1f, forearm %.1f, twist %.1f degrees" % worst)
 
 
 ## Pressing the lamp's switch turns its light and glow off, pressing again on.

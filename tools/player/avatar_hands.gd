@@ -1,6 +1,7 @@
 extends SceneTree
 ## Writes the avatar's hand scenes, core/player/hands/<character>_hand_<side>.tscn
-## (D-037), from the character's rigged hand glbs:
+## (D-037), from the character's rigged arm glbs (glove and sleeve; the older
+## hand-only glbs if no arm glb exists):
 ##
 ##   "$GODOT4_EDITOR" --headless --path . --script res://tools/player/avatar_hands.gd
 ##   "$GODOT4_EDITOR" --headless --path . --script res://tools/player/avatar_hands.gd -- --check
@@ -14,12 +15,18 @@ extends SceneTree
 ## palm offset at runtime) -> Model (the glb, fitted) with the index Fingertip
 ## press area on the <Side>IndexTip bone, an AnimationTree blending the glb's
 ## "Open" and "Grip" per finger (Index, Middle, Ring = ring + little, Thumb),
-## driven by AvatarHand from the controls each finger rests on (D-039).
+## driven by AvatarHand from the controls each finger rests on (D-039). With an
+## arm (an <Side>UpperArm bone), an ArmIK modifier places shoulder and elbow
+## (D-040): its shoulder offset is the glb's upper arm head relative to AVATAR_EYE.
 ## Loads the glbs with GLTFDocument, so it works before the editor imports them.
 ## --check compares with the files on disk and quits with 1 on a difference.
 
 const CHARACTER := "silena_vesper"
-const GLB := "res://assets/characters/%s/%s_hand_%s.glb"
+const GLB := "res://assets/characters/%s/%s_%s_%s.glb"
+## The avatar's eye midpoint in the glb's coordinates (the body faces +Z there).
+const AVATAR_EYE := Vector3(0.0, 1.7899, 0.1268)
+## Where the right elbow points, in the body frame (x right, y up, z back); mirrored for the left.
+const ELBOW_HINT := Vector3(0.35, -1.0, 0.3)
 const OUT := "res://core/player/hands/%s_hand_%s.tscn"
 const XR_MODEL := "res://addons/godot-xr-tools/hands/model/Hand_Nails_low_%s.gltf"
 ## Headset corrections in the XR Tools model frame, applied after the fit.
@@ -55,8 +62,24 @@ func _init() -> void:
 func _hand_scene(side: String) -> String:
 	var cap := side.capitalize()
 	var s := cap.left(1)
-	var glb := GLB % [CHARACTER, CHARACTER, side]
+	var glb := GLB % [CHARACTER, CHARACTER, "arm", side]
+	if not FileAccess.file_exists(glb):
+		glb = GLB % [CHARACTER, CHARACTER, "hand", side]
 	var ours := _load(glb)
+	var arm_ik: PackedStringArray = []
+	if _has_bone(ours, "%sUpperArm" % cap):
+		# The glb faces +Z, the player's body frame -Z: turn the offset half around.
+		var offset := Basis(Vector3.UP, PI) * (_bone(ours, "%sUpperArm" % cap) - AVATAR_EYE)
+		var hint := ELBOW_HINT * Vector3(-1.0 if side == "left" else 1.0, 1.0, 1.0)
+		arm_ik = [
+			"[node name=\"ArmIK\" type=\"SkeletonModifier3D\" parent=\"Offset/Model/Armature/Skeleton3D\"]",
+			"script = ExtResource(\"3_arm_ik\")",
+			"side = \"%s\"" % cap,
+			"shoulder_offset = %s" % _vec(offset),
+			"elbow_hint = %s" % _vec(hint),
+			"",
+		]
+		print("%s: shoulder %s from the eyes (body frame)" % [side, _vec(offset)])
 	var xr := _load(XR_MODEL % s)
 	var ours_frame := _palm_frame(ours, "%sHand" % cap, "%sMiddleProximal" % cap, "%sIndexProximal" % cap, "%sLittleProximal" % cap)
 	var xr_frame := _palm_frame(xr, "Wrist_%s" % s, "Middle_Proximal_%s" % s, "Index_Proximal_%s" % s, "Little_Proximal_%s" % s)
@@ -79,8 +102,10 @@ func _hand_scene(side: String) -> String:
 		"",
 		"[ext_resource type=\"Script\" path=\"res://core/player/hands/avatar_hand.gd\" id=\"1_hand\"]",
 		"[ext_resource type=\"PackedScene\" path=\"%s\" id=\"2_model\"]" % glb,
-		"",
 	]
+	if arm_ik:
+		lines.append("[ext_resource type=\"Script\" path=\"res://core/player/hands/arm_ik.gd\" id=\"3_arm_ik\"]")
+	lines.append("")
 	lines.append_array(_blend_tree(cap))
 	lines.append_array([
 		"[sub_resource type=\"SphereShape3D\" id=\"SphereShape3D_fingertip\"]",
@@ -110,6 +135,9 @@ func _hand_scene(side: String) -> String:
 		"[node name=\"CollisionShape3D\" type=\"CollisionShape3D\" parent=\"Offset/Model/Armature/Skeleton3D/IndexTip/Fingertip\"]",
 		"shape = SubResource(\"SphereShape3D_fingertip\")",
 		"",
+	])
+	lines.append_array(arm_ik)
+	lines.append_array([
 		"[node name=\"AnimationTree\" type=\"AnimationTree\" parent=\".\"]",
 		"root_node = NodePath(\"../Offset/Model\")",
 		"tree_root = SubResource(\"AnimationNodeBlendTree_hand\")",
@@ -178,12 +206,21 @@ func _load(path: String) -> Node3D:
 	return scene
 
 
+func _has_bone(scene: Node3D, bone: String) -> bool:
+	var skeleton: Skeleton3D = scene.find_children("*", "Skeleton3D", true, false)[0]
+	return skeleton.find_bone(bone) >= 0
+
+
 ## Rest position of a bone's head in the scene root's frame.
 func _bone(scene: Node3D, bone: String) -> Vector3:
 	var skeleton: Skeleton3D = scene.find_children("*", "Skeleton3D", true, false)[0]
 	var index := skeleton.find_bone(bone)
 	assert(index >= 0, "no bone %s" % bone)
-	var local := scene.global_transform.affine_inverse() * skeleton.global_transform
+	var local := Transform3D()
+	var node: Node = skeleton
+	while node != scene:
+		local = (node as Node3D).transform * local
+		node = node.get_parent()
 	return local * skeleton.get_bone_global_rest(index).origin
 
 
