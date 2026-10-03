@@ -110,7 +110,8 @@ Gameplay buttons are named OpenXR actions bound per controller in `openxr_action
 | `crouch` (toggle) | right B | right B | right B |
 | `interact`: sit down when a seat prompt shows / get up (or push the left stick) | right X | left X | left A |
 | `recenter`, hold 1 s: recenter + recalibrate eye height (blink + buzz) | right Y | left Y | left B |
-| free for later | left D-pad, bumpers, left View | | |
+| finger curl (hand animation only, `finger_*` actions, D-039) | index: bumper; middle: trigger; ring + little: grip; thumb: stick and face buttons (touch curls part way, press fully) | index: trigger; others: grip; thumb: stick, face buttons, thumb rest | index: trigger; others: grip; thumb: stick, trackpad, A/B |
+| free for later | left D-pad, bumpers, left View (touch already curls fingers) | | |
 
 Every button press is printed to the log (`XR button: right interact`), so a mapping problem shows up in `user://logs/godot.log`. Turn it off with `ArcologyPlayer.log_buttons`.
 

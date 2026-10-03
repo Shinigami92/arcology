@@ -6,32 +6,54 @@
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_open"]
 animation = &"Open"
 
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_closed1"]
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_grip_index"]
 animation = &"Grip"
 
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_closed2"]
-animation = &"Grip"
-
-[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_trigger"]
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_index"]
 filter_enabled = true
 filters = ["Armature/Skeleton3D:RightIndexMetacarpal", "Armature/Skeleton3D:RightIndexProximal", "Armature/Skeleton3D:RightIndexIntermediate", "Armature/Skeleton3D:RightIndexDistal", "Armature/Skeleton3D:RightIndexTip"]
 
-[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_grip"]
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_grip_middle"]
+animation = &"Grip"
+
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_middle"]
 filter_enabled = true
-filters = ["Armature/Skeleton3D:RightThumbMetacarpal", "Armature/Skeleton3D:RightThumbProximal", "Armature/Skeleton3D:RightThumbDistal", "Armature/Skeleton3D:RightThumbTip", "Armature/Skeleton3D:RightMiddleMetacarpal", "Armature/Skeleton3D:RightMiddleProximal", "Armature/Skeleton3D:RightMiddleIntermediate", "Armature/Skeleton3D:RightMiddleDistal", "Armature/Skeleton3D:RightMiddleTip", "Armature/Skeleton3D:RightRingMetacarpal", "Armature/Skeleton3D:RightRingProximal", "Armature/Skeleton3D:RightRingIntermediate", "Armature/Skeleton3D:RightRingDistal", "Armature/Skeleton3D:RightRingTip", "Armature/Skeleton3D:RightLittleMetacarpal", "Armature/Skeleton3D:RightLittleProximal", "Armature/Skeleton3D:RightLittleIntermediate", "Armature/Skeleton3D:RightLittleDistal", "Armature/Skeleton3D:RightLittleTip"]
+filters = ["Armature/Skeleton3D:RightMiddleMetacarpal", "Armature/Skeleton3D:RightMiddleProximal", "Armature/Skeleton3D:RightMiddleIntermediate", "Armature/Skeleton3D:RightMiddleDistal", "Armature/Skeleton3D:RightMiddleTip"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_grip_ring"]
+animation = &"Grip"
+
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_ring"]
+filter_enabled = true
+filters = ["Armature/Skeleton3D:RightRingMetacarpal", "Armature/Skeleton3D:RightRingProximal", "Armature/Skeleton3D:RightRingIntermediate", "Armature/Skeleton3D:RightRingDistal", "Armature/Skeleton3D:RightRingTip", "Armature/Skeleton3D:RightLittleMetacarpal", "Armature/Skeleton3D:RightLittleProximal", "Armature/Skeleton3D:RightLittleIntermediate", "Armature/Skeleton3D:RightLittleDistal", "Armature/Skeleton3D:RightLittleTip"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_grip_thumb"]
+animation = &"Grip"
+
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_thumb"]
+filter_enabled = true
+filters = ["Armature/Skeleton3D:RightThumbMetacarpal", "Armature/Skeleton3D:RightThumbProximal", "Armature/Skeleton3D:RightThumbDistal", "Armature/Skeleton3D:RightThumbTip"]
 
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_hand"]
 nodes/OpenHand/node = SubResource("AnimationNodeAnimation_open")
-nodes/OpenHand/position = Vector2(-600, 100)
-nodes/ClosedHand1/node = SubResource("AnimationNodeAnimation_closed1")
-nodes/ClosedHand1/position = Vector2(-600, 300)
-nodes/ClosedHand2/node = SubResource("AnimationNodeAnimation_closed2")
-nodes/ClosedHand2/position = Vector2(-360, 300)
-nodes/Trigger/node = SubResource("AnimationNodeBlend2_trigger")
-nodes/Trigger/position = Vector2(-360, 20)
-nodes/Grip/node = SubResource("AnimationNodeBlend2_grip")
-nodes/Grip/position = Vector2(0, 20)
-node_connections = [&"Grip", 0, &"Trigger", &"Grip", 1, &"ClosedHand2", &"Trigger", 0, &"OpenHand", &"Trigger", 1, &"ClosedHand1", &"output", 0, &"Grip"]
+nodes/OpenHand/position = Vector2(-600, 0)
+nodes/ClosedIndex/node = SubResource("AnimationNodeAnimation_grip_index")
+nodes/ClosedIndex/position = Vector2(-400, 250)
+nodes/Index/node = SubResource("AnimationNodeBlend2_index")
+nodes/Index/position = Vector2(-300, 0)
+nodes/ClosedMiddle/node = SubResource("AnimationNodeAnimation_grip_middle")
+nodes/ClosedMiddle/position = Vector2(-180, 250)
+nodes/Middle/node = SubResource("AnimationNodeBlend2_middle")
+nodes/Middle/position = Vector2(-80, 0)
+nodes/ClosedRing/node = SubResource("AnimationNodeAnimation_grip_ring")
+nodes/ClosedRing/position = Vector2(40, 250)
+nodes/Ring/node = SubResource("AnimationNodeBlend2_ring")
+nodes/Ring/position = Vector2(140, 0)
+nodes/ClosedThumb/node = SubResource("AnimationNodeAnimation_grip_thumb")
+nodes/ClosedThumb/position = Vector2(260, 250)
+nodes/Thumb/node = SubResource("AnimationNodeBlend2_thumb")
+nodes/Thumb/position = Vector2(360, 0)
+node_connections = [&"Index", 0, &"OpenHand", &"Index", 1, &"ClosedIndex", &"Middle", 0, &"Index", &"Middle", 1, &"ClosedMiddle", &"Ring", 0, &"Middle", &"Ring", 1, &"ClosedRing", &"Thumb", 0, &"Ring", &"Thumb", 1, &"ClosedThumb", &"output", 0, &"Thumb"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_fingertip"]
 radius = 0.012
@@ -39,7 +61,7 @@ radius = 0.012
 [node name="RightHand" type="Node3D"]
 script = ExtResource("1_hand")
 hand_blend_tree = SubResource("AnimationNodeBlendTree_hand")
-metadata/_doc = "Player's visible right hand: Silena Vesper's glove (D-037), posed by grip/trigger, with the index Fingertip press area. Generated by tools/player/avatar_hands.gd; don't edit."
+metadata/_doc = "Player's visible right hand: Silena Vesper's glove (D-037), each finger curled by the control it rests on (D-039), with the index Fingertip press area. Generated by tools/player/avatar_hands.gd; don't edit."
 
 [node name="Offset" type="Node3D" parent="."]
 metadata/_doc = "Moved to the controller's palm offset by XR Tools at runtime."
@@ -64,7 +86,9 @@ shape = SubResource("SphereShape3D_fingertip")
 root_node = NodePath("../Offset/Model")
 tree_root = SubResource("AnimationNodeBlendTree_hand")
 anim_player = NodePath("../Offset/Model/AnimationPlayer")
-parameters/Grip/blend_amount = 0.0
-parameters/Trigger/blend_amount = 0.0
+parameters/Index/blend_amount = 0.0
+parameters/Middle/blend_amount = 0.0
+parameters/Ring/blend_amount = 0.0
+parameters/Thumb/blend_amount = 0.0
 
 [editable path="Offset/Model"]

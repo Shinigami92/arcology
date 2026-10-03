@@ -635,10 +635,27 @@ func _test_hand_rig() -> void:
 		hand.force_grip_trigger(1.0, 1.0)
 		await _frames(10)
 		var closed := hand.global_transform.affine_inverse() * tip.global_position
-		hand.force_grip_trigger()
-		await _frames(2)
 		_check("hand_rig_%s_grip_curls" % side.to_lower(), open.distance_to(closed) > 0.02,
 				"fingertip moves %.3f m from open to grip" % open.distance_to(closed))
+		if hand is AvatarHand:
+			# Fingers curl independently (D-039): trigger alone moves only the index,
+			# grip alone only the others.
+			var middle := skeleton.find_bone("%sMiddleTip" % side)
+			# x: index tip moved from open, y: middle tip moved from rest
+			var moves: Array[Vector2] = []
+			for forced: Vector2 in [Vector2(0, 0), Vector2(0, 1), Vector2(1, 0)]:
+				hand.force_grip_trigger(forced.x, forced.y)
+				await _frames(10)
+				moves.append(Vector2(
+						(hand.global_transform.affine_inverse() * tip.global_position).distance_to(open),
+						skeleton.get_bone_global_pose(middle).origin.distance_to(skeleton.get_bone_global_rest(middle).origin)))
+			var trigger_only := moves[1] - moves[0]
+			var grip_only := moves[2] - moves[0]
+			_check("hand_rig_%s_fingers_independent" % side.to_lower(),
+					trigger_only.x > 0.02 and absf(trigger_only.y) < 0.002 and absf(grip_only.x) < 0.002 and grip_only.y > 0.02,
+					"index / middle tip travel: trigger %s, grip %s" % [trigger_only.snappedf(0.001), grip_only.snappedf(0.001)])
+		hand.force_grip_trigger()
+		await _frames(2)
 
 
 ## Pressing the lamp's switch turns its light and glow off, pressing again on.
