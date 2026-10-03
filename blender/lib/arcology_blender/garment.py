@@ -111,6 +111,63 @@ def ring_radii(bvh, frame, t, thetas, max_r=0.25, fallback=None):
     return [r if r is not None else (fallback or mean) for r in out]
 
 
+class PathFrames:
+    """Rotation-minimizing frames along a polyline (a limb's centerline through a bent
+    joint: wrist, elbow fillet, shoulder): `frame(t)` is a `LimbFrame` at arc length `t`
+    from the first point whose `axis` is the path's tangent and whose `ref` is
+    parallel-transported from `ref` at the start, so rings lofted across the path
+    (`frame(t).point(0, theta, r)`) don't twist. Beyond the ends the path continues
+    straight. `theta(t, direction)` is the angle of a world direction around the path."""
+
+    def __init__(self, points, ref, step=0.001):
+        pts = [Vector(p) for p in points]
+        seg = [(b - a).length for a, b in zip(pts, pts[1:])]
+        self.length = sum(seg)
+        n = max(2, int(math.ceil(self.length / step)) + 1)
+        self.step = self.length / (n - 1)
+        acc = [0.0]
+        for s in seg:
+            acc.append(acc[-1] + s)
+        self.points = []
+        i = 0
+        for k in range(n):
+            t = min(k * self.step, self.length)
+            while i < len(seg) - 1 and acc[i + 1] < t:
+                i += 1
+            f = 0.0 if seg[i] <= 0.0 else (t - acc[i]) / seg[i]
+            self.points.append(pts[i].lerp(pts[i + 1], max(0.0, min(1.0, f))))
+        self.tangents = []
+        for k in range(n):
+            a, b = self.points[max(k - 1, 0)], self.points[min(k + 1, n - 1)]
+            self.tangents.append((b - a).normalized())
+        r = Vector(ref)
+        r = (r - self.tangents[0] * r.dot(self.tangents[0])).normalized()
+        self.refs = [r]
+        for k in range(1, n):
+            q = self.tangents[k - 1].rotation_difference(self.tangents[k])
+            r = q @ self.refs[-1]
+            r = (r - self.tangents[k] * r.dot(self.tangents[k])).normalized()
+            self.refs.append(r)
+
+    def frame(self, t):
+        n = len(self.points)
+        if t <= 0.0 or t >= self.length:
+            k = 0 if t <= 0.0 else n - 1
+            o = self.points[k] + self.tangents[k] * (t if t <= 0.0 else t - self.length)
+            return limb_frame(o, self.tangents[k], self.refs[k])
+        x = t / self.step
+        k = min(int(x), n - 2)
+        f = x - k
+        axis = self.tangents[k].lerp(self.tangents[k + 1], f).normalized()
+        return limb_frame(self.points[k].lerp(self.points[k + 1], f), axis,
+                          self.refs[k].lerp(self.refs[k + 1], f))
+
+    def theta(self, t, direction):
+        fr = self.frame(t)
+        d = Vector(direction)
+        return math.atan2(d.dot(fr.lat), d.dot(fr.ref))
+
+
 def loft(bm, rings, closed=True, cap_start=False, cap_end=False):
     """Quads between consecutive rings of points (each ring a list of the same
     length). `closed` joins each ring's last point to its first. Caps are
@@ -230,6 +287,24 @@ def set_weights(ob, weights):
                 continue
             vg = vgs.get(name) or vgs.new(name=name)
             vg.add([i], w, "REPLACE")
+
+
+def split_weights(weights, src, dst, factor):
+    """Move `factor[i]` (0..1) of each vertex's `src` weight to `dst`: the distal forearm's
+    LowerArm weight goes to a twist bone (`rig.add_twist_bone`) by how close the vertex is
+    to the wrist, so a sleeve and the cuff under it share one blend. Returns new dicts."""
+    out = []
+    for wd, f in zip(weights, factor):
+        nd = dict(wd)
+        w = nd.get(src, 0.0)
+        if f > 0.0 and w > 0.0:
+            nd[dst] = nd.get(dst, 0.0) + w * f
+            if f >= 1.0:
+                del nd[src]
+            else:
+                nd[src] = w * (1.0 - f)
+        out.append(nd)
+    return out
 
 
 def rigid_blend(weights, bone, factor):

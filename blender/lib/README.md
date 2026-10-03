@@ -11,7 +11,8 @@ builder: many assets from one JSON, shared trim sheet instead of a per-part bake
 `blender/surfaces/` (seamless tileable floor/wall/ceiling texture sets, `surface`). Characters (D-037)
 start from an MPFB human (`human`) on a humanoid skeleton (`rig`), dress it with shells and lofts weighted from the
 skin (`garment`) and export with `export_glb(..., rigged=True)`; example: `blender/characters/silena_vesper/` (gloves:
-hand shell + lofted cuff, grip solved against a handle, mirrored right side sharing the bake).
+hand shell + lofted cuff, grip solved against a handle, mirrored right side sharing the bake; coat sleeves: a loft
+along the bent arm's centerline, a twist bone, test poses posed like the engine's IK).
 
 ## Stage scripts
 
@@ -196,14 +197,20 @@ from the repo root (Blender 5.2: `"C:/Program Files/Blender Foundation/Blender 5
 - `mirror_mesh(ob, name, src, dst)` mirrored copy across x = 0 with renamed vertex groups, same UVs and material (one bake for both sides)
 - `bone_region_distance(arm, bone, point)` distance to what a bone deforms (its segment, to its children, through non-deforming metacarpals)
 - `drop_far_weights(ob, arm, distance=0.045)` remove stray weights on bones far from the vertex, renormalize
+- `add_twist_bone(arm, parent, name, at=0.5)` deforming leaf child of `parent` (head `at` along it, same axes) for a share of the next joint's roll
+- test poses (render/verify only): `two_bone_pose(arm, upper, lower, end, target, pole, end_rotation)` engine-style two-bone IK;
+  `twist_share(arm, lower, end, twist, share=0.7)` turn a twist bone by a share of `end`'s roll against `lower` (returns the roll);
+  `rotate_about(arm, bone, axis, degrees)` extra turn about an armature-space axis through the bone's head
 
 ### garment (clothing over MPFB skin, D-037)
 - `skin_copy(body, name)` static copy of the body: shape keys mixed in, world coordinates, vertex groups kept (cut parts and weight sources from it)
 - `bvh_of(ob)`; `limb_frame(origin, axis, ref)` -> `LimbFrame` (`t` up the limb, `theta` around it, `point`, `coords`); `ring_radii(bvh, frame, t, thetas)` skin radius around a limb by ray casts
+- `PathFrames(points, ref, step)` rotation-minimizing frames along a bent centerline (wrist, elbow fillet, shoulder): `frame(t)` -> `LimbFrame`, `theta(t, direction)`
 - `loft(bm, rings, closed, cap_start, cap_end)` -> (vertex rings, cap centers, faces); `orient(bm, faces, probe, outward)` flip a lofted surface outward
 - `offset_shell(ob, distance(i, co, normal))` push along normals (a garment shell over the skin); `smooth_verts(ob, indices, factor, iterations, preserve_volume)`
 - `transfer_weights(src, dst, groups)` Data Transfer, nearest face interpolated, applied; `weights_of(ob)`, `set_weights(ob, weights)`
 - `rigid_blend(weights, bone, factor)` make cuffs/buckles rigid on one bone; `smooth_weights(ob, indices, groups, iterations, factor)` softer joints (knuckles, thumb base keep volume)
+- `split_weights(weights, src, dst, factor)` move a share of one bone's weight to another (LowerArm -> LowerArmTwist toward the wrist)
 
 ### export
 - `export_glb(objs, path, rigged=False)` Y up, transforms applied, textures embedded, triangulated for tangents;

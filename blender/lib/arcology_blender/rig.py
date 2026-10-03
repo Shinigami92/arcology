@@ -344,3 +344,108 @@ def drop_far_weights(ob, arm, distance=0.045):
         for gi, w in rest:
             vgs[gi].add([v.index], w / total, "REPLACE")
     return removed
+
+
+# --- twist bones and test poses -------------------------------------------------------------
+def add_twist_bone(arm, parent, name, at=0.5):
+    """Add a twist bone: a deforming leaf child of `parent` (not connected), head `at` of
+    the way along it, tail at the parent's tail, same roll (its +Y is the limb axis, its
+    X/Z match the parent's). The parent's children keep their parent (a humanoid Hand
+    stays under LowerArm). The engine rotates it about its own Y by a share of the next
+    joint's roll (`twist_share`), so the distal limb weighted to it (`garment.split_weights`)
+    doesn't candy-wrap. Returns the name."""
+    eb = _edit(arm)
+    p = eb[parent]
+    b = eb.new(name)
+    b.head = p.head.lerp(p.tail, at)
+    b.tail = p.tail.copy()
+    b.align_roll(p.z_axis)
+    b.parent = p
+    b.use_connect = False
+    b.use_deform = True
+    _object_mode()
+    return name
+
+
+def rotate_about(arm, bone, axis, degrees, pivot=None):
+    """Pose: turn `bone` (and what hangs below it) by `degrees` about an armature-space
+    `axis` through its posed head (or `pivot`), on top of its current pose."""
+    from mathutils import Matrix, Vector
+
+    bpy.context.view_layer.update()
+    pb = arm.pose.bones[bone]
+    c = Vector(pivot) if pivot is not None else pb.head.copy()
+    rot = Matrix.Rotation(degrees * 3.141592653589793 / 180.0, 4, Vector(axis).normalized())
+    pb.matrix = Matrix.Translation(c) @ rot @ Matrix.Translation(-c) @ pb.matrix
+    bpy.context.view_layer.update()
+
+
+def two_bone_pose(arm, upper, lower, end, target, pole, end_rotation=None):
+    """Pose a two-bone chain (shoulder, elbow, wrist) like an engine's two-bone IK: `end`'s
+    head reaches `target` (armature space; clamped to the chain's reach), the middle
+    joint bends toward the `pole` direction, each bone swings minimally from its current
+    direction. `end_rotation` (3x3, armature space, the end bone's axes) orients the end
+    bone, e.g. a hand on a controller. For test poses and renders. Returns the middle
+    joint's posed position."""
+    from mathutils import Matrix, Vector
+
+    bones, pbs = arm.data.bones, arm.pose.bones
+    bpy.context.view_layer.update()
+    s = pbs[upper].head.copy()
+    l1 = (bones[lower].head_local - bones[upper].head_local).length
+    l2 = (bones[end].head_local - bones[lower].head_local).length
+    d = Vector(target) - s
+    dist = min(max(d.length, abs(l1 - l2) + 1e-4), l1 + l2 - 1e-4)
+    dn = d.normalized()
+    p = Vector(pole)
+    pn = (p - dn * p.dot(dn)).normalized()
+    a = (l1 * l1 - l2 * l2 + dist * dist) / (2.0 * dist)
+    mid = s + dn * a + pn * (max(l1 * l1 - a * a, 0.0) ** 0.5)
+    tip = s + dn * dist
+
+    def swing(name, child, goal):
+        bpy.context.view_layer.update()
+        pb = pbs[name]
+        head = pb.head.copy()
+        cur = pbs[child].head - head
+        rot = cur.rotation_difference(goal - head).to_matrix().to_4x4()
+        pb.matrix = Matrix.Translation(head) @ rot @ Matrix.Translation(-head) @ pb.matrix
+
+    swing(upper, lower, mid)
+    swing(lower, end, tip)
+    if end_rotation is not None:
+        bpy.context.view_layer.update()
+        pb = pbs[end]
+        m = Matrix(end_rotation).to_4x4()
+        m.translation = pb.head
+        pb.matrix = m
+    bpy.context.view_layer.update()
+    return mid
+
+
+def twist_share(arm, lower, end, twist, share=0.7):
+    """Drive a twist bone the way the engine does: the roll of `end` about `lower`'s axis
+    relative to their rest relation (swing-twist decomposition), `share` of it applied to
+    `twist` about its own Y (`lower`'s axis). Returns the full roll in degrees."""
+    import math
+
+    from mathutils import Quaternion, Vector
+
+    bpy.context.view_layer.update()
+    bones, pbs = arm.data.bones, arm.pose.bones
+    rl0 = bones[lower].matrix_local.to_3x3()
+    re0 = bones[end].matrix_local.to_3x3()
+    rl = pbs[lower].matrix.to_3x3()
+    re = pbs[end].matrix.to_3x3()
+    q = (rl0 @ rl.transposed() @ re @ re0.transposed()).to_quaternion()  # end's extra turn, rest frame
+    axis = rl0.col[1].normalized()
+    v = Vector((q.x, q.y, q.z)).dot(axis)
+    roll = 2.0 * math.atan2(v, q.w)
+    if roll > math.pi:
+        roll -= 2.0 * math.pi
+    elif roll < -math.pi:
+        roll += 2.0 * math.pi
+    pbs[twist].rotation_mode = "QUATERNION"
+    pbs[twist].rotation_quaternion = Quaternion((0.0, 1.0, 0.0), share * roll)
+    bpy.context.view_layer.update()
+    return math.degrees(roll)
