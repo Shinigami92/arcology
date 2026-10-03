@@ -224,3 +224,123 @@ def pose_action(arm, name, rotations=None):
     for pb in arm.pose.bones:
         pb.rotation_quaternion = (1.0, 0.0, 0.0, 0.0)
     return action
+
+
+def subtree(arm, root):
+    """Names of `root` and every bone below it (e.g. what a hand glb keeps:
+    `prune_bones(arm, subtree(arm, "LeftLowerArm"))`)."""
+    names = [root]
+    for bone in arm.data.bones[root].children_recursive:
+        names.append(bone.name)
+    return names
+
+
+def mirror_name(name, src="Left", dst="Right"):
+    """`LeftIndexTip` -> `RightIndexTip` (names without the side stay)."""
+    return dst + name[len(src):] if name.startswith(src) else name
+
+
+def mirror_rotations(arm, rotations, src="Left", dst="Right"):
+    """Pose rotations for the other side: {bone: (x, y, z) degrees} in `src`'s bone-local
+    axes -> the same for the mirrored `dst` bones (mirror plane x = 0 in armature space).
+    Works for any bone rolls: each rotation is taken to armature space, reflected
+    and brought back into the other bone's rest frame."""
+    from mathutils import Matrix
+
+    mirror = Matrix.Diagonal((-1.0, 1.0, 1.0))
+    out = {}
+    for name, deg in rotations.items():
+        other = mirror_name(name, src, dst)
+        rl = arm.data.bones[name].matrix_local.to_3x3()
+        rr = arm.data.bones[other].matrix_local.to_3x3()
+        q = Euler([d * 3.141592653589793 / 180.0 for d in deg], "XYZ").to_matrix()
+        world = rl @ q @ rl.transposed()
+        local = rr.transposed() @ (mirror @ world @ mirror) @ rr
+        e = local.to_euler("XYZ")
+        out[other] = tuple(a * 180.0 / 3.141592653589793 for a in e)
+    return out
+
+
+def mirror_mesh(ob, name, src="Left", dst="Right", collection=None):
+    """Mirrored copy of a skinned mesh across world x = 0: vertices reflected,
+    faces flipped back outward, `src` vertex groups renamed to `dst` (UVs and
+    other layers kept, so a baked texture is shared). The copy keeps the
+    Armature modifier and parent of the original. Returns the new object."""
+    import bmesh
+
+    me = ob.data.copy()
+    me.name = name
+    new = bpy.data.objects.new(name, me)
+    (collection or ob.users_collection[0]).objects.link(new)
+    new.matrix_world = ob.matrix_world.copy()
+    mw = ob.matrix_world
+    inv = mw.inverted()
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    for v in bm.verts:
+        w = mw @ v.co
+        w.x = -w.x
+        v.co = inv @ w
+    bmesh.ops.reverse_faces(bm, faces=bm.faces[:])
+    bm.to_mesh(me)
+    bm.free()
+    me.update()
+    if len(new.vertex_groups) == len(ob.vertex_groups):  # group names travel with the mesh (Blender 4+)
+        for vg in new.vertex_groups:
+            vg.name = mirror_name(vg.name, src, dst)
+    else:
+        for vg in ob.vertex_groups:  # same order: the copied weights keep their group indices
+            new.vertex_groups.new(name=mirror_name(vg.name, src, dst))
+    for m in ob.modifiers:
+        if m.type == "ARMATURE":
+            mod = new.modifiers.new(m.name, "ARMATURE")
+            mod.object = m.object
+    new.parent = ob.parent
+    new.matrix_world = ob.matrix_world.copy()
+    for k in ob.keys():
+        new[k] = ob[k]
+    return new
+
+
+def bone_region_distance(arm, bone, point):
+    """Distance from a world point to the region a bone deforms: its own segment and
+    the segments from its head to its children's heads (and through non-deforming
+    children such as OpenXR metacarpals to their tails), so a short hand bone still
+    owns the palm up to the knuckles."""
+    mw = arm.matrix_world
+    head = mw @ bone.head_local
+    ends = [mw @ bone.tail_local] + [mw @ c.head_local for c in bone.children]
+    ends += [mw @ c.tail_local for c in bone.children if not c.use_deform]
+    best = None
+    for end in ends:
+        d = end - head
+        t = 0.0 if d.length_squared == 0.0 else max(0.0, min(1.0, (point - head).dot(d) / d.length_squared))
+        dist = (point - (head + d * t)).length
+        best = dist if best is None or dist < best else best
+    return best
+
+
+def drop_far_weights(ob, arm, distance=0.045):
+    """Remove weights of deforming bones whose region (`bone_region_distance`) is farther
+    than `distance` from the vertex (stray weights from transfers or smoothing), then
+    renormalize the vertex's remaining bone weights. Vertices whose every weight is far
+    keep their weights. Returns the number of weights removed."""
+    vgs = ob.vertex_groups
+    bones = {vg.index: arm.data.bones[vg.name] for vg in vgs
+             if arm.data.bones.get(vg.name) is not None and arm.data.bones[vg.name].use_deform}
+    removed = 0
+    mw = ob.matrix_world
+    for v in ob.data.vertices:
+        p = mw @ v.co
+        pairs = [(g.group, g.weight) for g in v.groups if g.group in bones and g.weight > 0.0]
+        far = [gi for gi, _ in pairs if bone_region_distance(arm, bones[gi], p) > distance]
+        if not far or len(far) == len(pairs):
+            continue
+        for gi in far:
+            vgs[gi].remove([v.index])
+            removed += 1
+        rest = [(gi, w) for gi, w in pairs if gi not in far]
+        total = sum(w for _, w in rest) or 1.0
+        for gi, w in rest:
+            vgs[gi].add([v.index], w / total, "REPLACE")
+    return removed

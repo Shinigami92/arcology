@@ -37,12 +37,15 @@ def mpfb():
     return Services
 
 
-def create_human(rig="game_engine", race=None, **macros):
+def create_human(rig="game_engine", race=None, targets=None, **macros):
     """New MPFB human with feet on the ground at the origin, facing -Y, and a built-in rig.
 
     `macros` are MPFB's sliders (`MACROS`, 0..1; gender 0 = female, 1 = male), `race`
     a dict like {"caucasian": 1.0}. `rig` is a built-in rig name ("game_engine": 53
     bones, Unreal-style names; "default": 163 with face and twist bones), or None.
+    `targets` maps MPFB detail targets (path under MPFB's data/targets without
+    ".target.gz", e.g. "hands/l-hand-fingers-length-incr") to weights 0..1; they
+    are loaded before the rig, so the rig fits the shaped body.
     Returns (body, armature); the body is parented to the armature with an Armature
     modifier and one vertex group per deforming bone.
     """
@@ -55,6 +58,8 @@ def create_human(rig="game_engine", race=None, **macros):
     if race:
         info["race"] = {k: race.get(k, 0.0) for k in info["race"]}
     body = svc.HumanService.create_human(macro_detail_dict=info)
+    for name, weight in (targets or {}).items():
+        svc.TargetService.load_target(body, target_path(name), weight=weight)
     arm = svc.HumanService.add_builtin_rig(body, rig) if rig else None
     return body, arm
 
@@ -91,3 +96,68 @@ def remove_helpers(body):
     body.data.update()
     for mod in [m for m in body.modifiers if m.type == "MASK"]:
         body.modifiers.remove(mod)
+
+
+def target_path(name):
+    """Full path of an MPFB detail target, e.g. "hands/l-hand-fingers-length-incr"."""
+    path = os.path.join(mpfb().LocationService.get_mpfb_data("targets"), name + ".target.gz")
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"MPFB target {name!r} not found ({path})")
+    return path
+
+
+def measure(body, arm, side="Left"):
+    """Rest-shape measurements in meters (call before `remove_helpers`: the eye
+    position comes from MPFB's eye helper). Returns a dict: `height` (top of the
+    skin above the feet' lowest point), `eye` (midpoint of the eye helpers),
+    `hand_length` (wrist joint to the farthest middle-finger skin, the usual
+    "wrist crease to fingertip" measure) and `hand_width` (across the index and
+    little knuckles' skin)."""
+    import bpy
+    import numpy as np
+    from mathutils import Vector
+
+    saved = [(m, m.show_viewport) for m in body.modifiers]
+    for m, _ in saved:
+        m.show_viewport = False
+    bpy.context.view_layer.update()
+    ev = body.evaluated_get(bpy.context.evaluated_depsgraph_get())
+    co = np.empty(len(ev.data.vertices) * 3, dtype=np.float32)
+    ev.data.vertices.foreach_get("co", co)
+    for m, show in saved:
+        m.show_viewport = show
+    mw = np.array(body.matrix_world)
+    co = co.reshape(-1, 3) @ mw[:3, :3].T + mw[:3, 3]
+
+    def group(name, minimum=0.5):
+        vg = body.vertex_groups.get(name)
+        if vg is None:
+            return np.zeros(len(co), dtype=bool)
+        mask = np.zeros(len(co), dtype=bool)
+        for v in body.data.vertices:
+            for g in v.groups:
+                if g.group == vg.index and g.weight >= minimum:
+                    mask[v.index] = True
+        return mask
+
+    helper = group("HelperGeometry", 1e-6) | group("JointCubes", 1e-6)
+    skin = co[~helper] if helper.any() else co
+    eyes = group("helper-l-eye", 1e-6) | group("helper-r-eye", 1e-6)
+    bones = arm.data.bones
+    hand = bones.get(f"{side}Hand") or bones.get("hand_" + side[0].lower())
+    mid3 = f"{side}MiddleDistal" if bones.get(f"{side}MiddleDistal") else "middle_03_" + side[0].lower()
+    wrist = np.array(arm.matrix_world @ hand.head_local)
+    tip = co[group(mid3) & ~helper]
+    out = {
+        "height": float(skin[:, 2].max() - skin[:, 2].min()),
+        "eye": Vector(co[eyes].mean(axis=0)) if eyes.any() else None,
+        "hand_length": float(np.linalg.norm(tip - wrist, axis=1).max()) if len(tip) else 0.0,
+    }
+    i1 = "index_01_" + side[0].lower() if bones.get("index_01_" + side[0].lower()) else f"{side}IndexProximal"
+    l1 = "pinky_01_" + side[0].lower() if bones.get("pinky_01_" + side[0].lower()) else f"{side}LittleProximal"
+    a, b = np.array(arm.matrix_world @ bones[i1].head_local), np.array(arm.matrix_world @ bones[l1].head_local)
+    across = (a - b) / np.linalg.norm(a - b)
+    palm = co[group(hand.name, 0.3) & ~helper]
+    proj = (palm - wrist) @ across
+    out["hand_width"] = float(proj.max() - proj.min()) if len(palm) else 0.0
+    return out

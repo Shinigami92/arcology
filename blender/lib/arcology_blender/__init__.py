@@ -39,8 +39,11 @@ Modules:
     collision  collision boxes and heightfield trimesh colliders for Godot
     bake       UV unwrap and Cycles bake of src_ materials into one PBR atlas set per part
                (texel weighting, emission atlases, spreading parts apart for AO)
-    human      MPFB2 base humans (characters): body, rig, skin, helper cleanup
-    rig        character armatures: humanoid bone names, OpenXR hand joints, pruning, weights, pose actions
+    human      MPFB2 base humans (characters): body, detail targets, rig, skin, helper cleanup, measurements
+    rig        character armatures: humanoid bone names, OpenXR hand joints, pruning, weights, pose actions,
+               mirroring meshes and poses to the other side
+    garment    clothing over the skin: skin copies, offset shells, lofts around a limb, weight transfer,
+               weight smoothing and rigid regions
     export     glTF export with the project's settings (static, or rigged with skin and animations)
     studio     neutral studio lights, camera and still renders, render.py options
     checks     bounds and Godot conversions, clearance sweeps, collider gaps, glb import report

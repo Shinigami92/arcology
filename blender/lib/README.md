@@ -9,7 +9,9 @@ lamp with emission, per-board veneer), `bed` (cloth simulation, heightfield coll
 builder: many assets from one JSON, shared trim sheet instead of a per-part bake, `trim`),
 `blender/architecture/skirting/` (skirting swept along generated runs, `TrimMesh.polyline_sweep`),
 `blender/surfaces/` (seamless tileable floor/wall/ceiling texture sets, `surface`). Characters (D-037)
-start from an MPFB human (`human`) on a humanoid skeleton (`rig`) and export with `export_glb(..., rigged=True)`.
+start from an MPFB human (`human`) on a humanoid skeleton (`rig`), dress it with shells and lofts weighted from the
+skin (`garment`) and export with `export_glb(..., rigged=True)`; example: `blender/characters/silena_vesper/` (gloves:
+hand shell + lofted cuff, grip solved against a handle, mirrored right side sharing the bake).
 
 ## Stage scripts
 
@@ -176,7 +178,8 @@ from the repo root (Blender 5.2: `"C:/Program Files/Blender Foundation/Blender 5
 
 ### human (MPFB2 base humans, D-037; characters only)
 - `mpfb()` enable the MPFB extension in this process (works under `--factory-startup`), returns `.HumanService`, `.TargetService`, `.LocationService`
-- `create_human(rig="game_engine", race=None, **macros)` -> (body, armature): feet at the origin, facing -Y; `MACROS` sliders 0..1 (gender 0 = female)
+- `create_human(rig="game_engine", race=None, targets=None, **macros)` -> (body, armature): feet at the origin, facing -Y; `MACROS` sliders 0..1 (gender 0 = female); `targets` = MPFB detail targets {"hands/l-hand-fingers-length-incr": 0.3}, loaded before the rig
+- `target_path(name)` an MPFB target file; `measure(body, arm, side)` height, eye midpoint, hand length (wrist to middle fingertip), hand width (call before `remove_helpers`)
 - `set_skin(body, name, skin_type="GAMEENGINE")`, `skin_path(name)` installed skins by folder name (glTF-safe Principled material)
 - `remove_helpers(body)` delete MPFB's helper geometry and its mask modifier (after fitting proxies: eyes, clothes)
 
@@ -188,6 +191,19 @@ from the repo root (Blender 5.2: `"C:/Program Files/Blender Foundation/Blender 5
 - `extract_by_weight(ob, bones, min_weight=0.5)` keep faces weighted to those bones (a hand cut from a body)
 - `limit_weights(ob, arm, limit=4)` strongest 4 deforming weights per vertex, normalized (glTF skins)
 - `pose_action(arm, name, {bone: (x, y, z) degrees})` a pose as action + NLA track = a glTF animation `name`; bone-local axes, +Y along the bone, +X curls fingers toward the palm
+- `subtree(arm, root)` a bone and everything below it (what a part's glb keeps: `prune_bones(arm, subtree(arm, "LeftLowerArm"))`)
+- `mirror_rotations(arm, rotations, src="Left", dst="Right")` a pose for the other side (exact for any bone rolls); `mirror_name(name)`
+- `mirror_mesh(ob, name, src, dst)` mirrored copy across x = 0 with renamed vertex groups, same UVs and material (one bake for both sides)
+- `bone_region_distance(arm, bone, point)` distance to what a bone deforms (its segment, to its children, through non-deforming metacarpals)
+- `drop_far_weights(ob, arm, distance=0.045)` remove stray weights on bones far from the vertex, renormalize
+
+### garment (clothing over MPFB skin, D-037)
+- `skin_copy(body, name)` static copy of the body: shape keys mixed in, world coordinates, vertex groups kept (cut parts and weight sources from it)
+- `bvh_of(ob)`; `limb_frame(origin, axis, ref)` -> `LimbFrame` (`t` up the limb, `theta` around it, `point`, `coords`); `ring_radii(bvh, frame, t, thetas)` skin radius around a limb by ray casts
+- `loft(bm, rings, closed, cap_start, cap_end)` -> (vertex rings, cap centers, faces); `orient(bm, faces, probe, outward)` flip a lofted surface outward
+- `offset_shell(ob, distance(i, co, normal))` push along normals (a garment shell over the skin); `smooth_verts(ob, indices, factor, iterations, preserve_volume)`
+- `transfer_weights(src, dst, groups)` Data Transfer, nearest face interpolated, applied; `weights_of(ob)`, `set_weights(ob, weights)`
+- `rigid_blend(weights, bone, factor)` make cuffs/buckles rigid on one bone; `smooth_weights(ob, indices, groups, iterations, factor)` softer joints (knuckles, thumb base keep volume)
 
 ### export
 - `export_glb(objs, path, rigged=False)` Y up, transforms applied, textures embedded, triangulated for tangents;
@@ -247,6 +263,8 @@ from the repo root (Blender 5.2: `"C:/Program Files/Blender Foundation/Blender 5
 - **MPFB helpers:** the base mesh carries helper geometry (joint cubes, clothes/hair/eye fitting shells) hidden
   by a Mask modifier; raw triangle counts include it until `human.remove_helpers`. Its vertex groups (`body`,
   `helper-*`, `Left`/`Right`/`Mid`) aren't bones: `rig.limit_weights` only touches deforming bones.
+- **Vertex group names live on the mesh** (Blender 4+): a copied mesh brings its group names, so a new object
+  using it already has them; rename them (`rig.mirror_mesh`) instead of creating new ones, or weights point at the old names.
 - **Rest channels vanish:** the glTF exporter drops pose channels equal to the rest pose, so an "Open" pose
   exports almost empty. Godot blends missing tracks as rest, so blending between poses still works.
 
