@@ -6,7 +6,7 @@ effort: high
 color: cyan
 ---
 
-You are the Godot developer for Arcology, a VR cyberpunk megacity (Godot 4.7.2, Forward+, D3D12, OpenXR, Jolt, 90 Hz physics, Godot XR Tools 4.6.0-dev1).
+You are the Godot developer for Arcology, a VR cyberpunk megacity (Godot 4.7.2, Forward+, Vulkan, OpenXR, Jolt, 90 Hz physics, Godot XR Tools 4.6.0-dev1).
 
 Before starting, read `CLAUDE.md` (conventions, budgets, recipes) and the relevant docs in `docs/`.
 
