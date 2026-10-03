@@ -20,7 +20,8 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [later] Lie down on the bed.
 - [later] In-world settings panel for comfort options (no flat menus).
 - [later] Hand tracking (Steam Frame) in addition to controllers.
-- [later] Player avatar / body (IK from head and hands); prerequisite for a meaningful mirror.
+- [M2] Player avatar: the user's Shadowrun character Silena Vesper (`docs/characters/silena_vesper.md`), IK from head and hands; prerequisite for a meaningful mirror. Stages: gloved hands, coat sleeves, body when looking down, head and hair.
+- [later] Seated or standing play mode (option in the settings panel). The avatar stands and walks either way; the user plays seated but is fine with a standing body (VRChat habit).
 - [later] Footstep sounds while walking (smooth locomotion and real steps), chosen by the floor under the player: vinyl, carpet, concrete, later street surfaces; quieter or none while seated.
 
 ## Interaction
