@@ -43,6 +43,7 @@ func _ready() -> void:
 		await _test_bedroom(variant)
 	await _test_ab_panel()
 	await _test_fingertips()
+	await _test_hand_rig()
 	for variant in _variants("Nightstand"):
 		await _test_lamp_switch(variant)
 	await _test_fridge_alarm()
@@ -609,6 +610,35 @@ func _test_fingertips() -> void:
 			if (node as Area3D).collision_layer == 131072:
 				found.append(side)
 	_check("fingertip_areas", found == ["Left", "Right"], "fingertips on hands: %s" % [found])
+
+
+## Each visible hand is an XRToolsHand whose fingertip rides an index bone of
+## its own skeleton, and gripping curls that finger (guards the hand swap, D-037).
+func _test_hand_rig() -> void:
+	for side: String in ["Left", "Right"]:
+		var hand := _main.get_node_or_null("Player/%sHand/CollisionHand/Hand" % side) as XRToolsHand
+		if hand == null:
+			_check("hand_rig_%s" % side.to_lower(), false, "no XRToolsHand at Player/%sHand/CollisionHand/Hand" % side)
+			continue
+		var tips := hand.find_children("Fingertip", "Area3D", true, false)
+		var attach: BoneAttachment3D = tips[0].get_parent() as BoneAttachment3D if tips.size() == 1 else null
+		var skeleton: Skeleton3D = attach.get_parent() as Skeleton3D if attach else null
+		var bone: int = skeleton.find_bone(attach.bone_name) if skeleton else -1
+		_check("hand_rig_%s_fingertip_bone" % side.to_lower(), bone >= 0 and "index" in attach.bone_name.to_lower(),
+				"fingertip on bone %s (index %d)" % [attach.bone_name if attach else "-", bone])
+		if bone < 0:
+			continue
+		var tip := tips[0] as Area3D
+		hand.force_grip_trigger(0.0, 0.0)
+		await _frames(10)
+		var open := hand.global_transform.affine_inverse() * tip.global_position
+		hand.force_grip_trigger(1.0, 1.0)
+		await _frames(10)
+		var closed := hand.global_transform.affine_inverse() * tip.global_position
+		hand.force_grip_trigger()
+		await _frames(2)
+		_check("hand_rig_%s_grip_curls" % side.to_lower(), open.distance_to(closed) > 0.02,
+				"fingertip moves %.3f m from open to grip" % open.distance_to(closed))
 
 
 ## Pressing the lamp's switch turns its light and glow off, pressing again on.
