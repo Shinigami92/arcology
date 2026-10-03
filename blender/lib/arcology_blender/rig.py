@@ -367,6 +367,80 @@ def add_twist_bone(arm, parent, name, at=0.5):
     return name
 
 
+# --- spring-bone chains (coat tails, hair, earrings) -----------------------------------------
+def add_bone_chain(arm, parent, names, points, normals=None):
+    """Add a chain of connected deforming bones through `points` (armature space, one more
+    point than names): bone k runs from points[k] to points[k + 1], the first one is a
+    child of `parent` (not connected), the rest connected to their predecessor. `normals`
+    (one per bone, optional) sets each bone's roll so its local Z points that way (e.g.
+    out of a coat's surface), which keeps the chain's swing axes readable in the engine
+    (Godot's SpringBoneSimulator3D). Returns the names."""
+    from mathutils import Vector
+
+    if len(points) != len(names) + 1:
+        raise ValueError("add_bone_chain: need one point more than names")
+    eb = _edit(arm)
+    prev = eb[parent]
+    for k, name in enumerate(names):
+        b = eb.new(name)
+        b.head = Vector(points[k])
+        b.tail = Vector(points[k + 1])
+        if normals is not None:
+            b.align_roll(Vector(normals[k]))
+        b.parent = prev
+        b.use_connect = k > 0
+        b.use_deform = True
+        prev = b
+    _object_mode()
+    return list(names)
+
+
+def chain_weights(arm, chains, point, power=3.0, joint_blend=0.3):
+    """Skin weights of a point on a surface hanging along bone chains (a coat skirt): the
+    two nearest chains (distance to each chain's polyline of joints) share the point by
+    inverse distance to the `power`; along each chain the bone under the point's
+    projection takes it, blended linearly with the neighbor bone within `joint_blend` of a
+    bone length around each joint (so joints bend smoothly). `chains`: lists of bone
+    names, root first. Returns a dict {bone: weight} summing to 1 (at most 4 bones)."""
+    from mathutils import Vector
+
+    p = Vector(point)
+    mw = arm.matrix_world
+    found = []
+    for chain in chains:
+        bones = [arm.data.bones[n] for n in chain]
+        joints = [mw @ b.head_local for b in bones] + [mw @ bones[-1].tail_local]
+        best = None
+        for k in range(len(bones)):
+            a, b = joints[k], joints[k + 1]
+            d = b - a
+            f = max(0.0, min(1.0, (p - a).dot(d) / d.length_squared))
+            dist = (p - (a + d * f)).length
+            if best is None or dist < best[0]:
+                best = (dist, k, f)
+        dist, k, f = best
+        w = {}
+        if f < joint_blend and k > 0:
+            s = 0.5 + 0.5 * f / joint_blend
+            w = {chain[k]: s, chain[k - 1]: 1.0 - s}
+        elif f > 1.0 - joint_blend and k < len(chain) - 1:
+            s = 0.5 + 0.5 * (1.0 - f) / joint_blend
+            w = {chain[k]: s, chain[k + 1]: 1.0 - s}
+        else:
+            w = {chain[k]: 1.0}
+        found.append((dist, w))
+    found.sort(key=lambda e: e[0])
+    if len(found) == 1:
+        return found[0][1]
+    (d1, w1), (d2, w2) = found[0], found[1]
+    a = (d2 ** power) / max(d1 ** power + d2 ** power, 1e-12)
+    out = {}
+    for w, share in ((w1, a), (w2, 1.0 - a)):
+        for k, v in w.items():
+            out[k] = out.get(k, 0.0) + v * share
+    return out
+
+
 def rotate_about(arm, bone, axis, degrees, pivot=None):
     """Pose: turn `bone` (and what hangs below it) by `degrees` about an armature-space
     `axis` through its posed head (or `pivot`), on top of its current pose."""

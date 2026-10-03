@@ -41,7 +41,7 @@ blender/                  .blend sources (LFS) + their build scripts, exported t
   characters/<name>/      one character's stage scripts (character-artist, D-037)
   surfaces/               tileable surface texture generator (vinyl, carpet, concrete, plaster) -> assets/materials/surfaces/
 core/
-  player/                 ArcologyPlayer rig (player.tscn), hands/ (visible hands and arms: AvatarHand + ArmIK (shoulder from the headset, two-bone elbow, forearm twist, D-040) in generated silena_vesper_hand_*.tscn, D-037/D-038; left/right_hand.tscn = the old XR Tools hands), StickSprint, GrabRay, player_physics.tres (jump height), Fingertip press areas (D-031)
+  player/                 ArcologyPlayer rig (player.tscn), avatar/ (the player's body: AvatarBody, BodyIK (head, spine, legs, arms from headset and hand targets), LimbIK (two-bone, roll-safe), generated silena_vesper_body.tscn, D-041), hands/ (AvatarHand: XR Tools hand behavior, the body's hand target and finger curls, generated silena_vesper_hand_*.tscn; left/right_hand.tscn = the old XR Tools hands), StickSprint, GrabRay, player_physics.tres (jump height), Fingertip press areas (D-031)
   interaction/            ImpactSound, TrashReceiver, HingeStopSound, HingeBodyBlocker, HingeSwing, HingeLight, SliderSwing, KinematicFollower, GrabPassThrough, Seat, GrabHighlight, LightSwitch, EmissiveMaterials, OpenAlarm, HangingRail, RailHanger; windows: MotorizedShade, SmartGlass, WindowLight, WindowHud, HingeAmbience, NamedMaterialOverride
   debug/                  ABSwitch + ABPanel: blind A/B variants in one spot, flipped by a wall button (D-030); RainDebugButton (temporary "RAIN" button in the living room)
   world_state/            (M2) time of day, weather, overrides
@@ -57,7 +57,7 @@ tools/
   shots/                  still renders from given views (--shots=...; results/ is gitignored)
   audio/synth_sfx.py      placeholder SFX generator
   blockout/apartment.py   apartment layout -> zones/apartment/apartment.tscn, plus apartment_skirting.json (runs from skirting.py)
-  player/avatar_hands.gd  avatar hand scenes from the character's arm glbs, fitted onto the XR Tools hand placement (D-038), with ArmIK (D-040)
+  player/avatar.gd        avatar scenes from the character's body glb: body (BodyIK, Fingertips, finger blend tree) and hand targets fitted onto the XR Tools hand placement (D-038, D-041)
   props/                  prop .tscn generator: prop_scenes.py (doors, drawers, pickables, switches) + one definition per prop (--check); window.py builds the windows from windows/*.json
   bake_gi.gd              VoxelGI bake script (currently unused, see D-012)
 ```
@@ -138,9 +138,9 @@ Asset budgets (realistic style, see the style guide):
 | Large prop in reach (fridge, wardrobe, sofa) | ≤ 30 k | ≤ 2048², baked PBR (albedo, normal, ORM) | ≤ 5 |
 | Small prop in reach (can, ball, lamp) | ≤ 5 k | ≤ 1024² | ≤ 2 |
 | Player avatar: each arm, glove + coat sleeve (always in view, up close) | ≤ 14 k | ≤ 2048² per material | ≤ 2 |
-| Player avatar: whole body (stage 3+, hands included) | ≤ 50 k | ≤ 2048² per part | ≤ 6 |
+| Player avatar: whole body (`Body` incl. arms ≤ 70 k, `HeadMesh` ≤ 10 k, `Collar` ≤ 2 k) | ≤ 80 k | ≤ 2048² per material | ≤ 6 |
 
-Characters (D-037): one skinned mesh per exported part, ≤ 4 bone influences per vertex, ≤ 100 bones, the head shadow-only in first person, spring bones instead of cloth simulation.
+Characters (D-037): one skinned mesh per exported part, ≤ 4 bone influences per vertex, ≤ 100 bones, mesh names never equal bone names (glTF), the head shadow-only in first person, spring bones instead of cloth simulation.
 
 Rules of thumb:
 - **One shadow-casting light per room.** Everything else unshadowed, small range. Emissive materials for neon, not lights.
@@ -154,7 +154,7 @@ Rules of thumb:
 Behavior checks that don't need the headset or the editor. Run `interaction` after any change to the player, props or apartment layout; add a check when fixing a bug found in the headset.
 
 ```sh
-"$GODOT4_EDITOR" --path . --xr-mode off -- --test=interaction   # doors, blocker, pass-through, jump, ranged grab, hand rig, props, windows, rain
+"$GODOT4_EDITOR" --path . --xr-mode off -- --test=interaction   # doors, blocker, pass-through, jump, ranged grab, avatar (hands, fingers, arms, body), props, windows, rain
 "$GODOT4_EDITOR" --path . --xr-mode off -- --test=skyline       # window shimmer (D-020, D-023)
 ```
 
@@ -243,9 +243,9 @@ Windows are specs, not scenes (D-033). Add an entry to a `tools/props/windows/*.
 - **Rain:** panes are in the `window_glass` group, each window has a `RainPatter` player (`rain_patter` group) and a vent a `RainAmbience` (`rain_ambience` group, a `HingeAmbience` whose `gain` follows the rain); `RainOnGlass` (in `main.tscn` under `Weather`) finds them by group. `--rain=<0..1>` starts wet (tests, shots, perf), `--rain-delay=<s>` lets it set in later (hitch checks). The living room's temporary `RainDebugButton` cycles 0 → 0.4 → 1 → 0.
 - **Stills:** `--shot-hinge=Windows/BedroomWindow/Vent:10` tilts the vent; `--shot-call=Windows/LivingWindow/Shade:set_closure:0.6,Windows/LivingWindow/SmartGlass:set_tint:0.9` sets shades and tint.
 
-### Update the avatar hands
+### Update the avatar
 
-The `character-artist` rebuilds `assets/characters/<name>/<name>_arm_<side>.glb` (glove and sleeve; stage scripts in `blender/characters/<name>/`; poses `Open` and `Grip`; bones `<Side>UpperArm` down to the finger tips plus `<Side>LowerArmTwist`). Wait for the imports, then run `"$GODOT4_EDITOR" --headless --path . --script res://tools/player/avatar_hands.gd` (`-- --check` compares): it fits each glb onto the XR Tools hand placement, prints how far wrist and knuckles land from it, and writes `core/player/hands/<name>_hand_<side>.tscn` (with an `ArmIK` whose shoulder offset comes from the glb and `AVATAR_EYE`). Headset corrections go into its `TUNE` block, never into the scenes. Then scan and run the `interaction` tests (`hand_rig_*`, `arm_ik_*`).
+The `character-artist` rebuilds `assets/characters/<name>/<name>_body.glb` (stage scripts in `blender/characters/<name>/`; meshes `Body`, `HeadMesh`, `Collar`; poses `Open` and `Grip`; humanoid bones plus OpenXR hand joints, `<Side>LowerArmTwist` and the coat chains). Wait for the imports, then run `"$GODOT4_EDITOR" --headless --path . --script res://tools/player/avatar.gd` (`-- --check` compares): it fits each hand target onto the XR Tools hand placement, prints how far wrist and knuckles land from it, and writes `core/player/avatar/<name>_body.tscn` and `core/player/hands/<name>_hand_<side>.tscn`. Landmarks the glb can't tell (`AVATAR_EYE`, `SOLE_HEIGHT`) and headset corrections (`TUNE`) live in the generator, never in the scenes. Then scan and run the `interaction` tests (`hand_rig_*`, `arm_ik_*`, `body_ik_*`).
 
 ### Add or regenerate sounds
 

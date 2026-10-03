@@ -1,4 +1,4 @@
-"""Stage 5: contract checks on the .blend, then re-import both glbs.
+"""Verify: contract checks on the .blend, then re-import the glbs.
 
   blender -b --factory-startup --python blender/characters/silena_vesper/verify.py
 
@@ -12,6 +12,15 @@ triangle may cross a sleeve triangle (the gauntlet poking through the cuff),
 and how far the sleeve stays from the elbow joint (volume at the bend). Prints
 the arm bones' rest frames and the eyes in Godot axes, then re-imports the glbs
 (bones, animations, triangles).
+
+Body (stage 3, `check_body`): triangles of Body / HeadMesh / Collar against the budgets,
+materials (at most 6, textures at most 2048), the skeleton (the contract's bones only,
+the coat chains' names, parents and direction, at most 100), weights (<= 4,
+normalized, nothing on a bone far from the vertex), the seams (Head and Collar meet
+Body on shared points with identical weights), and every body test pose
+(test_poses.BODY_TESTS): triangles of one garment crossing another's (legs through
+the skirt, arms through the coat, the top through the coat, items through the coat).
+Prints the landmarks in Godot coordinates (bone heads, eyes, the boots' floor contacts).
 """
 
 import os
@@ -19,15 +28,18 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import bmesh  # noqa: E402
 import bpy  # noqa: E402
 import numpy as np  # noqa: E402
 from mathutils import Vector  # noqa: E402
 from mathutils.bvhtree import BVHTree  # noqa: E402
 
 from silena_vesper_common import (  # noqa: E402
-    BLEND, COAT_MAT, GLB, GLOVE_MAT, GRIP_DIAMETER, HAND_LENGTH_RANGE, HEIGHT_TARGET, POSES, TEX_SIZE, arm_mesh,
-    armature,
+    BLEND, BODY_GLB, BODY_TRI_BUDGET, COAT_BODY_MAT, COAT_CHAINS, COAT_MAT, COLLAR_TRI_BUDGET, GLB, GLOVE_MAT,
+    GLOW_MAT, GRIP_DIAMETER, HAND_LENGTH_RANGE, HEAD_TRI_BUDGET, HEIGHT_TARGET, MAX_BONES, OUTFIT_MAT, POSES,
+    SKIN_MAT, SOLE_Z, TEX_SIZE, arm_mesh, armature, chain_names,
 )
+from outfit_bake import PART_IDS  # noqa: E402
 import test_poses  # noqa: E402
 from arcology_blender import rig  # noqa: E402
 from arcology_blender.checks import fmt, godot, import_report  # noqa: E402
@@ -246,6 +258,251 @@ def frames(arm):
     print(f"  eyes (midpoint) {fmt(godot(arm['eye']), 4)}")
 
 
+# --- body (stage 3) ---------------------------------------------------------------------------
+FAR_BODY = 0.30          # the coat sits up to ~27 cm in front of the spine bones that carry its front
+SEAM_ZONE = 0.045        # crossings this close to an armhole seam are the sleeve's piping over the coat
+# legs/items is information: the belt's items rest on the trousers (contacts under the belt's
+# edge, the tabs tucked under it); the others must be clean at rest
+CROSS_PAIRS = (("legs", "skirt"), ("arms", "coat"), ("top", "coat"), ("items", "coat"), ("legs", "items"))
+GROUPS = {
+    "legs": ("trousers", "boot", "thigh_strap"),
+    "arms": ("arm",),
+    "top": ("top",),
+    "items": ("belt", "hangers", "passkey_glow"),
+}
+
+
+def expected_bones():
+    names = set(rig.GAME_ENGINE_TO_HUMANOID.values())
+    for side in rig.SIDES:
+        names.add(f"{side}Palm")
+        names.add(f"{side}LowerArmTwist")
+        for f in rig.FINGERS:
+            names.add(f"{side}{f}Tip")
+            if f != "Thumb":
+                names.add(f"{side}{f}Metacarpal")
+    for chain in COAT_CHAINS:
+        names.update(chain_names(chain))
+    return names
+
+
+def face_parts(ob):
+    a = ob.data.attributes.get("part")
+    inv = {v: k for k, v in PART_IDS.items()}
+    return [inv.get(d.value, "") for d in a.data] if a else [""] * len(ob.data.polygons)
+
+
+def tri_sets(ob):
+    """{group: [triangles]} of the Body by garment; `skirt` is the coat below the waist."""
+    from silena_vesper_common import WAIST_Z
+
+    parts = face_parts(ob)
+    ob.data.calc_loop_triangles()
+    out = {k: [] for k in list(GROUPS) + ["coat", "skirt"]}
+    co = ob.data.vertices
+    for t in ob.data.loop_triangles:
+        p = parts[t.polygon_index]
+        if p == "coat":
+            out["coat"].append(tuple(t.vertices))
+            if min(co[i].co.z for i in t.vertices) < WAIST_Z - 0.06:
+                out["skirt"].append(tuple(t.vertices))
+            continue
+        for g, members in GROUPS.items():
+            if p in members:
+                out[g].append(tuple(t.vertices))
+    return out
+
+
+def crossings(co, tris_a, tris_b, seam=None):
+    """Crossing triangle pairs (not sharing a vertex); with `seam` (vertex indices), the
+    count of those away from it (farther than SEAM_ZONE) and those near it."""
+    verts = [Vector(p) for p in co]
+    ta = BVHTree.FromPolygons(verts, tris_a, all_triangles=True)
+    tb = BVHTree.FromPolygons(verts, tris_b, all_triangles=True)
+    pairs = [(i, j) for i, j in ta.overlap(tb) if not set(tris_a[i]) & set(tris_b[j])]
+    if seam is None:
+        return len(pairs)
+    sp = np.array([co[i] for i in seam])
+    near = 0
+    for i, _ in pairs:
+        c = co[list(tris_a[i])].mean(axis=0)
+        if np.min(np.linalg.norm(sp - c, axis=1)) < SEAM_ZONE:
+            near += 1
+    return len(pairs) - near, near
+
+
+def seam_verts(ob):
+    """Vertices shared by arm and coat faces: the welded armhole rims."""
+    parts = face_parts(ob)
+    arm_v, coat_v = set(), set()
+    for p in ob.data.polygons:
+        if parts[p.index] == "arm":
+            arm_v.update(p.vertices)
+        elif parts[p.index] == "coat":
+            coat_v.update(p.vertices)
+    return sorted(arm_v & coat_v)
+
+
+def check_body(arm):
+    from arcology_blender.checks import godot as gd
+    from mathutils.kdtree import KDTree
+
+    names = ("Body", "HeadMesh", "Collar")
+    if any(bpy.data.objects.get(n) is None for n in names):
+        check(False, "body meshes Body, HeadMesh, Collar exist (run bake.py)")
+        return
+    body, head, collar = (bpy.data.objects[n] for n in names)
+    print("BODY")
+    for ob, budget in ((body, BODY_TRI_BUDGET), (head, HEAD_TRI_BUDGET), (collar, COLLAR_TRI_BUDGET)):
+        check(tri_count(ob) <= budget, f"{ob.name} triangles {tri_count(ob)} <= {budget}")
+    mats = set()
+    for ob in (body, head, collar):
+        ms = [m.name for m in ob.data.materials]
+        mats.update(ms)
+        print(f"  {ob.name} materials {ms}")
+        uvs = [u.name for u in ob.data.uv_layers]
+        check(uvs == ["UVMap"], f"{ob.name} uv maps {uvs}")
+        extra = [a.name for a in ob.data.attributes if not a.name.startswith(".") and a.name not in
+                 ("position", "sharp_face", "UVMap", "material_index", "part")]
+        check(not extra, f"{ob.name}: no build-time attributes left {extra}")
+    for i, m in enumerate(body.data.materials):
+        if m.name in (COAT_BODY_MAT, OUTFIT_MAT, GLOVE_MAT, COAT_MAT):
+            print(f"  Body texel density {m.name}: {texel_density(body, i):.0f} px/m")
+    want = {GLOVE_MAT, COAT_MAT, COAT_BODY_MAT, OUTFIT_MAT, GLOW_MAT, SKIN_MAT}
+    check(mats == want and len(mats) <= 6, f"materials {sorted(mats)} (6 at most)")
+    for name in sorted(mats):
+        m = bpy.data.materials[name]
+        imgs = sorted({(n.image.name, n.image.size[0], n.image.size[1]) for n in m.node_tree.nodes
+                       if n.type == "TEX_IMAGE" and n.image})
+        check(all(max(w, h) <= TEX_SIZE for _, w, h in imgs), f"{name} textures {imgs}")
+    # skeleton
+    bones = arm.data.bones
+    have = {b.name for b in bones}
+    want_b = expected_bones()
+    check(have == want_b, f"bones are the contract's ({len(have)}): missing {sorted(want_b - have)}, "
+                          f"extra {sorted(have - want_b)}")
+    check(len(have) <= MAX_BONES, f"bones {len(have)} <= {MAX_BONES}")
+    for chain in COAT_CHAINS:
+        cn = chain_names(chain)
+        ok = bones[cn[0]].parent.name == "Hips" and all(bones[cn[k]].parent.name == cn[k - 1]
+                                                        and bones[cn[k]].use_connect for k in range(1, len(cn)))
+        down = all(bones[n].tail_local.z < bones[n].head_local.z for n in cn)
+        check(ok and down, f"chain {chain}: {cn[0]} child of Hips, connected, pointing down "
+                           f"(head z {bones[cn[0]].head_local.z:.3f}, tail z {bones[cn[-1]].tail_local.z:.3f})")
+    # weights
+    for ob in (body, head, collar):
+        ws = weights(ob, arm)
+        counts = [len(w) for w in ws]
+        sums = [sum(w.values()) for w in ws]
+        check(max(counts) <= 4 and min(counts) >= 1, f"{ob.name} influences {min(counts)}..{max(counts)}")
+        check(max(abs(s - 1.0) for s in sums) < 1e-3, f"{ob.name} normalized")
+        nondef = {b for w in ws for b in w if not arm.data.bones[b].use_deform}
+        check(not nondef, f"{ob.name}: only deforming bones {sorted(nondef)}")
+        stray, worst = 0, 0.0
+        fp = face_parts(ob)
+        follows = set()     # the skirt and the hanging items follow the thigh's swing on purpose
+        for poly in ob.data.polygons:
+            if fp[poly.index] in ("coat", "hangers", "passkey_glow"):
+                follows.update(poly.vertices)
+        for vtx, w in zip(ob.data.vertices, ws):
+            p = ob.matrix_world @ vtx.co
+            for b, wt in w.items():
+                if vtx.index in follows and (b.endswith("UpperLeg") or b == "Hips"):
+                    continue
+                d = rig.bone_region_distance(arm, arm.data.bones[b], p)
+                if wt > 0.05 and d > FAR_BODY:
+                    stray += 1
+                    worst = max(worst, d)
+        check(stray == 0, f"{ob.name}: no weights on bones farther than {FAR_BODY} m ({stray}, worst {worst:.3f})")
+    # seams: HeadMesh and Collar meet Body on shared points with identical weights
+    kd = KDTree(len(body.data.vertices))
+    for vtx in body.data.vertices:
+        kd.insert(vtx.co, vtx.index)
+    kd.balance()
+    bw = weights(body, arm)
+    hparts = face_parts(head)
+    skin_v = {i for p in head.data.polygons if hparts[p.index] == "head" for i in p.vertices}
+    for ob in (head, collar):
+        bm_ = bmesh.new()
+        bm_.from_mesh(ob.data)
+        if ob is head:      # the neck's cut (the hair has its own open edges)
+            edge = [v.index for v in bm_.verts if v.is_boundary and v.index in skin_v]
+        else:               # the collar is closed: its base ring sits on the coat's neckline
+            edge = [v.index for v in bm_.verts]
+        bm_.free()
+        ow = weights(ob, arm)
+        shared, same = 0, 0
+        for i in edge:
+            _, j, d = kd.find(ob.data.vertices[i].co)
+            if d < 1e-5:
+                shared += 1
+                if all(abs(ow[i].get(k, 0.0) - bw[j].get(k, 0.0)) < 1e-3 for k in set(ow[i]) | set(bw[j])):
+                    same += 1
+        print(f"  {ob.name}: {len(edge)} seam candidates, {shared} on Body points, {same} with the same weights")
+        if ob is head:
+            check(shared == len(edge) and same == shared, "HeadMesh's neck seam lies on Body's with identical weights")
+        else:
+            check(shared > 0 and same == shared, "Collar's base lies on the coat with identical weights")
+    # folds: faces turned against their neighbors (information: a few remain where the sleeve
+    # heads stand above the shoulders)
+    bm_ = bmesh.new()
+    bm_.from_mesh(body.data)
+    bm_.normal_update()
+    bparts = face_parts(body)
+    folds = []
+    for f in bm_.faces:
+        if bparts[f.index] != "coat":
+            continue
+        nb = [g for e in f.edges for g in e.link_faces if g is not f]
+        avg = sum((g.normal for g in nb), Vector())
+        if nb and avg.length > 1e-6 and f.normal.dot(avg.normalized()) < -0.3:
+            folds.append(tuple(round(c, 3) for c in f.calc_center_median()))
+    bm_.free()
+    print(f"  coat faces folded against their neighbors: {len(folds)} {folds[:8]}")
+    # intersections in the test poses
+    print("BODY TEST POSES (crossing triangle pairs)")
+    sets = tri_sets(body)
+    seam = seam_verts(body)
+    print("  triangles per group: " + ", ".join(f"{k} {len(t)}" for k, t in sets.items())
+          + f"; armhole seam vertices {len(seam)}")
+    fingers = {p: test_poses.finger_rotations(arm, p) for p in ("Open", "Grip")}
+    for test in test_poses.BODY_TESTS:
+        info = test_poses.body_apply(arm, test, fingers)
+        co = posed(body)
+        line = []
+        for a, b in CROSS_PAIRS:
+            if (a, b) == ("arms", "coat"):
+                n, near = crossings(co, sets[a], sets[b], seam)
+                line.append(f"{a}/{b} {n} (+{near} at the armhole seam)")
+            else:
+                n = crossings(co, sets[a], sets[b])
+                line.append(f"{a}/{b} {n}")
+            if test == "body_rest" and (a, b) != ("legs", "items"):
+                check(n == 0, f"rest: {a} through {b}: {n}")
+        print(f"  {test:15s} {info:34s} " + ", ".join(line) + f"; lowest point z {co[:, 2].min():.4f}")
+    test_poses.reset_all(arm, {})
+    set_pose(arm, None)
+    # landmarks in Godot coordinates
+    print("LANDMARKS (Godot coordinates of the glb: y up, the body faces +z)")
+    for n in ("Hips", "Spine", "Chest", "UpperChest", "Neck", "Head", "LeftUpperArm", "RightUpperArm",
+              "LeftUpperLeg", "RightUpperLeg", "LeftLowerLeg", "RightLowerLeg", "LeftFoot", "RightFoot",
+              "LeftToes", "RightToes"):
+        print(f"  {n:14s} head {fmt(gd(arm.matrix_world @ bones[n].head_local), 4)}")
+    print(f"  eyes (midpoint) {fmt(gd(arm['eye']), 4)}")
+    co = np.array([tuple(body.matrix_world @ vtx.co) for vtx in body.data.vertices])
+    parts = face_parts(body)
+    boot_v = set()
+    for p in body.data.polygons:
+        if parts[p.index] == "boot":
+            boot_v.update(p.vertices)
+    bv = co[sorted(boot_v)]
+    for side, sx in (("Left", 1.0), ("Right", -1.0)):
+        s = bv[(bv[:, 0] * sx > 0.0) & (bv[:, 2] < SOLE_Z + 0.0015)]
+        heel = s[s[:, 1].argmax()]
+        toe = s[s[:, 1].argmin()]
+        print(f"  {side} boot floor contact: heel {fmt(gd(heel), 4)} toe {fmt(gd(toe), 4)}")
+
+
 def main():
     bpy.ops.wm.open_mainfile(filepath=BLEND)
     arm = armature()
@@ -270,11 +527,12 @@ def main():
         check_deformation(arm, side, obs[side])
     set_pose(arm, None)
     frames(arm)
+    check_body(arm)
     print("CONTRACT", "OK" if not FAILS else f"FAIL ({len(FAILS)})")
     for f in FAILS:
         print("  FAILED:", f)
-    for side in ("Left", "Right"):
-        import_report(GLB[side])
+    for path in (GLB["Left"], GLB["Right"], BODY_GLB):
+        import_report(path)
         a = [o for o in bpy.data.objects if o.type == "ARMATURE"][0]
         print(f"  BONES {len(a.data.bones)}: {', '.join(b.name for b in a.data.bones)}")
         roots = [b.name for b in a.data.bones if b.parent is None]

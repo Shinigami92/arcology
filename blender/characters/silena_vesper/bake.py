@@ -1,6 +1,8 @@
-"""Stage 2: unwrap and bake the left glove and the left sleeve (albedo, normal, ORM: one
-set per material), drop the build-time data, join them into `ArmLeft` (two materials),
-mirror it into `ArmRight` (same mesh mirrored, same texture sets), save.
+"""Bake: unwrap and bake the left glove and the left sleeve (albedo, normal, ORM: one set
+per material), drop the build-time data, join them into `ArmLeft` (two materials),
+mirror it into `ArmRight` (same mesh mirrored, same texture sets); then the body
+(outfit_bake.py: coat body and outfit atlases, the meshes `Body`, `HeadMesh`, `Collar`);
+save. The body's parts are hidden while the arms bake, so the arms come out as before.
 
   blender -b --factory-startup blender/characters/silena_vesper.blend --python blender/characters/silena_vesper/bake.py
 
@@ -29,6 +31,7 @@ from silena_vesper_common import (  # noqa: E402
 import coat_leather  # noqa: E402
 import glove as glove_geo  # noqa: E402
 import leather  # noqa: E402
+import outfit_bake  # noqa: E402
 import sleeve as sleeve_geo  # noqa: E402
 from arcology_blender import bake, geo, rig  # noqa: E402
 from arcology_blender.scene import save_blend, tag  # noqa: E402
@@ -120,6 +123,19 @@ def join(objs, name):
     return ob
 
 
+def mark_dome(s):
+    """Face attribute `dome`: the faces closing the sleeve inside the armhole (every vertex
+    in the cap region, from the rim inward). The body's arms drop them (outfit_bake.py)."""
+    reg = s.data.attributes["region"].data
+    dome = s.data.attributes.new("dome", "INT", "FACE").data
+    for p in s.data.polygons:
+        dome[p.index].value = int(all(round(reg[i].value) == sleeve_geo.R_CAP for i in p.vertices))
+
+
+STAGE3_PARTS = ("coat", "collar", "top", "trousers", "boot_left", "belt", "hangers", "thigh_strap", "hair",
+                "passkey_glow", "head", "skin_v")
+
+
 def main():
     scene = bpy.context.scene
     arm = armature()
@@ -129,6 +145,9 @@ def main():
         tr.mute = True
     arm.data.pose_position = "REST"
     bpy.context.view_layer.update()
+    body_parts = [ob for ob in bpy.data.objects if ob.get("arcology_part") in STAGE3_PARTS]
+    for ob in body_parts:
+        ob.hide_render = True
 
     bake.setup(scene, ao_distance=0.03)
     unwrap_glove(g)
@@ -139,9 +158,13 @@ def main():
     coat_mat = bake.final_material(COAT_MAT, albedo, normal, orm)
     bake.assign_single([g], glove_mat)
     bake.assign_single([s], coat_mat)
+    for ob in body_parts:
+        ob.hide_render = False
+    outfit_bake.bake_atlases()
     bake.remove_source_materials()
     leather.remove_images()
     coat_leather.remove_images()
+    mark_dome(s)
     strip_build_data(g, ("region",) + glove_geo.FINGER_ATTRS + glove_geo.CUFF_ATTRS, glove_geo.UV_HELPERS,
                      ("snap_center", "snap_normal", "orn_origin"))
     strip_build_data(s, sleeve_geo.ATTRS, sleeve_geo.UV_HELPERS)
@@ -155,6 +178,7 @@ def main():
     rig.limit_weights(left, arm, 4)
     right = rig.mirror_mesh(left, "ArmRight", "Left", "Right")
     tag(right, "arm_right")
+    outfit_bake.build_meshes(arm)
 
     for tr in tracks:
         tr.mute = False

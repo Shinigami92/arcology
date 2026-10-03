@@ -602,69 +602,71 @@ func _dummy_fingertip() -> Area3D:
 	return tip
 
 
-## Both hands carry a fingertip press area on the Player Hands layer.
+## Both hands carry a fingertip press area on the Player Hands layer, on the
+## avatar's index finger tips (D-041).
 func _test_fingertips() -> void:
 	var found: Array[String] = []
-	for side in ["Left", "Right"]:
-		for node in _main.get_node("Player/%sHand" % side).find_children("Fingertip", "Area3D", true, false):
-			if (node as Area3D).collision_layer == 131072:
-				found.append(side)
+	for side: String in ["Left", "Right"]:
+		var tip := _main.get_node_or_null("Player/Avatar/Model/Armature/Skeleton3D/IndexTip%s/Fingertip" % side) as Area3D
+		if tip and tip.collision_layer == 131072:
+			found.append(side)
 	_check("fingertip_areas", found == ["Left", "Right"], "fingertips on hands: %s" % [found])
 
 
-## Each visible hand is an XRToolsHand whose fingertip rides an index bone of
-## its own skeleton, and gripping curls that finger (guards the hand swap, D-037).
+## The avatar's hand bones follow the AvatarHand targets, and each hand's
+## controls curl its own fingers, each finger on its own (D-039, D-041).
 func _test_hand_rig() -> void:
-	for side: String in ["Left", "Right"]:
-		var hand := _main.get_node_or_null("Player/%sHand/CollisionHand/Hand" % side) as XRToolsHand
-		if hand == null:
-			_check("hand_rig_%s" % side.to_lower(), false, "no XRToolsHand at Player/%sHand/CollisionHand/Hand" % side)
-			continue
-		var tips := hand.find_children("Fingertip", "Area3D", true, false)
-		var attach: BoneAttachment3D = tips[0].get_parent() as BoneAttachment3D if tips.size() == 1 else null
-		var skeleton: Skeleton3D = attach.get_parent() as Skeleton3D if attach else null
-		var bone: int = skeleton.find_bone(attach.bone_name) if skeleton else -1
-		_check("hand_rig_%s_fingertip_bone" % side.to_lower(), bone >= 0 and "index" in attach.bone_name.to_lower(),
-				"fingertip on bone %s (index %d)" % [attach.bone_name if attach else "-", bone])
-		if bone < 0:
-			continue
-		var tip := tips[0] as Area3D
-		hand.force_grip_trigger(0.0, 0.0)
-		await _frames(10)
-		var open := hand.global_transform.affine_inverse() * tip.global_position
-		hand.force_grip_trigger(1.0, 1.0)
-		await _frames(10)
-		var closed := hand.global_transform.affine_inverse() * tip.global_position
-		_check("hand_rig_%s_grip_curls" % side.to_lower(), open.distance_to(closed) > 0.02,
-				"fingertip moves %.3f m from open to grip" % open.distance_to(closed))
-		if hand is AvatarHand:
-			# Fingers curl independently (D-039): trigger alone moves only the index,
-			# grip alone only the others.
-			var middle := skeleton.find_bone("%sMiddleTip" % side)
-			# x: index tip moved from open, y: middle tip moved from rest
-			var moves: Array[Vector2] = []
-			for forced: Vector2 in [Vector2(0, 0), Vector2(0, 1), Vector2(1, 0)]:
-				hand.force_grip_trigger(forced.x, forced.y)
-				await _frames(10)
-				moves.append(Vector2(
-						(hand.global_transform.affine_inverse() * tip.global_position).distance_to(open),
-						skeleton.get_bone_global_pose(middle).origin.distance_to(skeleton.get_bone_global_rest(middle).origin)))
-			var trigger_only := moves[1] - moves[0]
-			var grip_only := moves[2] - moves[0]
-			_check("hand_rig_%s_fingers_independent" % side.to_lower(),
-					trigger_only.x > 0.02 and absf(trigger_only.y) < 0.002 and absf(grip_only.x) < 0.002 and grip_only.y > 0.02,
-					"index / middle tip travel: trigger %s, grip %s" % [trigger_only.snappedf(0.001), grip_only.snappedf(0.001)])
-		hand.force_grip_trigger()
-		await _frames(2)
-		await _test_arm_ik(side, skeleton)
-
-
-## The arm reaches the hand from a shoulder near the headset without moving
-## the hand or stretching the bones, the elbow below the arm line (D-040).
-func _test_arm_ik(side: String, skeleton: Skeleton3D) -> void:
-	var ik := skeleton.get_node_or_null("ArmIK") as ArmIK
-	if ik == null:
+	var skeleton := _main.get_node_or_null("Player/Avatar/Model/Armature/Skeleton3D") as Skeleton3D
+	if skeleton == null:
+		_check("hand_rig", false, "no avatar skeleton at Player/Avatar/Model/Armature/Skeleton3D")
 		return
+	# Hands where a seated player holds them: in reach, in front of the chest.
+	var camera := get_viewport().get_camera_3d()
+	var saved: Array[Transform3D] = []
+	for side: String in ["Left", "Right"]:
+		var controller := _main.get_node("Player/%sHand" % side) as Node3D
+		saved.append(controller.global_transform)
+		var x := -0.2 if side == "Left" else 0.2
+		controller.global_transform = Transform3D(controller.global_basis, camera.global_transform * Vector3(x, -0.45, -0.3))
+	await _frames(5)
+	for side: String in ["Left", "Right"]:
+		var hand := _main.get_node_or_null("Player/%sHand/CollisionHand/Hand" % side) as AvatarHand
+		if hand == null or hand.target == null:
+			_check("hand_rig_%s" % side.to_lower(), false, "no AvatarHand with a target at Player/%sHand/CollisionHand/Hand" % side)
+			continue
+		var bone := skeleton.find_bone("%sHand" % side)
+		var index := skeleton.find_bone("%sIndexTip" % side)
+		var middle := skeleton.find_bone("%sMiddleTip" % side)
+		# x: index tip, y: middle tip travel from the open pose, in the hand bone's frame
+		var open: Array[Vector3] = []
+		var moves: Array[Vector2] = []
+		var drift := 0.0
+		for forced: Vector2 in [Vector2(0, 0), Vector2(0, 1), Vector2(1, 0)]:
+			hand.force_grip_trigger(forced.x, forced.y)
+			await _frames(3)
+			await skeleton.skeleton_updated
+			var h := skeleton.get_bone_global_pose(bone)
+			var tips: Array[Vector3] = [h.affine_inverse() * skeleton.get_bone_global_pose(index).origin, h.affine_inverse() * skeleton.get_bone_global_pose(middle).origin]
+			if open.is_empty():
+				open = tips
+				drift = (skeleton.global_transform * h.origin).distance_to(hand.target.global_position)
+			moves.append(Vector2(tips[0].distance_to(open[0]), tips[1].distance_to(open[1])))
+		hand.force_grip_trigger()
+		_check("hand_rig_%s_follows" % side.to_lower(), drift < 0.001, "hand bone %.4f m from its target" % drift)
+		_check("hand_rig_%s_fingers_independent" % side.to_lower(),
+				moves[1].x > 0.02 and moves[1].y < 0.002 and moves[2].x < 0.002 and moves[2].y > 0.02,
+				"index / middle tip travel: trigger %s, grip %s" % [moves[1].snappedf(0.001), moves[2].snappedf(0.001)])
+		await _test_arm_ik(side, skeleton)
+	await _test_body_ik(skeleton)
+	for i in 2:
+		(_main.get_node("Player/%sHand" % ["Left", "Right"][i]) as Node3D).global_transform = saved[i]
+	await _frames(2)
+
+
+## The arm reaches the hand target from the shoulder without stretching, the
+## elbow below the arm line, and wrist roll moves only the twist bone (headset
+## bug: upper arm and forearm flipped half a turn at about -110 degrees, D-040).
+func _test_arm_ik(side: String, skeleton: Skeleton3D) -> void:
 	await skeleton.skeleton_updated
 	var bones: Array[Transform3D] = []
 	var rests: Array[Transform3D] = []
@@ -673,44 +675,64 @@ func _test_arm_ik(side: String, skeleton: Skeleton3D) -> void:
 		bones.append(skeleton.get_bone_global_pose(bone))
 		rests.append(skeleton.get_bone_global_rest(bone))
 	var to_world := skeleton.global_transform
-	var camera := get_viewport().get_camera_3d()
-	var shoulder := to_world * bones[0].origin
-	var hand_drift := bones[2].origin.distance_to(rests[2].origin)
 	var stretch := absf(bones[0].origin.distance_to(bones[1].origin) - rests[0].origin.distance_to(rests[1].origin)) \
 			+ absf(bones[1].origin.distance_to(bones[2].origin) - rests[1].origin.distance_to(rests[2].origin))
 	var sag := ((to_world * bones[0].origin + to_world * bones[2].origin) * 0.5).y - (to_world * bones[1].origin).y
-	var from_head := shoulder.distance_to(camera.global_position)
-	_check("arm_ik_%s" % side.to_lower(),
-			hand_drift < 0.001 and stretch < 0.001 and sag > 0.0 and from_head < 0.6,
-			"hand drift %.4f m, bone stretch %.4f m, elbow %.3f m below the arm line, shoulder %.2f m from the eyes" % [hand_drift, stretch, sag, from_head])
+	_check("arm_ik_%s" % side.to_lower(), stretch < 0.001 and sag > 0.0,
+			"bone stretch %.4f m, elbow %.3f m below the arm line" % [stretch, sag])
 
-	# Rolling the wrist (the controller about the forearm) moves the twist bone
-	# smoothly and leaves the upper arm and forearm alone (headset bug: both
-	# flipped half a turn at about -110 degrees of roll).
 	var controller := _main.get_node("Player/%sHand" % side) as Node3D
-	var saved := controller.transform
-	var lower_bone := skeleton.find_bone("%sLowerArm" % side)
+	var saved := controller.global_transform
 	var axis := (to_world * bones[2].origin - to_world * bones[1].origin).normalized()
 	var pivot := to_world * bones[2].origin
-	var parts: Array[int] = [skeleton.find_bone("%sUpperArm" % side), lower_bone, skeleton.find_bone("%sLowerArmTwist" % side)]
+	var parts: Array[int] = [skeleton.find_bone("%sUpperArm" % side), skeleton.find_bone("%sLowerArm" % side), skeleton.find_bone("%sLowerArmTwist" % side)]
 	var worst: Array[float] = [0.0, 0.0, 0.0]
 	var last: Array[Quaternion] = []
-	ik.set("_roll_tracked", NAN)
 	for step in range(-30, 31):
-		var roll := Transform3D(Basis(axis, deg_to_rad(step * 5.0)), Vector3.ZERO)
-		controller.global_transform = roll.translated_local(-pivot).translated(pivot) * (controller.get_parent() as Node3D).global_transform * saved
+		controller.global_transform = Transform3D(Basis(axis, deg_to_rad(step * 5.0)), Vector3.ZERO).translated_local(-pivot).translated(pivot) * saved
 		await get_tree().physics_frame
 		await skeleton.skeleton_updated
 		var now: Array[Quaternion] = []
 		for i in parts.size():
-			now.append((skeleton.global_transform * skeleton.get_bone_global_pose(parts[i])).basis.get_rotation_quaternion())
+			now.append((to_world * skeleton.get_bone_global_pose(parts[i])).basis.get_rotation_quaternion())
 			if last:
 				worst[i] = maxf(worst[i], rad_to_deg(now[i].angle_to(last[i])))
 		last = now
-	controller.transform = saved
+	controller.global_transform = saved
 	await _frames(2)
 	_check("arm_ik_%s_roll" % side.to_lower(), worst[0] < 2.0 and worst[1] < 2.0 and worst[2] < 6.0,
 			"largest change per 5 degrees of wrist roll: upper arm %.1f, forearm %.1f, twist %.1f degrees" % worst)
+
+
+## The body stands under the headset: eyes at the camera, feet on the floor,
+## and crouching (a lower head) bends the knees instead of sinking the feet.
+func _test_body_ik(skeleton: Skeleton3D) -> void:
+	var ik := skeleton.get_node("BodyIK") as BodyIK
+	var camera := get_viewport().get_camera_3d()
+	var ground := _main.get_node("Player/PlayerBody") as Node3D
+	var head := skeleton.find_bone("Head")
+	var feet: Array[int] = [skeleton.find_bone("LeftFoot"), skeleton.find_bone("RightFoot")]
+	var foot_rest := skeleton.get_bone_global_rest(feet[0]).origin.y
+	var eye_in_head := skeleton.get_bone_global_rest(head).affine_inverse() * ik.eye_rest
+	var saved := camera.position
+	for case: Array in [["standing", 0.0], ["crouching", -0.5]]:
+		camera.position = saved + Vector3(0.0, case[1], 0.0)
+		await _frames(2)
+		await skeleton.skeleton_updated
+		var to_world := skeleton.global_transform
+		var eye := to_world * skeleton.get_bone_global_pose(head) * eye_in_head
+		var floor_y := ground.global_position.y
+		var foot_y: Array[float] = []
+		for foot in feet:
+			foot_y.append((to_world * skeleton.get_bone_global_pose(foot).origin).y - floor_y - foot_rest + ik.sole_height)
+		var thigh := skeleton.get_bone_global_pose(skeleton.find_bone("LeftUpperLeg")).basis.y
+		var shin := skeleton.get_bone_global_pose(skeleton.find_bone("LeftLowerLeg")).basis.y
+		var bend := rad_to_deg(thigh.angle_to(shin))
+		var eye_off := eye.distance_to(camera.global_position)
+		_check("body_ik_%s" % case[0], eye_off < 0.03 and absf(foot_y[0]) < 0.01 and absf(foot_y[1]) < 0.01 and (case[1] == 0.0 or bend > 30.0),
+				"eyes %.3f m from the camera, feet %.3f / %.3f m off the floor, knee bent %.0f degrees" % [eye_off, foot_y[0], foot_y[1], bend])
+	camera.position = saved
+	await _frames(2)
 
 
 ## Pressing the lamp's switch turns its light and glow off, pressing again on.

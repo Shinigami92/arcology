@@ -17,6 +17,7 @@
 [ext_resource type="PackedScene" uid="uid://clt88d5d1dje4" path="res://addons/godot-xr-tools/functions/movement_crouch.tscn" id="15_crouch"]
 [ext_resource type="PackedScene" uid="uid://wtpox7m5vu2b" path="res://addons/godot-xr-tools/effects/fade.tscn" id="16_fade"]
 [ext_resource type="Resource" path="res://core/player/player_physics.tres" id="17_physics"]
+[ext_resource type="PackedScene" path="res://core/player/avatar/silena_vesper_body.tscn" id="18_avatar"]
 
 [node name="Player" type="XROrigin3D" unique_id=1464589661]
 script = ExtResource("1_player")
@@ -94,3 +95,5 @@ collision_mask = 1019
 ground_control = 2
 
 [node name="Fade" parent="." unique_id=245932940 instance=ExtResource("16_fade")]
+
+[node name="Avatar" parent="." instance=ExtResource("18_avatar")]

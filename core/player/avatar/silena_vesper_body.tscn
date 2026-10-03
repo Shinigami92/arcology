@@ -1,0 +1,154 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://core/player/avatar/avatar_body.gd" id="1_body"]
+[ext_resource type="PackedScene" path="res://assets/characters/silena_vesper/silena_vesper_body.glb" id="2_model"]
+[ext_resource type="Script" path="res://core/player/avatar/body_ik.gd" id="3_ik"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_open"]
+animation = &"Open"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_grip_leftindex"]
+animation = &"Grip"
+
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_leftindex"]
+filter_enabled = true
+filters = ["Armature/Skeleton3D:LeftIndexMetacarpal", "Armature/Skeleton3D:LeftIndexProximal", "Armature/Skeleton3D:LeftIndexIntermediate", "Armature/Skeleton3D:LeftIndexDistal", "Armature/Skeleton3D:LeftIndexTip"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_grip_leftmiddle"]
+animation = &"Grip"
+
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_leftmiddle"]
+filter_enabled = true
+filters = ["Armature/Skeleton3D:LeftMiddleMetacarpal", "Armature/Skeleton3D:LeftMiddleProximal", "Armature/Skeleton3D:LeftMiddleIntermediate", "Armature/Skeleton3D:LeftMiddleDistal", "Armature/Skeleton3D:LeftMiddleTip"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_grip_leftring"]
+animation = &"Grip"
+
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_leftring"]
+filter_enabled = true
+filters = ["Armature/Skeleton3D:LeftRingMetacarpal", "Armature/Skeleton3D:LeftRingProximal", "Armature/Skeleton3D:LeftRingIntermediate", "Armature/Skeleton3D:LeftRingDistal", "Armature/Skeleton3D:LeftRingTip", "Armature/Skeleton3D:LeftLittleMetacarpal", "Armature/Skeleton3D:LeftLittleProximal", "Armature/Skeleton3D:LeftLittleIntermediate", "Armature/Skeleton3D:LeftLittleDistal", "Armature/Skeleton3D:LeftLittleTip"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_grip_leftthumb"]
+animation = &"Grip"
+
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_leftthumb"]
+filter_enabled = true
+filters = ["Armature/Skeleton3D:LeftThumbMetacarpal", "Armature/Skeleton3D:LeftThumbProximal", "Armature/Skeleton3D:LeftThumbDistal", "Armature/Skeleton3D:LeftThumbTip"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_grip_rightindex"]
+animation = &"Grip"
+
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_rightindex"]
+filter_enabled = true
+filters = ["Armature/Skeleton3D:RightIndexMetacarpal", "Armature/Skeleton3D:RightIndexProximal", "Armature/Skeleton3D:RightIndexIntermediate", "Armature/Skeleton3D:RightIndexDistal", "Armature/Skeleton3D:RightIndexTip"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_grip_rightmiddle"]
+animation = &"Grip"
+
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_rightmiddle"]
+filter_enabled = true
+filters = ["Armature/Skeleton3D:RightMiddleMetacarpal", "Armature/Skeleton3D:RightMiddleProximal", "Armature/Skeleton3D:RightMiddleIntermediate", "Armature/Skeleton3D:RightMiddleDistal", "Armature/Skeleton3D:RightMiddleTip"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_grip_rightring"]
+animation = &"Grip"
+
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_rightring"]
+filter_enabled = true
+filters = ["Armature/Skeleton3D:RightRingMetacarpal", "Armature/Skeleton3D:RightRingProximal", "Armature/Skeleton3D:RightRingIntermediate", "Armature/Skeleton3D:RightRingDistal", "Armature/Skeleton3D:RightRingTip", "Armature/Skeleton3D:RightLittleMetacarpal", "Armature/Skeleton3D:RightLittleProximal", "Armature/Skeleton3D:RightLittleIntermediate", "Armature/Skeleton3D:RightLittleDistal", "Armature/Skeleton3D:RightLittleTip"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_grip_rightthumb"]
+animation = &"Grip"
+
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_rightthumb"]
+filter_enabled = true
+filters = ["Armature/Skeleton3D:RightThumbMetacarpal", "Armature/Skeleton3D:RightThumbProximal", "Armature/Skeleton3D:RightThumbDistal", "Armature/Skeleton3D:RightThumbTip"]
+
+[sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_fingers"]
+nodes/OpenHand/node = SubResource("AnimationNodeAnimation_open")
+nodes/OpenHand/position = Vector2(-600, 0)
+nodes/ClosedLeftIndex/node = SubResource("AnimationNodeAnimation_grip_leftindex")
+nodes/ClosedLeftIndex/position = Vector2(-400, 250)
+nodes/LeftIndex/node = SubResource("AnimationNodeBlend2_leftindex")
+nodes/LeftIndex/position = Vector2(-300, 0)
+nodes/ClosedLeftMiddle/node = SubResource("AnimationNodeAnimation_grip_leftmiddle")
+nodes/ClosedLeftMiddle/position = Vector2(-180, 250)
+nodes/LeftMiddle/node = SubResource("AnimationNodeBlend2_leftmiddle")
+nodes/LeftMiddle/position = Vector2(-80, 0)
+nodes/ClosedLeftRing/node = SubResource("AnimationNodeAnimation_grip_leftring")
+nodes/ClosedLeftRing/position = Vector2(40, 250)
+nodes/LeftRing/node = SubResource("AnimationNodeBlend2_leftring")
+nodes/LeftRing/position = Vector2(140, 0)
+nodes/ClosedLeftThumb/node = SubResource("AnimationNodeAnimation_grip_leftthumb")
+nodes/ClosedLeftThumb/position = Vector2(260, 250)
+nodes/LeftThumb/node = SubResource("AnimationNodeBlend2_leftthumb")
+nodes/LeftThumb/position = Vector2(360, 0)
+nodes/ClosedRightIndex/node = SubResource("AnimationNodeAnimation_grip_rightindex")
+nodes/ClosedRightIndex/position = Vector2(480, 250)
+nodes/RightIndex/node = SubResource("AnimationNodeBlend2_rightindex")
+nodes/RightIndex/position = Vector2(580, 0)
+nodes/ClosedRightMiddle/node = SubResource("AnimationNodeAnimation_grip_rightmiddle")
+nodes/ClosedRightMiddle/position = Vector2(700, 250)
+nodes/RightMiddle/node = SubResource("AnimationNodeBlend2_rightmiddle")
+nodes/RightMiddle/position = Vector2(800, 0)
+nodes/ClosedRightRing/node = SubResource("AnimationNodeAnimation_grip_rightring")
+nodes/ClosedRightRing/position = Vector2(920, 250)
+nodes/RightRing/node = SubResource("AnimationNodeBlend2_rightring")
+nodes/RightRing/position = Vector2(1020, 0)
+nodes/ClosedRightThumb/node = SubResource("AnimationNodeAnimation_grip_rightthumb")
+nodes/ClosedRightThumb/position = Vector2(1140, 250)
+nodes/RightThumb/node = SubResource("AnimationNodeBlend2_rightthumb")
+nodes/RightThumb/position = Vector2(1240, 0)
+node_connections = [&"LeftIndex", 0, &"OpenHand", &"LeftIndex", 1, &"ClosedLeftIndex", &"LeftMiddle", 0, &"LeftIndex", &"LeftMiddle", 1, &"ClosedLeftMiddle", &"LeftRing", 0, &"LeftMiddle", &"LeftRing", 1, &"ClosedLeftRing", &"LeftThumb", 0, &"LeftRing", &"LeftThumb", 1, &"ClosedLeftThumb", &"RightIndex", 0, &"LeftThumb", &"RightIndex", 1, &"ClosedRightIndex", &"RightMiddle", 0, &"RightIndex", &"RightMiddle", 1, &"ClosedRightMiddle", &"RightRing", 0, &"RightMiddle", &"RightRing", 1, &"ClosedRightRing", &"RightThumb", 0, &"RightRing", &"RightThumb", 1, &"ClosedRightThumb", &"output", 0, &"RightThumb"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_fingertip"]
+radius = 0.012
+
+[node name="Avatar" type="Node3D"]
+script = ExtResource("1_body")
+metadata/_doc = "The player's body, Silena Vesper (D-037, D-041): posed by BodyIK from the headset and the AvatarHand targets, fingers by the hands. Generated by tools/player/avatar.gd; don't edit."
+
+[node name="Model" parent="." instance=ExtResource("2_model")]
+
+[node name="BodyIK" type="SkeletonModifier3D" parent="Model/Armature/Skeleton3D"]
+script = ExtResource("3_ik")
+eye_rest = Vector3(0, 1.7899, 0.1268)
+sole_height = -0.012
+
+[node name="IndexTipLeft" type="BoneAttachment3D" parent="Model/Armature/Skeleton3D"]
+bone_name = "LeftIndexTip"
+
+[node name="Fingertip" type="Area3D" parent="Model/Armature/Skeleton3D/IndexTipLeft"]
+collision_layer = 131072
+collision_mask = 0
+monitoring = false
+metadata/_doc = "Detection-only left fingertip on the Player Hands layer: presses XR Tools area buttons (ABPanel, switches) without adding finger collision."
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Model/Armature/Skeleton3D/IndexTipLeft/Fingertip"]
+shape = SubResource("SphereShape3D_fingertip")
+
+[node name="IndexTipRight" type="BoneAttachment3D" parent="Model/Armature/Skeleton3D"]
+bone_name = "RightIndexTip"
+
+[node name="Fingertip" type="Area3D" parent="Model/Armature/Skeleton3D/IndexTipRight"]
+collision_layer = 131072
+collision_mask = 0
+monitoring = false
+metadata/_doc = "Detection-only right fingertip on the Player Hands layer: presses XR Tools area buttons (ABPanel, switches) without adding finger collision."
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Model/Armature/Skeleton3D/IndexTipRight/Fingertip"]
+shape = SubResource("SphereShape3D_fingertip")
+
+[node name="AnimationTree" type="AnimationTree" parent="."]
+root_node = NodePath("../Model")
+tree_root = SubResource("AnimationNodeBlendTree_fingers")
+anim_player = NodePath("../Model/AnimationPlayer")
+parameters/LeftIndex/blend_amount = 0.0
+parameters/LeftMiddle/blend_amount = 0.0
+parameters/LeftRing/blend_amount = 0.0
+parameters/LeftThumb/blend_amount = 0.0
+parameters/RightIndex/blend_amount = 0.0
+parameters/RightMiddle/blend_amount = 0.0
+parameters/RightRing/blend_amount = 0.0
+parameters/RightThumb/blend_amount = 0.0
+
+[editable path="Model"]

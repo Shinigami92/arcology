@@ -137,3 +137,72 @@ def apply(arm, side, test, fingers):
         bend(arm, side, float(test[5:]))
         info = f"elbow {test[5:]}"
     return info
+
+
+# --- whole-body test poses (stage 3) ----------------------------------------------------------
+# - body_rest: the bind pose (A-pose), fingers open;
+# - body_fp: both hands held at chest height in front (fp_down on each side), as Godot's
+#   arm IK places them; legs at rest;
+# - body_stride: her left foot 15 cm forward, the right 15 cm back (30 cm apart), feet
+#   flat, the hips lowered so both feet stay on the floor (the coat's chains at rest);
+# - body_arm_raise: her left arm raised to shoulder height (upper arm horizontal), 30 % of
+#   it at the clavicle (SHOULDER_SHARE), the right arm in the fp hold.
+BODY_TESTS = {"body_rest": "Open", "body_fp": "Open", "body_stride": "Open", "body_arm_raise": "Open"}
+STRIDE = 0.15
+SHOULDER_SHARE = 0.3         # of an arm's elevation above the A-pose taken by the clavicle (Shoulder bone)
+LEG_BONES = ("UpperLeg", "LowerLeg", "Foot")
+
+
+def reset_all(arm, fingers):
+    for pb in arm.pose.bones:
+        pb.rotation_mode = "QUATERNION"
+        pb.location = (0.0, 0.0, 0.0)
+        pb.scale = (1.0, 1.0, 1.0)
+        pb.rotation_quaternion = fingers.get(pb.name, (1.0, 0.0, 0.0, 0.0))
+    for side in ("Left", "Right"):
+        for b in ARM_BONES + LEG_BONES:
+            arm.pose.bones[side + b].rotation_quaternion = (1.0, 0.0, 0.0, 0.0)
+    bpy.context.view_layer.update()
+
+
+def step(arm, side, forward):
+    """The foot `forward` meters ahead of its rest place, flat, the knee toward the front."""
+    b = arm.data.bones
+    ankle = b[f"{side}Foot"].head_local.copy()
+    foot_rot = b[f"{side}Foot"].matrix_local.to_3x3()
+    target = ankle + Vector((0.0, -forward, 0.0))
+    rig.two_bone_pose(arm, f"{side}UpperLeg", f"{side}LowerLeg", f"{side}Foot", target,
+                      Vector((0.0, -1.0, 0.05)), foot_rot)
+
+
+def body_apply(arm, test, fingers):
+    reset_all(arm, fingers[BODY_TESTS[test]])
+    info = ""
+    if test in ("body_fp", "body_arm_raise"):
+        rolls = [hold(arm, side) for side in ("Left", "Right")]
+        info = "roll " + " ".join(f"{r:.0f}" for r in rolls)
+    if test == "body_arm_raise":
+        for b in ARM_BONES:
+            arm.pose.bones["Left" + b].rotation_quaternion = (1.0, 0.0, 0.0, 0.0)
+        bpy.context.view_layer.update()
+        up = arm.data.bones["LeftUpperArm"]
+        d = (up.tail_local - up.head_local).normalized()
+        ang = math.degrees(math.atan2(-d.z, d.x))
+        # the clavicle takes a share of the elevation, as a real shoulder does
+        rig.rotate_about(arm, "LeftShoulder", (0.0, 1.0, 0.0), -ang * SHOULDER_SHARE)
+        rig.rotate_about(arm, "LeftUpperArm", (0.0, 1.0, 0.0), -ang * (1.0 - SHOULDER_SHARE))
+        info = f"upper arm raised {ang:.1f} deg ({SHOULDER_SHARE:.0%} at the clavicle)"
+    if test == "body_stride":
+        b = arm.data.bones
+        leg = (b["LeftFoot"].head_local - b["LeftUpperLeg"].head_local).length
+        drop = leg - math.sqrt(leg * leg - STRIDE * STRIDE)
+        arm.pose.bones["Hips"].location = (0.0, 0.0, 0.0)
+        hips = arm.pose.bones["Hips"]
+        rest = b["Hips"].matrix_local.to_3x3()
+        hips.location = rest.transposed() @ Vector((0.0, 0.0, -drop))
+        bpy.context.view_layer.update()
+        step(arm, "Left", STRIDE)
+        step(arm, "Right", -STRIDE)
+        info = f"stride {2 * STRIDE:.2f} m, hips down {drop * 1000:.1f} mm"
+    bpy.context.view_layer.update()
+    return info

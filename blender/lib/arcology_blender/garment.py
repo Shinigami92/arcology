@@ -358,3 +358,164 @@ def smooth_weights(ob, indices, groups, iterations=6, factor=0.5):
                 vg.add([int(vi)], float(w[vi, i]), "REPLACE")
             else:
                 vg.remove([int(vi)])
+
+
+# --- whole-body garments (coat, top, trousers, boots) --------------------------------------
+class WeightSampler:
+    """Vertex-group weights of a mesh (the skin) at arbitrary world points: the nearest
+    point on its surface, the weights interpolated barycentrically in that triangle
+    (what Data Transfer's "nearest face interpolated" does, but per point and in plain
+    Python, so two garments evaluated at the same point get identical weights: a sleeve's
+    armhole and the coat body sewn to it). `groups` limits the groups read; results are
+    normalized dicts {group: weight}."""
+
+    def __init__(self, src, groups=None):
+        me = src.data
+        mw = src.matrix_world
+        me.calc_loop_triangles()
+        self.verts = [mw @ v.co for v in me.vertices]
+        self.tris = [tuple(t.vertices) for t in me.loop_triangles]
+        self.bvh = BVHTree.FromPolygons(self.verts, self.tris, all_triangles=True)
+        keep = None if groups is None else set(groups)
+        names = {vg.index: vg.name for vg in src.vertex_groups if keep is None or vg.name in keep}
+        self.w = [{names[g.group]: g.weight for g in v.groups if g.group in names and g.weight > 0.0}
+                  for v in me.vertices]
+
+    def at(self, point):
+        from mathutils.geometry import barycentric_transform
+
+        loc, _, idx, _ = self.bvh.find_nearest(Vector(point))
+        a, b, c = self.tris[idx]
+        bary = barycentric_transform(loc, self.verts[a], self.verts[b], self.verts[c],
+                                     Vector((1.0, 0.0, 0.0)), Vector((0.0, 1.0, 0.0)), Vector((0.0, 0.0, 1.0)))
+        out = {}
+        for vi, f in zip((a, b, c), bary):
+            f = min(max(f, 0.0), 1.0)
+            for k, w in self.w[vi].items():
+                out[k] = out.get(k, 0.0) + w * f
+        total = sum(out.values())
+        return {k: w / total for k, w in out.items()} if total > 0.0 else out
+
+
+def limit_dict(weights, limit=4, epsilon=1e-4):
+    """A weight dict's `limit` largest entries above `epsilon`, normalized (the rule of
+    rig.limit_weights for weights still held in Python)."""
+    kept = sorted(((w, k) for k, w in weights.items() if w > epsilon), reverse=True)[:limit]
+    total = sum(w for w, _ in kept) or 1.0
+    return {k: w / total for w, k in kept}
+
+
+def relax_shell(ob, bvh, clearance, iterations=12, factor=0.5, fixed=None):
+    """Drape a shell (a garment offset from the skin) like fabric: each iteration moves
+    every free vertex toward the mean of its edge neighbors by `factor` (bridging concave
+    skin: the cleavage, the small of the back, between the legs), then pushes it back out
+    of the skin `bvh` until it is at least `clearance(i, co)` meters outside along the
+    skin's normal at the nearest point. `fixed`: vertex indices that don't move. Works in
+    the object's local coordinates (build the BVH in the same space)."""
+    me = ob.data
+    n = len(me.vertices)
+    co = np.empty(n * 3)
+    me.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    edges = np.empty(len(me.edges) * 2, dtype=np.int64)
+    me.edges.foreach_get("vertices", edges)
+    edges = edges.reshape(-1, 2)
+    deg = np.bincount(edges.ravel(), minlength=n).astype(float)
+    free = np.ones(n, dtype=bool)
+    if fixed is not None:
+        free[list(fixed)] = False
+    need = [clearance(i, Vector(co[i])) for i in range(n)]
+    for _ in range(iterations):
+        acc = np.zeros_like(co)
+        np.add.at(acc, edges[:, 0], co[edges[:, 1]])
+        np.add.at(acc, edges[:, 1], co[edges[:, 0]])
+        mean = acc / np.maximum(deg, 1.0)[:, None]
+        co[free] = (1.0 - factor) * co[free] + factor * mean[free]
+        for i in np.nonzero(free)[0]:
+            p = Vector(co[i])
+            loc, nrm, _, _ = bvh.find_nearest(p)
+            if loc is None:
+                continue
+            d = (p - loc).dot(nrm)
+            if d < need[i]:
+                co[i] = loc + nrm * need[i]
+    me.vertices.foreach_set("co", co.ravel())
+    me.update()
+
+
+def boundary_loop(verts):
+    """Order bmesh vertices that form one closed boundary loop (e.g. the edge of a hole cut
+    into a surface) by walking their boundary edges from verts[0] (pass a list in a
+    deterministic order). Returns the ordered list."""
+    pool = set(verts)
+    start = verts[0]                  # (not next(iter(pool)): sets of bmesh elements iterate by address)
+    loop, prev, cur = [start], None, start
+    while True:
+        nxt = [e.other_vert(cur) for e in cur.link_edges if e.is_boundary and e.other_vert(cur) in pool
+               and e.other_vert(cur) is not prev]
+        if not nxt or nxt[0] is start:
+            break
+        prev, cur = cur, nxt[0]
+        loop.append(cur)
+        if len(loop) > len(pool):
+            break
+    return loop
+
+
+def zip_loops(bm, loop_a, loop_b, center, axis):
+    """Bridge two closed, ordered vertex loops around a common `axis` through `center` (an
+    armhole cut into a coat body and a band around the sleeve's seam ring) with
+    triangles, also when their vertex counts differ: loop_b is turned to wind the same
+    way around the axis as loop_a and to start at the vertex nearest loop_a[0], then both
+    are merged by their share of arc length. The strip is wound consistently; flip it
+    with `orient` if needed. Returns the new faces."""
+    axis = Vector(axis).normalized()
+    c = Vector(center)
+
+    def winding(loop):
+        s = 0.0
+        for v, w in zip(loop, loop[1:] + loop[:1]):
+            s += (v.co - c).cross(w.co - c).dot(axis)
+        return s
+
+    a = list(loop_a)
+    b = list(loop_b)
+    if (winding(a) > 0.0) != (winding(b) > 0.0):
+        b = b[::-1]
+    k = min(range(len(b)), key=lambda i: (b[i].co - a[0].co).length_squared)
+    b = b[k:] + b[:k]
+
+    def shares(loop):
+        acc = [0.0]
+        for v, w in zip(loop, loop[1:] + loop[:1]):
+            acc.append(acc[-1] + (w.co - v.co).length)
+        return [x / acc[-1] for x in acc]
+
+    sa, sb = shares(a), shares(b)
+    a, b = a + [a[0]], b + [b[0]]
+    faces = []
+    i = j = 0
+    while i < len(a) - 1 or j < len(b) - 1:
+        if j >= len(b) - 1 or (i < len(a) - 1 and sa[i + 1] <= sb[j + 1]):
+            tri = (a[i], a[i + 1], b[j])
+            i += 1
+        else:
+            tri = (a[i], b[j + 1], b[j])
+            j += 1
+        if len(set(tri)) == 3 and bm.faces.get(tri) is None:
+            faces.append(bm.faces.new(tri))
+    return faces
+
+
+def delete_faces(ob, faces):
+    """Delete faces by index (and the vertices left without faces). Returns the count."""
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    bm.faces.ensure_lookup_table()
+    doomed = [bm.faces[i] for i in sorted(set(faces))]
+    bmesh.ops.delete(bm, geom=doomed, context="FACES")
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    bm.to_mesh(ob.data)
+    bm.free()
+    ob.data.update()
+    return len(doomed)

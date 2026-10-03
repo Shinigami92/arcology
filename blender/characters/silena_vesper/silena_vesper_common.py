@@ -5,10 +5,13 @@ proportions, glove and sleeve contracts, paths and parts. Built on blender/lib
 Stage 1 = the gloved hands (glove.py, leather.py, filigree.py, poses.py); stage 2
 = the coat sleeves over them (sleeve.py, coat_leather.py, embroidery.py): each
 arm is one glb, glove + sleeve from the shoulder to the fingertips on the
-`<Side>UpperArm` subtree plus a `<Side>LowerArmTwist` bone. The full MPFB body
-(`Body`) and its humanoid skeleton (`Armature`) are built once and kept in the
-.blend; every exported part is cut from or fitted over them (later stages: body,
-head). Render-only test poses: test_poses.py.
+`<Side>UpperArm` subtree plus a `<Side>LowerArmTwist` bone. Stage 3 = the body
+(outfit.py and its parts: coat.py with the collar, clothes.py, boots.py, belt.py,
+head.py, outfit_materials.py, ornaments.py; outfit_bake.py): one glb with the whole
+skeleton (plus six coat chains) and the meshes `Body`, `HeadMesh`, `Collar`. The MPFB
+human (`Human`) and its humanoid skeleton (`Armature`) are built once and kept in the
+.blend; every exported part is cut from or fitted over them. Render-only test poses:
+test_poses.py (arms and body).
 
 Run the stages with Blender 5.2 in background mode, from the repo root:
 
@@ -137,6 +140,55 @@ def twist_inflation(t):
 # Poses (glTF animation names; Godot's hand blend tree mixes them per finger)
 POSES = ("Open", "Grip")
 GRIP_DIAMETER = 0.038        # controller handle
+
+# --- Stage 3: the full body (outfit.py and its parts) ------------------------------------
+BODY_GLB = os.path.join(GLB_DIR, f"{NAME}_body.glb")
+BODY_TRI_BUDGET = 70000      # mesh "Body" (arms included)
+HEAD_TRI_BUDGET = 10000
+COLLAR_TRI_BUDGET = 2000
+MAX_BONES = 100
+COAT_BODY_MAT = "SilenaCoatBody"   # coat body + collar (baked atlas)
+OUTFIT_MAT = "SilenaOutfit"        # top, belt and its items, trousers, boots, hair, eyes (baked atlas)
+SKIN_MAT = "SilenaSkin"            # MPFB's GAMEENGINE skin (renamed)
+GLOW_MAT = "SilenaPasskeyGlow"     # the passkey's strip: plain emissive, Godot switches it
+
+# Coat skirt chains (spring bones in Godot): six chains of four bones from the waist to the
+# hem, children of Hips, evenly spaced around the skirt from her left front edge around the
+# back to her right front edge (coat.chain_points).
+COAT_CHAINS = ("FrontLeft", "SideLeft", "BackLeft", "BackRight", "SideRight", "FrontRight")
+CHAIN_BONES = 4
+CHAIN_INSET = 0.012          # chain joints this far inside the coat's outer surface
+
+
+def chain_names(chain):
+    return [f"Coat{chain}{k}" for k in range(1, CHAIN_BONES + 1)]
+
+
+# Body landmarks (meters, rest pose; from the MPFB body built above)
+WAIST_Z = 1.14               # the coat's skirt hangs from here (chain roots)
+HEM_Z = 0.125                # ankle length
+BELT_Z = (0.975, 1.030)      # belt bottom / top edge at the back (the front sits 1.5 cm lower)
+BELT_FRONT_DROP = 0.015
+TOP_HEM_Z = 0.985            # the top ends under the belt
+TROUSER_TOP_Z = 1.005        # trouser waistband, under the belt
+TROUSER_BOTTOM_Z = 0.34      # tucked into the boots
+BOOT_TOP_Z = 0.425           # boot shaft top (mid-calf)
+SOLE_Z = -0.012              # boot sole contact plane (the bare foot stands at z = 0)
+HEAD_CUT_Z = (1.605, 1.665)  # Head / Body skin split: front, back (neck above the collar's base)
+
+# Palette (linear) beyond the gloves'
+FABRIC = (0.0048, 0.0044, 0.0062)          # #0F0E12 fabric black
+UNDERLAYER = (0.034, 0.016, 0.070)         # deep violet satin under the lace
+TECH_VIOLET = (0.198, 0.028, 1.0)          # #7B2FFF passkey glow
+HAIR = (0.0035, 0.0030, 0.0050)            # black with a violet sheen
+STEEL = (0.42, 0.43, 0.45)
+RUBBER = (0.012, 0.011, 0.012)
+
+
+def outfit_parts(name):
+    """Objects of one stage-3 part (tags set by outfit.py: coat, collar, top, trousers,
+    boots, belt, head, hair, skin_v)."""
+    return part_objects(name, mesh_only=True)
 
 
 # --- Parts (tagged in build.py) ------------------------------------------------------

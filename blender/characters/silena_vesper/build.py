@@ -1,6 +1,8 @@
-"""Stages 1-2 build: MPFB body + humanoid skeleton (with LowerArmTwist bones), the left
-glove (geometry, weights, procedural leather), the hand poses, the left coat sleeve
-(geometry, weights, procedural coat leather); saves the .blend.
+"""Build: MPFB body + humanoid skeleton (with LowerArmTwist bones), the left glove
+(geometry, weights, procedural leather), the hand poses, the left coat sleeve (geometry,
+weights, procedural coat leather) (stages 1-2), then the body (stage 3, outfit.py: coat
+body and collar sewn to the sleeves, top, trousers, boots, belt and its items, head,
+visible skin, the coat's spring chains); saves the .blend.
 
   blender -b --factory-startup --python blender/characters/silena_vesper/build.py
 
@@ -23,6 +25,7 @@ from silena_vesper_common import (  # noqa: E402
 import coat_leather  # noqa: E402
 import glove as glove_geo  # noqa: E402
 import leather  # noqa: E402
+import outfit  # noqa: E402
 import poses  # noqa: E402
 import sleeve as sleeve_geo  # noqa: E402
 from arcology_blender import garment, human, rig  # noqa: E402
@@ -210,14 +213,16 @@ def main():
     weight_sleeve(sl, skin, arm, sf, "Left")
     sl.data.materials.append(coat_leather.src_coat(sf))
     arm["t_elbow"], arm["t_shoulder"] = sf.t_E, sf.t_S
+    sl["rim_ring"] = sb.b_end + 1          # the dome's first ring: stage 3 sews the coat body to it
     print(f"SLEEVE t_elbow={sf.t_E:.4f} t_shoulder={sf.t_S:.4f} rings={len(sb.vrings)}")
     print(f"GLOVE cut {cut_hidden_glove(ob, hf)} hidden faces")
+    print(f"TRIS glove_left={tri_count(ob)} sleeve_left={tri_count(sl)} arm_left={tri_count(ob) + tri_count(sl)}")
 
+    outfit.build()                         # stage 3: the body (after the arms, which it doesn't change)
     for o in (body, skin):
         o.hide_render = True
         o.hide_set(True)
     ref.hide_render = True
-    print(f"TRIS glove_left={tri_count(ob)} sleeve_left={tri_count(sl)} arm_left={tri_count(ob) + tri_count(sl)}")
     save_blend(BLEND)
 
 

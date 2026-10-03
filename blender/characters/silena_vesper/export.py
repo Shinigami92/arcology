@@ -1,13 +1,21 @@
-"""Stage 3: one glb per arm into assets/characters/silena_vesper/ (not saved).
+"""Export: the body glb into assets/characters/silena_vesper/ (not saved); with
+`-- --arms` also one glb per arm (stage 2, retired from the game in D-041).
 
   blender -b --factory-startup blender/characters/silena_vesper.blend --python blender/characters/silena_vesper/export.py
 
-Each glb (`silena_vesper_arm_<side>.glb`) holds a copy of the skeleton pruned to
+Each arm glb (`silena_vesper_arm_<side>.glb`) holds a copy of the skeleton pruned to
 `<Side>UpperArm` and below (upper arm, lower arm, LowerArmTwist, hand, fingers,
 OpenXR palm/metacarpal/tip joints) and the arm (glove + coat sleeve, one mesh
 `Arm<Side>` with the materials SilenaGlove and SilenaCoat) bound to it, in body
 coordinates (Godot places the hand at the controller and solves the elbow), with
 the hand poses as animations (`Open`, `Grip`).
+
+`silena_vesper_body.glb` holds the whole skeleton (`Armature`: humanoid bones, OpenXR
+hand joints, LowerArmTwist, the coat's spring chains) and three meshes in body
+coordinates: `Body` (arms, coat, clothes, belt and items, visible skin), `HeadMesh`
+(head, neck above the collar, ears, hair; shadow-only in first person) and `Collar`,
+with the same `Open` and `Grip` animations. No mesh may share a name with a bone: glTF
+puts nodes in one namespace and Godot's importer renames the bone (`Head` -> `Head_2`).
 """
 
 import os
@@ -17,8 +25,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bpy  # noqa: E402
 
-from silena_vesper_common import GLB, arm_mesh, armature  # noqa: E402
-from arcology_blender import rig  # noqa: E402
+from silena_vesper_common import BODY_GLB, GLB, arm_mesh, armature  # noqa: E402
+from arcology_blender import rig, scene  # noqa: E402
 from arcology_blender.export import export_glb  # noqa: E402
 
 
@@ -53,9 +61,22 @@ def export_side(side):
     src_arm.name, src_arm.data.name, src_mesh.name, src_mesh.data.name = names
 
 
+def export_body():
+    arm = armature()
+    meshes = [bpy.data.objects[n] for n in ("Body", "HeadMesh", "Collar")]
+    for tr in arm.animation_data.nla_tracks:
+        tr.mute = False
+    for ob in meshes:
+        rig.limit_weights(ob, arm, 4)
+    bpy.context.view_layer.update()
+    export_glb([arm] + meshes, BODY_GLB, rigged=True)
+
+
 def main():
-    for side in ("Left", "Right"):
-        export_side(side)
+    if "--arms" in scene.script_args():
+        for side in ("Left", "Right"):
+            export_side(side)
+    export_body()
 
 
 if __name__ == "__main__":

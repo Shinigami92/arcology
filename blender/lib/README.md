@@ -12,7 +12,9 @@ builder: many assets from one JSON, shared trim sheet instead of a per-part bake
 start from an MPFB human (`human`) on a humanoid skeleton (`rig`), dress it with shells and lofts weighted from the
 skin (`garment`) and export with `export_glb(..., rigged=True)`; example: `blender/characters/silena_vesper/` (gloves:
 hand shell + lofted cuff, grip solved against a handle, mirrored right side sharing the bake; coat sleeves: a loft
-along the bent arm's centerline, a twist bone, test poses posed like the engine's IK).
+along the bent arm's centerline, a twist bone, test poses posed like the engine's IK; the body: skin shells draped
+over the skin, a long coat from meridian profiles and skirt rings sewn to the sleeves' armholes, spring-bone chains
+in the skirt, belt items resting on the body, the head/body skin split on shared points).
 
 ## Stage scripts
 
@@ -201,6 +203,8 @@ from the repo root (Blender 5.2: `"C:/Program Files/Blender Foundation/Blender 5
 - test poses (render/verify only): `two_bone_pose(arm, upper, lower, end, target, pole, end_rotation)` engine-style two-bone IK;
   `twist_share(arm, lower, end, twist, share=0.7)` turn a twist bone by a share of `end`'s roll against `lower` (returns the roll);
   `rotate_about(arm, bone, axis, degrees)` extra turn about an armature-space axis through the bone's head
+- `add_bone_chain(arm, parent, names, points, normals=None)` connected deforming chain through points (spring bones: coat tails, hair), roll from normals
+- `chain_weights(arm, chains, point, power=3, joint_blend=0.3)` weights of a point hanging between bone chains (two nearest chains by inverse distance, smooth joints)
 
 ### garment (clothing over MPFB skin, D-037)
 - `skin_copy(body, name)` static copy of the body: shape keys mixed in, world coordinates, vertex groups kept (cut parts and weight sources from it)
@@ -211,6 +215,10 @@ from the repo root (Blender 5.2: `"C:/Program Files/Blender Foundation/Blender 5
 - `transfer_weights(src, dst, groups)` Data Transfer, nearest face interpolated, applied; `weights_of(ob)`, `set_weights(ob, weights)`
 - `rigid_blend(weights, bone, factor)` make cuffs/buckles rigid on one bone; `smooth_weights(ob, indices, groups, iterations, factor)` softer joints (knuckles, thumb base keep volume)
 - `split_weights(weights, src, dst, factor)` move a share of one bone's weight to another (LowerArm -> LowerArmTwist toward the wrist)
+- `WeightSampler(src, groups).at(point)` skin weights at any point (nearest face, barycentric), identical for coincident points of two garments; `limit_dict(w, 4)`
+- `relax_shell(ob, bvh, clearance(i, co), iterations, factor, fixed)` drape an offset shell: Laplacian steps, pushed back out to the clearance (bridges cleavage, crotch, hollows)
+- `zip_loops(bm, loop_a, loop_b, center, axis)` triangle strip between two ordered closed loops of any vertex counts (an armhole to a sleeve's band); `boundary_loop(verts)` orders a hole's edge
+- `delete_faces(ob, faces)` faces by index and the vertices left over (hidden skin and garment layers)
 
 ### export
 - `export_glb(objs, path, rigged=False)` Y up, transforms applied, textures embedded, triangulated for tangents;
@@ -272,6 +280,17 @@ from the repo root (Blender 5.2: `"C:/Program Files/Blender Foundation/Blender 5
   `helper-*`, `Left`/`Right`/`Mid`) aren't bones: `rig.limit_weights` only touches deforming bones.
 - **Vertex group names live on the mesh** (Blender 4+): a copied mesh brings its group names, so a new object
   using it already has them; rename them (`rig.mirror_mesh`) instead of creating new ones, or weights point at the old names.
+- **Empty groups clash when mirroring:** `transfer_weights` (and `skin_copy`, whose copy already carries the
+  mesh's group names: it adds empty `*.001` duplicates) leave groups for every source bone; `rig.mirror_mesh` then
+  renames `LeftFoot` onto an existing empty `RightFoot` as `RightFoot.001` and the mirrored weights are lost. Remove
+  empty and non-bone groups before mirroring.
+- **Mesh names must differ from bone names:** glTF puts bones and meshes in one node namespace; Godot's importer
+  renames the bone (a mesh `Head` turns the `Head` bone into `Head_2` and breaks the humanoid profile). Silena's head
+  mesh is `HeadMesh`.
+- **MPFB's GAMEENGINE skin links an alpha map** into the BSDF: the glTF exporter writes a masked/blended
+  material. Unlink it for an opaque skin (`silena_vesper/outfit.py`, `opaque_skin`).
+- **Cycles renders back faces, Godot culls them:** first-person stills from inside a body show the inside of the
+  neck and open garments; emulate culling for those (`silena_vesper/render.py`, `BackfaceCulling`).
 - **Rest channels vanish:** the glTF exporter drops pose channels equal to the rest pose, so an "Open" pose
   exports almost empty. Godot blends missing tracks as rest, so blending between poses still works.
 

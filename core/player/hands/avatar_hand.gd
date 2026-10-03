@@ -1,7 +1,11 @@
 @tool
 class_name AvatarHand
 extends XRToolsHand
-## XRToolsHand for the avatar's rigged hands (D-037, D-039).
+## XRToolsHand for the avatar's hands (D-037, D-039, D-041). The visible hand
+## belongs to the AvatarBody; this node keeps XR Tools' hand behavior (follows
+## the controller and collision hand, palm offset, grab pose overrides) and
+## offers [member target], where the body's hand bone goes, and the finger
+## curls, which it sends to the body.
 ##
 ## Each finger curls on the control it rests on, through the finger_* OpenXR
 ## actions (openxr_action_map.tres). Steam Frame: index on the bumper, middle
@@ -10,14 +14,15 @@ extends XRToolsHand
 ## the grip. Touching a control curls its finger part way, pressing it fully.
 ## Controllers without finger_* bindings fall back to XR Tools' grip/trigger.
 ##
-## XR Tools swaps its own hand animations into the blend tree (default_pose,
-## pose overrides), whose tracks use the XR Tools bone names; without a
-## default_pose this hand keeps the model's "Open" and "Grip". XR Tools pose
-## areas (per-object grab poses) would still swap in XR Tools animations.
+## XR Tools would swap its own hand animations into a blend tree (default_pose,
+## pose overrides); this hand has none (its AnimationTree child only exists
+## because XRToolsHand expects one), so per-object grab poses need avatar
+## poses first.
 ##
-## Scene layout (written by tools/player/avatar_hands.gd): the first child is
-## an Offset node that XR Tools moves to the controller's palm offset; the glb
-## model sits under it, fitted onto where the XR Tools hand used to be.
+## Scene layout (written by tools/player/avatar.gd): the first child is an
+## Offset node that XR Tools moves to the controller's palm offset; under it
+## HandTarget, the body's hand bone fitted onto where the XR Tools hand used
+## to be (D-038).
 
 const FINGERS: Array[StringName] = [&"Index", &"Middle", &"Ring", &"Thumb"]
 
@@ -28,8 +33,23 @@ const FINGERS: Array[StringName] = [&"Index", &"Middle", &"Ring", &"Thumb"]
 ## How fast a finger follows its control (full curl per second).
 @export var finger_speed := 14.0
 
+## "Left" or "Right", from the controller.
+var side := ""
+## Where the body's hand bone goes.
+var target: Node3D
+
 var _curl: Array[float] = [0.0, 0.0, 0.0, 0.0]
 var _goal: Array[float] = [0.0, 0.0, 0.0, 0.0]
+var _body: AvatarBody
+
+
+func _ready() -> void:
+	super()
+	if Engine.is_editor_hint():
+		return
+	side = "Right" if _controller and _controller.tracker == &"right_hand" else "Left"
+	target = get_node_or_null("Offset/HandTarget") as Node3D
+	add_to_group(&"avatar_hands")
 
 
 func _update_pose() -> void:
@@ -40,12 +60,12 @@ func _update_pose() -> void:
 
 func _physics_process(delta: float) -> void:
 	super(delta)
-	if Engine.is_editor_hint() or not _controller or not _anim_tree:
+	if Engine.is_editor_hint() or not _controller:
 		return
 	_read_goals()
 	for i in FINGERS.size():
 		_curl[i] = move_toward(_curl[i], _goal[i], finger_speed * delta)
-		_anim_tree.set("parameters/%s/blend_amount" % FINGERS[i], _curl[i])
+	_send()
 
 
 ## Forces the curl as XR Tools does: trigger for the index, grip for the rest
@@ -56,8 +76,14 @@ func force_grip_trigger(grip: float = -1.0, trigger: float = -1.0) -> void:
 	if grip >= 0.0 or trigger >= 0.0:
 		_read_goals()
 		_curl = _goal.duplicate()
-		for i in FINGERS.size():
-			_anim_tree.set("parameters/%s/blend_amount" % FINGERS[i], _curl[i])
+		_send()
+
+
+func _send() -> void:
+	if not is_instance_valid(_body):
+		_body = get_tree().get_first_node_in_group(&"avatar_body") as AvatarBody
+	if _body:
+		_body.set_finger_curls(side, _curl)
 
 
 func _read_goals() -> void:

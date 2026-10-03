@@ -124,6 +124,7 @@ func recenter() -> void:
 	else:
 		XRServer.center_on_hmd(XRServer.RESET_BUT_KEEP_TILT, true)
 		_body.calibrate_player_height()
+	get_tree().call_group(&"avatar_body", &"reset")
 	await _fade_to(0.0)
 
 
@@ -149,6 +150,7 @@ func sit(seat: Seat) -> void:
 	seat.set_occupied(true)
 	seated = true
 	_stand_stick_held = 0.0
+	get_tree().call_group(&"avatar_body", &"reset")
 	await _fade_to(0.0)
 	_busy = false
 	seated_changed.emit(true)
@@ -173,6 +175,7 @@ func stand() -> void:
 	_seat.set_occupied(false)
 	_seat = null
 	seated = false
+	get_tree().call_group(&"avatar_body", &"reset")
 	await _fade_to(0.0)
 	_busy = false
 	seated_changed.emit(false)
