@@ -7,12 +7,17 @@ import bpy
 from .scene import tri_count
 
 
-def export_glb(objs, path):
+def export_glb(objs, path, rigged=False):
     """Export the objects as one glb (Y up, transforms applied, textures embedded).
 
     Meshes are triangulated at export (not saved) so MikkTSpace tangents exist
     for every mesh: n-gons from booleans and bevels otherwise export without
     tangents and the normal maps break in Godot.
+
+    `rigged=True` (characters, D-037): include the armature in `objs`; exports
+    the skin with every bone (non-deforming ones too: OpenXR tips, palms) and
+    each NLA track as an animation of the track's name (`rig.pose_action`).
+    Limit weights to 4 per vertex first (`rig.limit_weights`).
     """
     bpy.ops.object.select_all(action="DESELECT")
     for ob in objs:
@@ -29,7 +34,7 @@ def export_glb(objs, path):
             mod.quad_method = "BEAUTY"
             mod.ngon_method = "BEAUTY"
             tri_mods.append((ob, mod))
-    bpy.ops.export_scene.gltf(
+    options = dict(
         filepath=path,
         export_format="GLB",
         use_selection=True,
@@ -47,6 +52,16 @@ def export_glb(objs, path):
         export_skins=False,
         export_morph=False,
     )
+    if rigged:
+        options.update(
+            export_skins=True,
+            export_animations=True,
+            export_animation_mode="NLA_TRACKS",
+            export_def_bones=False,
+            export_all_influences=False,
+            export_optimize_animation_size=False,
+        )
+    bpy.ops.export_scene.gltf(**options)
     for ob, mod in tri_mods:
         ob.modifiers.remove(mod)
     tris = sum(tri_count(o) for o in objs)

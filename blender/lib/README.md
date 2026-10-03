@@ -8,7 +8,8 @@ lamp with emission, per-board veneer), `bed` (cloth simulation, heightfield coll
 `wardrobe_lit` (sweeps, shared props atlas, `Spread`), `blender/architecture/windows/` (spec-driven
 builder: many assets from one JSON, shared trim sheet instead of a per-part bake, `trim`),
 `blender/architecture/skirting/` (skirting swept along generated runs, `TrimMesh.polyline_sweep`),
-`blender/surfaces/` (seamless tileable floor/wall/ceiling texture sets, `surface`).
+`blender/surfaces/` (seamless tileable floor/wall/ceiling texture sets, `surface`). Characters (D-037)
+start from an MPFB human (`human`) on a humanoid skeleton (`rig`) and export with `export_glb(..., rigged=True)`.
 
 ## Stage scripts
 
@@ -173,8 +174,24 @@ from the repo root (Blender 5.2: `"C:/Program Files/Blender Foundation/Blender 5
 - `Spread([(root, offset), ...], axis=0)` context manager: move parts apart while they bake into one atlas
 - `remove_source_materials()`, `report_images()`; lower level: `uv_unwrap`, `uv_unwrap_weighted`, `bake_atlas`, `final_material`, `EmitOverride`, `pixels`
 
+### human (MPFB2 base humans, D-037; characters only)
+- `mpfb()` enable the MPFB extension in this process (works under `--factory-startup`), returns `.HumanService`, `.TargetService`, `.LocationService`
+- `create_human(rig="game_engine", race=None, **macros)` -> (body, armature): feet at the origin, facing -Y; `MACROS` sliders 0..1 (gender 0 = female)
+- `set_skin(body, name, skin_type="GAMEENGINE")`, `skin_path(name)` installed skins by folder name (glTF-safe Principled material)
+- `remove_helpers(body)` delete MPFB's helper geometry and its mask modifier (after fitting proxies: eyes, clothes)
+
+### rig (armatures for characters, D-037)
+- `GAME_ENGINE_TO_HUMANOID` MPFB `game_engine` rig -> Godot `SkeletonProfileHumanoid` names; `SIDES`, `FINGERS`
+- `rename_bones(arm, mapping)` bones and the skinned meshes' vertex groups; `skinned_meshes(arm)`
+- `add_hand_joints(arm, side, metacarpal_start, tip_length)` OpenXR joints the profile lacks: `<side>Palm`, index-little metacarpals, `<side><Finger>Tip` (non-deforming)
+- `prune_bones(arm, keep)` delete other bones, their weights move to the nearest kept ancestor
+- `extract_by_weight(ob, bones, min_weight=0.5)` keep faces weighted to those bones (a hand cut from a body)
+- `limit_weights(ob, arm, limit=4)` strongest 4 deforming weights per vertex, normalized (glTF skins)
+- `pose_action(arm, name, {bone: (x, y, z) degrees})` a pose as action + NLA track = a glTF animation `name`; bone-local axes, +Y along the bone, +X curls fingers toward the palm
+
 ### export
-- `export_glb(objs, path)` Y up, transforms applied, textures embedded, triangulated for tangents
+- `export_glb(objs, path, rigged=False)` Y up, transforms applied, textures embedded, triangulated for tangents;
+  `rigged=True` adds skin (all bones) and one animation per NLA track (pass the armature in `objs`)
 - `export_glb_at_origin(root, objs, path)` moving part with its root at the glb origin
 
 ### studio
@@ -223,6 +240,15 @@ from the repo root (Blender 5.2: `"C:/Program Files/Blender Foundation/Blender 5
   node group "glTF Material Output", and `bake.final_material`'s copy only has Occlusion. Rename it
   before importing context glbs in a stage that doesn't save (see `import_glb` in
   `blender/architecture/skirting/skirting_common.py`).
+
+- **MPFB under `--factory-startup`:** `human.mpfb()` enables the extension with `default_set=True` (MPFB reads
+  its own preferences entry; without it, registration fails with "I don't seem to exist"). The asset packs
+  live in the Blender profile (`extensions/.user/blender_org/mpfb/data`), installed once per Blender version.
+- **MPFB helpers:** the base mesh carries helper geometry (joint cubes, clothes/hair/eye fitting shells) hidden
+  by a Mask modifier; raw triangle counts include it until `human.remove_helpers`. Its vertex groups (`body`,
+  `helper-*`, `Left`/`Right`/`Mid`) aren't bones: `rig.limit_weights` only touches deforming bones.
+- **Rest channels vanish:** the glTF exporter drops pose channels equal to the rest pose, so an "Open" pose
+  exports almost empty. Godot blends missing tracks as rest, so blending between poses still works.
 
 ## Rebuild checks (byte identity)
 
