@@ -8,7 +8,8 @@ arm is one glb, glove + sleeve from the shoulder to the fingertips on the
 `<Side>UpperArm` subtree plus a `<Side>LowerArmTwist` bone. Stage 3 = the body
 (outfit.py and its parts: coat.py with the collar, clothes.py, boots.py, belt.py,
 head.py, outfit_materials.py, ornaments.py; outfit_bake.py): one glb with the whole
-skeleton (plus six coat chains) and the meshes `Body`, `HeadMesh`, `Collar`. The MPFB
+skeleton (plus six coat chains and three belt-item bones) and the meshes `Body`,
+`HeadMesh`, `Collar`. The MPFB
 human (`Human`) and its humanoid skeleton (`Armature`) are built once and kept in the
 .blend; every exported part is cut from or fitted over them. Render-only test poses:
 test_poses.py (arms and body).
@@ -146,7 +147,8 @@ BODY_GLB = os.path.join(GLB_DIR, f"{NAME}_body.glb")
 BODY_TRI_BUDGET = 70000      # mesh "Body" (arms included)
 HEAD_TRI_BUDGET = 10000
 COLLAR_TRI_BUDGET = 2000
-MAX_BONES = 100
+MAX_BONES = 104             # 99 (humanoid, OpenXR hand joints, twists, coat chains) + 3 belt-item
+                            # bones (stage 3c); nothing in the contract is unused (CLAUDE.md: 100)
 COAT_BODY_MAT = "SilenaCoatBody"   # coat body + collar (baked atlas)
 OUTFIT_MAT = "SilenaOutfit"        # top, belt and its items, trousers, boots, hair, eyes (baked atlas)
 SKIN_MAT = "SilenaSkin"            # MPFB's GAMEENGINE skin (renamed)

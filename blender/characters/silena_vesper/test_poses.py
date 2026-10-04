@@ -17,7 +17,7 @@ Poses (`TESTS`: name -> finger pose):
 import math
 
 import bpy
-from mathutils import Matrix, Vector
+from mathutils import Matrix, Quaternion, Vector
 
 from silena_vesper_common import TWIST_SHARE
 import glove as glove_geo
@@ -146,8 +146,14 @@ def apply(arm, side, test, fingers):
 # - body_stride: her left foot 15 cm forward, the right 15 cm back (30 cm apart), feet
 #   flat, the hips lowered so both feet stay on the floor (the coat's chains at rest);
 # - body_arm_raise: her left arm raised to shoulder height (upper arm horizontal), 30 % of
-#   it at the clavicle (SHOULDER_SHARE), the right arm in the fp hold.
-BODY_TESTS = {"body_rest": "Open", "body_fp": "Open", "body_stride": "Open", "body_arm_raise": "Open"}
+#   it at the clavicle (SHOULDER_SHARE), the right arm in the fp hold;
+# - body_belt_swing / body_belt_side: the bind pose with the belt items' bones turned
+#   (BELT_SWING degrees) away from the body / sideways along the belt (BELT_SIDE, the
+#   lower cuff also bent back against the upper one at the chain), as spring bones would.
+BODY_TESTS = {"body_rest": "Open", "body_fp": "Open", "body_stride": "Open", "body_arm_raise": "Open",
+              "body_belt_swing": "Open", "body_belt_side": "Open"}
+BELT_SWING = {"BeltCuffs1": 30.0, "BeltPasskey1": 25.0}
+BELT_SIDE = {"BeltCuffs1": 30.0, "BeltCuffs2": -35.0, "BeltPasskey1": 25.0}
 STRIDE = 0.15
 SHOULDER_SHARE = 0.3         # of an arm's elevation above the A-pose taken by the clavicle (Shoulder bone)
 LEG_BONES = ("UpperLeg", "LowerLeg", "Foot")
@@ -192,6 +198,14 @@ def body_apply(arm, test, fingers):
         rig.rotate_about(arm, "LeftShoulder", (0.0, 1.0, 0.0), -ang * SHOULDER_SHARE)
         rig.rotate_about(arm, "LeftUpperArm", (0.0, 1.0, 0.0), -ang * (1.0 - SHOULDER_SHARE))
         info = f"upper arm raised {ang:.1f} deg ({SHOULDER_SHARE:.0%} at the clavicle)"
+    if test in ("body_belt_swing", "body_belt_side"):
+        # about the bone's local X (Z, away from the body, swings outward) or local Z
+        # (sideways, along the belt)
+        swing = BELT_SWING if test == "body_belt_swing" else BELT_SIDE
+        axis = (1.0, 0.0, 0.0) if test == "body_belt_swing" else (0.0, 0.0, 1.0)
+        for name, deg in swing.items():
+            arm.pose.bones[name].rotation_quaternion = Quaternion(axis, math.radians(deg))
+        info = " ".join(f"{n} {d:.0f} deg" for n, d in swing.items())
     if test == "body_stride":
         b = arm.data.bones
         leg = (b["LeftFoot"].head_local - b["LeftUpperLeg"].head_local).length

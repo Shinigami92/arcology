@@ -8,7 +8,8 @@ renders shadows only as in Godot), `armpit_fp` (the same pose from outside: wher
 upper arm meets the coat), `front`, `side`, `back`, `q34` (full body), `stride`,
 `stride_front`, `stride_q34` (a 30 cm stride), `belt` and `belt_low` (close on the belt's
 items, from above and below), `armhole` and `armhole_back` (her left arm raised to
-shoulder height).
+shoulder height), `items_q34` and `items_front` (close on the hanging cuffs and passkey,
+at rest and with their bones swung out or sideways: body_belt_swing, body_belt_side).
 
 Views per shot (`SHOTS`): `fp` (first person: the camera at her eyes, looking at the
 hand), `side` (the whole arm from outside), `cuff` (close on the wrist and the
@@ -46,10 +47,13 @@ SHOTS = {  # test pose (test_poses.TESTS) -> views
 
 BODY_SHOTS = {
     "body_fp": ("fp30", "fp50", "fp70", "armpit_fp"),
-    "body_rest": ("front", "side", "back", "belt", "belt_low", "q34"),
+    "body_rest": ("front", "side", "back", "belt", "belt_low", "q34", "items_q34", "items_front"),
     "body_stride": ("stride", "stride_front", "stride_q34"),
     "body_arm_raise": ("armhole", "armhole_back"),
+    "body_belt_swing": ("items_q34", "items_front"),
+    "body_belt_side": ("items_q34", "items_front"),
 }
+ITEM_BONES = ("BeltCuffs1", "BeltCuffs2", "BeltPasskey1")
 BODY_MESHES = ("Body", "HeadMesh", "Collar")
 
 
@@ -61,6 +65,11 @@ def body_camera(arm, view):
     if view.startswith("fp"):
         p = math.radians(float(view[2:]))
         return eye, eye + Vector((0.0, -math.cos(p), -math.sin(p))), 15.0
+    if view.startswith("items_"):
+        bones = arm.data.bones
+        c = sum((bones[n].head_local + bones[n].tail_local for n in ITEM_BONES), Vector()) / (2 * len(ITEM_BONES))
+        off = Vector((-0.40, -0.50, 0.05)) if view == "items_q34" else Vector((-0.22, -0.62, 0.10))
+        return c + off, c, 70.0
     views = {
         "front": ((0.0, -4.4, 1.05), (0.0, 0.0, 0.97), 45.0),
         "side": ((4.4, -0.15, 1.05), (0.0, 0.0, 0.97), 45.0),
@@ -153,7 +162,8 @@ def render_body(opt, scene, cam, arm, shots, size):
             camera, target, lens = body_camera(arm, view)
             aim(cam, camera, target, lens)
             cam.data.clip_start = 0.02
-            path = os.path.join(opt.out, f"{NAME}_body_{view}{opt.suffix}.png")
+            stem = f"{shot}_{view}" if view.startswith("items_") else f"body_{view}"   # items_*: one per pose
+            path = os.path.join(opt.out, f"{NAME}_{stem}{opt.suffix}.png")
             print(f"SHOT body {shot} {view} {info}")
             if view.startswith("fp"):
                 with BackfaceCulling([bpy.data.objects[n] for n in BODY_MESHES]):

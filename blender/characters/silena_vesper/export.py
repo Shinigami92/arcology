@@ -11,7 +11,7 @@ coordinates (Godot places the hand at the controller and solves the elbow), with
 the hand poses as animations (`Open`, `Grip`).
 
 `silena_vesper_body.glb` holds the whole skeleton (`Armature`: humanoid bones, OpenXR
-hand joints, LowerArmTwist, the coat's spring chains) and three meshes in body
+hand joints, LowerArmTwist, the coat's spring chains, the belt items' bones) and three meshes in body
 coordinates: `Body` (arms, coat, clothes, belt and items, visible skin), `HeadMesh`
 (head, neck above the collar, ears, hair; shadow-only in first person) and `Collar`,
 with the same `Open` and `Grip` animations. No mesh may share a name with a bone: glTF

@@ -15,8 +15,9 @@ the arm bones' rest frames and the eyes in Godot axes, then re-imports the glbs
 
 Body (stage 3, `check_body`): triangles of Body / HeadMesh / Collar against the budgets,
 materials (at most 6, textures at most 2048), the skeleton (the contract's bones only,
-the coat chains' names, parents and direction, at most 100), weights (<= 4,
-normalized, nothing on a bone far from the vertex), the seams (Head and Collar meet
+the coat chains' and the belt items' names, parents and direction, at most MAX_BONES),
+weights (<= 4, normalized, nothing on a bone far from the vertex; every hanging belt
+item vertex only on its own bones, no other vertex on them), the seams (Head and Collar meet
 Body on shared points with identical weights), and every body test pose
 (test_poses.BODY_TESTS): triangles of one garment crossing another's (legs through
 the skirt, arms through the coat, the top through the coat, items through the coat).
@@ -40,6 +41,7 @@ from silena_vesper_common import (  # noqa: E402
     SKIN_MAT, SOLE_Z, TEX_SIZE, arm_mesh, armature, chain_names,
 )
 from outfit_bake import PART_IDS  # noqa: E402
+import belt as belt_geo  # noqa: E402
 import test_poses  # noqa: E402
 from arcology_blender import rig  # noqa: E402
 from arcology_blender.checks import fmt, godot, import_report  # noqa: E402
@@ -283,7 +285,64 @@ def expected_bones():
                 names.add(f"{side}{f}Metacarpal")
     for chain in COAT_CHAINS:
         names.update(chain_names(chain))
+    names.update(belt_bones())
     return names
+
+
+def belt_bones():
+    return sorted({b for bs in belt_geo.HANG_BONES.values() for b in bs})
+
+
+def check_belt_items(arm, body, head, collar):
+    """The hanging items' bones (parents, pointing down) and weights: every vertex with a
+    `hang` code only on its HANG_BONES (the chain on both cuff bones, the rest on one at
+    1.0), clips and tabs and every other vertex on none of them."""
+    from arcology_blender.checks import godot as gd
+
+    bones = arm.data.bones
+    want = {"BeltCuffs1": ("Hips", False), "BeltCuffs2": ("BeltCuffs1", True), "BeltPasskey1": ("Hips", False)}
+    for name, (parent, connect) in want.items():
+        b = bones.get(name)
+        ok = b is not None and b.parent is not None and b.parent.name == parent and b.use_connect == connect
+        down = b is not None and b.tail_local.z < b.head_local.z
+        check(ok and down, f"{name}: child of {parent}{' (connected)' if connect else ''}, pointing down")
+    belt_set = set(belt_bones())
+    hang = body.data.attributes.get(belt_geo.HANG_ATTR)
+    check(hang is not None, f"Body has the per-vertex `{belt_geo.HANG_ATTR}` codes")
+    if hang is None:
+        return
+    codes = [d.value for d in hang.data]
+    ws = weights(body, arm)
+    bad, counts = [], {}
+    for i, (c, w) in enumerate(zip(codes, ws)):
+        counts[c] = counts.get(c, 0) + 1
+        if c == belt_geo.HANG_CLIP:
+            if set(w) & belt_set:
+                bad.append((i, c, w))
+            continue
+        allowed = set(belt_geo.HANG_BONES[c])
+        rigid = len(allowed) == 1
+        if not set(w) <= allowed or (rigid and abs(w.get(next(iter(allowed)), 0.0) - 1.0) > 1e-4):
+            bad.append((i, c, w))
+    check(not bad, f"hanging items weighted only to their bones (vertices per code {dict(sorted(counts.items()))}, "
+                   f"wrong {len(bad)} {bad[:3]})")
+    for ob in (head, collar):
+        on = sum(1 for w in weights(ob, arm) if set(w) & belt_set)
+        check(on == 0, f"{ob.name}: no weights on the belt items' bones ({on})")
+    chain = [w for c, w in zip(codes, ws) if c == belt_geo.HANG_CHAIN]
+    mixed = sum(1 for w in chain if len(w) == 2)
+    print(f"  cuffs' chain: {len(chain)} vertices, {mixed} blended between BeltCuffs1 and BeltCuffs2")
+    print("  belt item bones (Godot coordinates of the glb: y up, the body faces +z; X/Y/Z = bone basis, "
+          "Y along the bone, Z away from the body):")
+    for name in want:
+        b = bones[name]
+        m = arm.matrix_world @ b.matrix_local
+        x, y, z = (m.to_3x3().col[i] for i in range(3))
+        hung = [i for i, c in enumerate(codes) if c in [k for k, v in belt_geo.HANG_BONES.items() if name in v]]
+        reach = max((body.data.vertices[i].co - b.head_local).length for i in hung)
+        print(f"    {name:13s} parent={b.parent.name:10s} head={fmt(gd(m.translation), 4)} "
+              f"tail={fmt(gd(arm.matrix_world @ b.tail_local), 4)} length={b.length:.4f} "
+              f"Y={fmt(gd(y))} X={fmt(gd(x))} Z={fmt(gd(z))} farthest vertex from the head {reach:.4f}")
 
 
 def face_parts(ob):
@@ -363,7 +422,7 @@ def check_body(arm):
         uvs = [u.name for u in ob.data.uv_layers]
         check(uvs == ["UVMap"], f"{ob.name} uv maps {uvs}")
         extra = [a.name for a in ob.data.attributes if not a.name.startswith(".") and a.name not in
-                 ("position", "sharp_face", "UVMap", "material_index", "part")]
+                 ("position", "sharp_face", "UVMap", "material_index", "part", belt_geo.HANG_ATTR)]
         check(not extra, f"{ob.name}: no build-time attributes left {extra}")
     for i, m in enumerate(body.data.materials):
         if m.name in (COAT_BODY_MAT, OUTFIT_MAT, GLOVE_MAT, COAT_MAT):
@@ -389,6 +448,7 @@ def check_body(arm):
         down = all(bones[n].tail_local.z < bones[n].head_local.z for n in cn)
         check(ok and down, f"chain {chain}: {cn[0]} child of Hips, connected, pointing down "
                            f"(head z {bones[cn[0]].head_local.z:.3f}, tail z {bones[cn[-1]].tail_local.z:.3f})")
+    check_belt_items(arm, body, head, collar)
     # weights
     for ob in (body, head, collar):
         ws = weights(ob, arm)
@@ -532,6 +592,9 @@ def main():
     for f in FAILS:
         print("  FAILED:", f)
     for path in (GLB["Left"], GLB["Right"], BODY_GLB):
+        if not os.path.exists(path):        # the arm glbs only exist after `export.py -- --arms`
+            print(f"SKIP {path} (not exported)")
+            continue
         import_report(path)
         a = [o for o in bpy.data.objects if o.type == "ARMATURE"][0]
         print(f"  BONES {len(a.data.bones)}: {', '.join(b.name for b in a.data.bones)}")

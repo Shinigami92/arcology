@@ -4,9 +4,15 @@
   front), a gunmetal frame buckle with its prong, the belt's end through a keeper,
   two pouches with snap flaps (her left and right front), a row of five vials in
   elastic loops on a leather backing (left of the buckle).
-- `Hangers` (Hips, the lower parts partly on her right thigh so they ride along when it
-  swings): handcuffs on a D-ring clip, the maglock passkey on a leather tab with its
-  violet strip (own material `SilenaPasskeyGlow`, faces with region H_GLOW).
+- `Hangers`: handcuffs on a D-ring clip, the maglock passkey on a leather tab with its
+  violet strip (own material `SilenaPasskeyGlow`, faces with region H_GLOW). The clip
+  and the tabs stay on Hips (their lower ends partly on the thigh, as before); what
+  hangs from them has its own bones for Godot's spring bones (stage 3c, `HANG_BONES`,
+  children of Hips, local Z away from the body): the cuffs' upper ring, its lock and
+  the chain on `BeltCuffs1` (from where the ring hangs in the D-ring), the lower ring
+  and its lock on `BeltCuffs2` (from the chain's middle link; the chain blends across
+  it), the passkey with its ring and glowing strip on `BeltPasskey1` (from the top of
+  its ring on the tab), each rigid.
 - `ThighStrap` (right thigh; the drop strap blends from Hips): a band around the right
   thigh with a buckle and the strap down from the belt.
 
@@ -33,6 +39,14 @@ BELT_GAP = 0.0022            # over the top / trousers
 COLUMNS = 72
 H_LEATHER, H_METAL, H_GLASS, H_POLY, H_ELASTIC, H_GLOW, H_STRAP = range(7)
 ATTRS = ("region", "hu", "hv")
+# Per-vertex int `hang` on Hangers and PasskeyGlow (kept through bake.py like the face
+# attribute `part`, for verify.py; glTF doesn't export it): which hanging piece a vertex
+# belongs to, 0 = clip or tab (no bone of its own).
+HANG_ATTR = "hang"
+HANG_CLIP, HANG_CUFFS1, HANG_CHAIN, HANG_CUFFS2, HANG_PASSKEY = range(5)
+HANG_BONES = {HANG_CUFFS1: ("BeltCuffs1",), HANG_CHAIN: ("BeltCuffs1", "BeltCuffs2"),
+              HANG_CUFFS2: ("BeltCuffs2",), HANG_PASSKEY: ("BeltPasskey1",)}
+CHAIN_BLEND = 0.009          # the chain blends BeltCuffs1 -> 2 within this of BeltCuffs2's head
 
 BUCKLE_DEG = 4.0
 TONGUE_DEGS = (6.0, 21.0)
@@ -71,16 +85,20 @@ def _farthest(bvh, origin, d, max_r=0.5):
 class Builder:
     """A bmesh with the item attributes; `add(bm2, matrix, region)` merges a part."""
 
-    def __init__(self):
+    def __init__(self, hang=False):
         self.bm = bmesh.new()
         self.L = {a: self.bm.verts.layers.float.new(a) for a in ATTRS}
+        if hang:
+            self.L[HANG_ATTR] = self.bm.verts.layers.int.new(HANG_ATTR)
 
-    def add(self, part, matrix, region, uv=None):
+    def add(self, part, matrix, region, uv=None, hang=0):
         L = self.L
         vmap = {}
         for v in part.verts:
             w = self.bm.verts.new(matrix @ v.co)
             w[L["region"]] = float(region)
+            if HANG_ATTR in L:
+                w[L[HANG_ATTR]] = hang
             u = uv(v.co) if uv else (v.co.x, v.co.z)
             w[L["hu"]], w[L["hv"]] = u
             vmap[v] = w
@@ -176,13 +194,12 @@ def build_belt(top, trousers, collection):
         _pouch(b, ring, deg)
     belt = b.to_object("Belt", collection)
     _shade_flat_regions(belt, (H_METAL,))
-    h = Builder()
-    glow = Builder()
-    _cuffs(h, ring)
-    _passkey(h, ring, glow)
+    h = Builder(hang=True)
+    glow = Builder(hang=True)
+    bones = _cuffs(h, ring) + _passkey(h, ring, glow)
     hangers = h.to_object("Hangers", collection)
     glow_ob = glow.to_object("PasskeyGlow", collection)
-    return belt, hangers, glow_ob, ring
+    return belt, hangers, glow_ob, ring, bones
 
 
 def _belt_band(b, ring):
@@ -369,7 +386,7 @@ def fit_hanging(ring, deg, parts, clear=0.005, max_tilt=32.0):
     until every vertex clears it: they rest on the thigh instead of sinking into it."""
     g = gravity_frame(ring, deg)
     pts = []
-    for bm, lm, _ in parts:
+    for bm, lm, *_ in parts:
         vs = bm.verts[:]
         step = max(1, len(vs) // 40)
         pts += [lm @ v.co for v in vs[::step]]
@@ -391,8 +408,17 @@ def fit_hanging(ring, deg, parts, clear=0.005, max_tilt=32.0):
 
 
 def _add_parts(b, m, parts):
-    for bm, lm, region in parts:
-        b.add(bm, m @ lm, region)
+    """`parts`: [(bmesh, local matrix, region[, hang])] in the item frame `m`."""
+    for bm, lm, region, *hang in parts:
+        b.add(bm, m @ lm, region, hang=hang[0] if hang else HANG_CLIP)
+
+
+def _bone_specs(m, names, joints, out):
+    """[(name, head, tail, roll normal)] in world space from item-local `joints` (one more
+    than `names`) in the item frame `m`; the bones' local Z points along local `out`."""
+    w = [m @ Vector(j) for j in joints]
+    o = (m.to_3x3() @ Vector(out)).normalized()
+    return [(n, w[k], w[k + 1], o) for k, n in enumerate(names)]
 
 
 def _cuffs(b, ring):
@@ -407,6 +433,8 @@ def _cuffs(b, ring):
     d_path = curves.round_polyline(d_path, 0.006, steps=4, closed=True)
     curves.sweep(bm, d_path, curves.circle_profile(0.0022, 8), up=(0.0, 1.0, 0.0), closed=True, caps=False)
     parts.append((bm, Matrix.Identity(4), H_METAL))
+    d_bottom = min(d_path, key=lambda p: p.z)
+    ring_ends = []
     tilt = Matrix.Rotation(math.radians(18.0), 4, "Z")
     for k, (cz, ang) in enumerate(((-0.090, 8.0), (-0.172, -12.0))):
         cm = Matrix.Translation((0.004 * (1 - 2 * k), 0.010, cz)) @ tilt @ Matrix.Rotation(math.radians(ang), 4, "Y")
@@ -418,9 +446,13 @@ def _cuffs(b, ring):
         side = 1.0 if k == 0 else -1.0
         lock = soft.soft_box((side * 0.034, 0.0, 0.004), (0.010, 0.0085, 0.030), 0.0018, step=0.02,
                              band_segments=1, panel_axis=1)
-        parts.append((bm, cm, H_METAL))
-        parts.append((lock, cm, H_METAL))
-    for j, z in enumerate((-0.1235, -0.1325, -0.1415)):
+        hang = HANG_CUFFS1 if k == 0 else HANG_CUFFS2
+        parts.append((bm, cm, H_METAL, hang))
+        parts.append((lock, cm, H_METAL, hang))
+        on_ring = [cm @ p for p in circle]
+        ring_ends.append(max(on_ring, key=lambda p: p.z) if k == 0 else min(on_ring, key=lambda p: p.z))
+    links = (-0.1235, -0.1325, -0.1415)
+    for j, z in enumerate(links):
         lm = Matrix.Translation((0.002, 0.010, z))
         if j % 2:
             lm = lm @ Matrix.Rotation(math.pi / 2, 4, "Z")
@@ -428,8 +460,16 @@ def _cuffs(b, ring):
         path = [Vector((0.0028 * math.cos(a), 0.0, 0.0058 * math.sin(a)))
                 for a in np.linspace(0.0, 2.0 * math.pi, 12, endpoint=False)]
         curves.sweep(bm, path, curves.circle_profile(0.0011, 6), up=(0.0, 1.0, 0.0), closed=True, caps=False)
-        parts.append((bm, lm, H_METAL))
-    _add_parts(b, fit_hanging(ring, CUFFS_DEG, parts), parts)
+        parts.append((bm, lm, H_METAL, HANG_CHAIN))
+    m = fit_hanging(ring, CUFFS_DEG, parts)
+    # BeltCuffs1 swings from where the upper ring hangs in the D-ring (between the D-ring's
+    # bottom and the ring's top) to the chain's middle link, BeltCuffs2 on to the lower
+    # ring's bottom (below the link, on the cuffs' center plane)
+    top, bottom = ring_ends
+    joints = ((d_bottom + top) * 0.5, Vector((0.002, 0.010, links[1])), Vector((0.002, 0.010, bottom.z)))
+    bones = _bone_specs(m, ("BeltCuffs1", "BeltCuffs2"), joints, (0.0, 1.0, 0.0))
+    _add_parts(b, m, parts)
+    return bones
 
 
 def _passkey(b, ring, glow):
@@ -442,20 +482,25 @@ def _passkey(b, ring, glow):
     ringp = [Vector((0.0075 * math.cos(a), 0.0045, -0.036 + 0.0075 * math.sin(a)))
              for a in np.linspace(0.0, 2.0 * math.pi, 14, endpoint=False)]
     curves.sweep(bm, ringp, curves.circle_profile(0.0013, 6), up=(0.0, 1.0, 0.0), closed=True, caps=False)
-    parts.append((bm, Matrix.Identity(4), H_METAL))
+    parts.append((bm, Matrix.Identity(4), H_METAL, HANG_PASSKEY))
     km = Matrix.Translation((0.0, 0.0065, -0.083)) @ Matrix.Rotation(math.radians(-6.0), 4, "Y")
     body = soft.soft_box((0.0, 0.0, 0.0), (0.031, 0.0072, 0.074), 0.0030, step=0.012, band_segments=2,
                          panel_axis=1)
-    parts.append((body, km, H_POLY))
+    parts.append((body, km, H_POLY, HANG_PASSKEY))
     eye = soft.soft_box((0.0, 0.0, 0.0405), (0.012, 0.0050, 0.012), 0.0024, step=0.02, band_segments=1,
                         panel_axis=1)
-    parts.append((eye, km, H_POLY))
+    parts.append((eye, km, H_POLY, HANG_PASSKEY))
     strip = soft.soft_box((0.0, 0.0036, -0.002), (0.0056, 0.0014, 0.050), 0.0006, step=0.01, band_segments=1,
                           panel_axis=1)
-    glow_parts.append((strip, km, H_GLOW))
+    glow_parts.append((strip, km, H_GLOW, HANG_PASSKEY))
     m = fit_hanging(ring, PASSKEY_DEG, parts + glow_parts)
+    # BeltPasskey1 swings from the top of its ring (where it hangs on the tab) to the
+    # middle of the card's bottom edge
+    top = max(ringp, key=lambda p: p.z)
+    bones = _bone_specs(m, ("BeltPasskey1",), (top, km @ Vector((0.0, 0.0, -0.037))), (0.0, 1.0, 0.0))
     _add_parts(b, m, parts)
     _add_parts(glow, m, glow_parts)
+    return bones
 
 
 # --- thigh strap ------------------------------------------------------------------------------------
@@ -560,14 +605,39 @@ def weight_rigid(ob, bone):
     garment.set_weights(ob, [{bone: 1.0} for _ in ob.data.vertices])
 
 
-def weight_hangers(ob, belt_bottom=BELT_Z[0]):
-    """Clip and tab on Hips; the hanging parts take up to 40 % of the right thigh's swing
-    toward their bottom, so the thigh doesn't run through them in a stride."""
+def add_bones(arm, specs):
+    """The hanging items' bones (`build_belt`'s specs), children of Hips, local Z away from
+    the body: BeltCuffs1 -> BeltCuffs2 (connected), BeltPasskey1."""
+    from arcology_blender import rig
+
+    chains = {}
+    for name, head, tail, out in specs:
+        chains.setdefault(name.rstrip("0123456789"), []).append((name, head, tail, out))
+    for chain in chains.values():
+        points = [chain[0][1]] + [c[2] for c in chain]
+        rig.add_bone_chain(arm, "Hips", [c[0] for c in chain], points, [c[3] for c in chain])
+
+
+def weight_hangers(ob, arm, belt_bottom=BELT_Z[0]):
+    """Clips and tabs (`hang` 0) on Hips, their lower ends taking up to 40 % of the nearer
+    thigh's swing (unchanged from stage 3a). Each hanging piece rigid on its own bone
+    (HANG_BONES, `add_bones` first); the cuffs' chain blends from BeltCuffs1 to BeltCuffs2
+    within CHAIN_BLEND of BeltCuffs2's head, along the bone."""
+    hang = ob.data.attributes[HANG_ATTR].data
+    b2 = arm.data.bones["BeltCuffs2"]
+    axis = (b2.tail_local - b2.head_local).normalized()
     out = []
     for v in ob.data.vertices:
-        f = 0.40 * smoothstep(belt_bottom - v.co.z, 0.03, 0.20)
-        side = "Right" if v.co.x < 0.0 else "Left"
-        out.append({"Hips": 1.0 - f, f"{side}UpperLeg": f} if f > 0.0 else {"Hips": 1.0})
+        h = hang[v.index].value
+        if h == HANG_CLIP:
+            f = 0.40 * smoothstep(belt_bottom - v.co.z, 0.03, 0.20)
+            side = "Right" if v.co.x < 0.0 else "Left"
+            out.append({"Hips": 1.0 - f, f"{side}UpperLeg": f} if f > 0.0 else {"Hips": 1.0})
+        elif h == HANG_CHAIN:
+            f = smoothstep((v.co - b2.head_local).dot(axis), -CHAIN_BLEND, CHAIN_BLEND)
+            out.append({k: w for k, w in (("BeltCuffs1", 1.0 - f), ("BeltCuffs2", f)) if w > 0.0})
+        else:
+            out.append({HANG_BONES[h][0]: 1.0})
     garment.set_weights(ob, out)
 
 

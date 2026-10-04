@@ -9,6 +9,9 @@ one `Armature` and tagged (scene.tag) for bake.py:
   coat, collar (coat body atlas); top, trousers, boot_left, belt, hangers, thigh_strap,
   hair (outfit atlas); passkey_glow (plain emissive); head, skin_v (MPFB skin).
 
+The hanging belt items get their own bones (belt.add_bones: BeltCuffs1, BeltCuffs2,
+BeltPasskey1, after the coat chains) for Godot's spring bones (stage 3c).
+
 The right boot is the left one mirrored in bake.py (one texture region for both).
 """
 
@@ -142,7 +145,7 @@ def build():
     top = clothes.build_top(skin, coll)
     trousers = clothes.build_trousers(skin, coll)
     boot = boots.build_boot(skin, arm, coll, "Left")
-    belt_ob, hangers, glow, ring = belt.build_belt(top, trousers, coll)
+    belt_ob, hangers, glow, ring, belt_bones = belt.build_belt(top, trousers, coll)
     strap = belt.build_thigh_strap(trousers, arm, coll, ring)
     obst = obstacles(skin, [top, trousers, boot, belt_ob, hangers, glow, strap], mirrored=[boot])
     coat_ob, info = coat.build_coat(skin, obst, sleeve_rims(), coll, top)
@@ -153,11 +156,12 @@ def build():
     for ob in (top, trousers, boot):
         weight_from_skin(ob, skin, arm)
     belt.weight_rigid(belt_ob, "Hips")
-    belt.weight_hangers(hangers)
-    belt.weight_hangers(glow)
     belt.weight_thigh_strap(strap)
     coat.weight_coat(coat_ob, skin, arm, info)
     coat.weight_collar(collar, coat_ob, arm, info)
+    belt.add_bones(arm, belt_bones)     # stage 3c: the hanging items' spring bones (after the chains)
+    belt.weight_hangers(hangers, arm)
+    belt.weight_hangers(glow, arm)
 
     head.add_ears(human)
     head_ob, skin_v = head.split_skin(human, coll)
