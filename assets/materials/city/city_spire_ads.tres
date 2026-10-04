@@ -1,0 +1,13 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/architecture/city/_kit/spire/city_spire_ads_albedo.png" id="1_city_spire_ads_albedo"]
+[ext_resource type="Texture2D" path="res://assets/architecture/city/_kit/spire/city_spire_ads_emission.png" id="2_city_spire_ads_emission"]
+
+[resource]
+resource_name = "city_spire_ads"
+albedo_texture = ExtResource("1_city_spire_ads_albedo")
+roughness = 0.28
+emission_enabled = true
+emission = Color(0, 0, 0, 1)
+emission_energy_multiplier = 4.0
+emission_texture = ExtResource("2_city_spire_ads_emission")

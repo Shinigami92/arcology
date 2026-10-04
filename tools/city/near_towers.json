@@ -1,0 +1,21 @@
+{
+	"_doc": "Near ring of the city view: hero towers built in Blender (blender/architecture/city/<style>/), placed by the Godot skyline generator. Godot coordinates, meters: x east, z south, y up; the apartment windows face -Z from z = -3.1 with the eye at about y = 1.6; the street is y = -180 (D-008). pos = base center on the street (x, z); footprint = [width along local X, depth along local Z] at the base; top_y = world height of the roof slab (crowns, antennas and masts may rise above it); yaw = degrees about +Y; local +Z is the tower's front and faces the apartment at yaw 0. The far city (FarTowers) repeats these towers further out and keeps its cells clear of these footprints.",
+	"street_y": -180.0,
+	"eye": [0.0, 1.6, -3.0],
+	"styles": {
+		"brutalist": "Fifth Element megablocks: huge stacked concrete slabs with setbacks, deep window bays, balconies, external walkways and sky bridges, landing pads, rooftop plant and clutter, warm residential windows, small neon signs.",
+		"spire": "Coruscant / Area18 corporate spires: slender glass and dark metal towers, tapering or faceted, vertical light strips, horizontal office bands, giant holo ad panels, crowns with antennas and aircraft warning lights, cool office light."
+	},
+	"towers": [
+		{"name": "city_brutal_stacked", "style": "brutalist", "pos": [-140.0, -150.0], "footprint": [90.0, 36.0], "top_y": 45.0, "yaw": 12.0, "_doc": "Stacked slabs with two setbacks; walkway decks on the front at several heights."},
+		{"name": "city_brutal_deck", "style": "brutalist", "pos": [-20.0, -135.0], "footprint": [64.0, 44.0], "top_y": -35.0, "yaw": -4.0, "_doc": "Roof 35 m below the window, the closest roof the player looks down onto: landing pad with markings and lights, rooftop plant, a roof-edge neon sign facing the apartment."},
+		{"name": "city_brutal_terrace", "style": "brutalist", "pos": [175.0, -150.0], "footprint": [72.0, 38.0], "top_y": 15.0, "yaw": -18.0, "_doc": "Terraced front (stepping back toward the top) with planted balconies; roof just above eye level."},
+		{"name": "city_brutal_bridge", "style": "brutalist", "pos": [110.0, -330.0], "footprint": [110.0, 42.0], "top_y": 95.0, "yaw": 6.0, "_doc": "Two slab towers joined by a sky bridge around y = 0..15 (eye level); the widest silhouette."},
+		{"name": "city_brutal_ziggurat", "style": "brutalist", "pos": [-330.0, -220.0], "footprint": [96.0, 48.0], "top_y": 70.0, "yaw": 28.0, "_doc": "Stepped ziggurat profile, seen from the side-left."},
+		{"name": "city_spire_blade", "style": "spire", "pos": [45.0, -200.0], "footprint": [42.0, 30.0], "top_y": 300.0, "yaw": -8.0, "_doc": "Thin glass blade, the closest spire; a giant holo ad panel on its front around eye level (y = -10..30)."},
+		{"name": "city_spire_taper", "style": "spire", "pos": [-90.0, -300.0], "footprint": [46.0, 46.0], "top_y": 240.0, "yaw": 15.0, "_doc": "Tapers toward the top, vertical light strips on the corners."},
+		{"name": "city_spire_twin", "style": "spire", "pos": [-250.0, -330.0], "footprint": [38.0, 38.0], "top_y": 200.0, "yaw": 22.0, "_doc": "Faceted tower with a lit crown."},
+		{"name": "city_spire_crown", "style": "spire", "pos": [300.0, -320.0], "footprint": [56.0, 56.0], "top_y": 400.0, "yaw": -25.0, "_doc": "The landmark: tallest tower, antenna crown with blinking aircraft warning lights (separate emissive part), sky lobby band."},
+		{"name": "city_spire_adtower", "style": "spire", "pos": [240.0, -500.0], "footprint": [36.0, 36.0], "top_y": 230.0, "yaw": -10.0, "_doc": "Slim tower wrapped in stacked ad screens on two faces."}
+	]
+}

@@ -1,7 +1,7 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://zones/skyline/skyline_blocks.gd" id="1_blocks"]
-[ext_resource type="Shader" path="res://assets/shaders/skyline_facade.gdshader" id="2_facade"]
+[ext_resource type="Script" path="res://zones/skyline/far_towers.gd" id="1_far"]
+[ext_resource type="PackedScene" path="res://zones/skyline/near_towers.tscn" id="3_near"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_night"]
 sky_top_color = Color(0.02, 0.028, 0.055, 1)
@@ -39,20 +39,17 @@ fog_light_energy = 1.0
 fog_density = 0.0016
 fog_sky_affect = 0.0
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_facade"]
-shader = ExtResource("2_facade")
-
 [sub_resource type="PlaneMesh" id="PlaneMesh_street"]
 size = Vector2(4000, 4000)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_street"]
 albedo_color = Color(0.02, 0.02, 0.025, 1)
 emission_enabled = true
-emission = Color(1, 0.55, 0.2, 1)
-emission_energy_multiplier = 0.35
+emission = Color(1, 0.6, 0.3, 1)
+emission_energy_multiplier = 0.06
 
 [node name="Skyline" type="Node3D"]
-metadata/_doc = "World backdrop outside every zone: sky, environment, moonlight, far city. M2 world_state drives the environment; see docs/decisions.md D-008 for coordinates."
+metadata/_doc = "World backdrop outside every zone: sky, environment, moonlight, near towers (tools/props/city.py) and the far city repeating them (FarTowers). M2 world_state drives the environment; see docs/decisions.md D-008 for coordinates."
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_night")
@@ -64,10 +61,11 @@ light_energy = 0.15
 shadow_enabled = false
 sky_mode = 1
 
-[node name="Blocks" type="MultiMeshInstance3D" parent="."]
-material_override = SubResource("ShaderMaterial_facade")
-cast_shadow = 0
-script = ExtResource("1_blocks")
+[node name="NearTowers" parent="." instance=ExtResource("3_near")]
+
+[node name="FarTowers" type="Node3D" parent="." node_paths=PackedStringArray("near_towers")]
+script = ExtResource("1_far")
+near_towers = NodePath("../NearTowers")
 
 [node name="StreetGlow" type="MeshInstance3D" parent="."]
 position = Vector3(0, -180, 0)

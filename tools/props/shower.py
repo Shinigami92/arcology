@@ -23,8 +23,8 @@ from __future__ import annotations
 
 import sys
 
-from prop_scenes import (Scene, Sound, TextResource, glb_images, glb_import_text, glb_node_position, main, pickable_scene,
-                         ref, raw, write_new_file)
+from prop_scenes import (TEXTURE_IMPORT, Scene, Sound, TextResource, glb_images, glb_import_text, glb_node_position,
+                         main, pickable_scene, ref, raw, write_new_file)
 
 D = "assets/props/shower"
 BODY = f"{D}/shower_body.glb"
@@ -125,43 +125,6 @@ def handheld() -> Scene:
         holder=HAND_HOLDER_GROUP, holder_props={"center": HAND_CENTER, "snap_sound": ref("SnapSound")})
     s.sound("SnapSound", "sfx/vent_latch", volume_db=-12.0)
     return s
-
-
-TEXTURE_IMPORT = """[remap]
-
-importer="texture"
-type="CompressedTexture2D"
-
-[deps]
-
-source_file="res://{path}"
-
-[params]
-
-compress/mode=2
-compress/high_quality=false
-compress/lossy_quality=0.7
-compress/uastc_level=0
-compress/rdo_quality_loss=0.0
-compress/hdr_compression=1
-compress/normal_map={normal_map}
-compress/channel_pack=0
-mipmaps/generate=true
-mipmaps/limit=-1
-roughness/mode={roughness_mode}
-roughness/src_normal=""
-process/channel_remap/red=0
-process/channel_remap/green=1
-process/channel_remap/blue=2
-process/channel_remap/alpha=3
-process/fix_alpha_border=true
-process/premult_alpha=false
-process/normal_map_invert_y=false
-process/hdr_as_srgb=false
-process/hdr_clamp_exposure=false
-process/size_limit=0
-detect_3d/compress_to=0
-"""
 
 
 def write_imports() -> int:

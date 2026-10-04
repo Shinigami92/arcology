@@ -58,7 +58,8 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 ## City view
 
 - [M1] Simple window view.
-- [M2] Window view in layers: near facades as real, realistic geometry (simplified only where distance hides it), mid-distance as impostors/cards, far city as Blender-rendered panoramas.
+- [M2] Window view in layers: near facades as real, realistic geometry (simplified only where distance hides it), mid-distance as impostors/cards, far city as Blender-rendered panoramas. Near ring done (D-045): ten Blender towers; the far city repeats them (D-046). Next: more tower variety (types, heights, wider footprints for the far ring), then the panorama.
+- [M2] City life on the towers: blink the `<tower>_blink` meshes (warning and pad lights), animate the spires' `_ad<n>` panels (unshaded, scanlines, flicker), scale the city materials' emission with the day/night cycle.
 - [later] Upgrade a layer to real geometry when its zone is built.
 - [later] Flying traffic lanes (The Fifth Element), holographic ads, neon signage.
 - [later] Elysium-style ring visible in the sky.

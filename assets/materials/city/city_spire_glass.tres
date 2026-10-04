@@ -1,0 +1,24 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/architecture/city/_kit/spire/city_spire_glass_albedo.png" id="1_city_spire_glass_albedo"]
+[ext_resource type="Texture2D" path="res://assets/architecture/city/_kit/spire/city_spire_glass_orm.png" id="2_city_spire_glass_orm"]
+[ext_resource type="Texture2D" path="res://assets/architecture/city/_kit/spire/city_spire_glass_normal.png" id="3_city_spire_glass_normal"]
+[ext_resource type="Texture2D" path="res://assets/architecture/city/_kit/spire/city_spire_glass_emission.png" id="4_city_spire_glass_emission"]
+
+[resource]
+resource_name = "city_spire_glass"
+albedo_texture = ExtResource("1_city_spire_glass_albedo")
+metallic = 1.0
+metallic_texture = ExtResource("2_city_spire_glass_orm")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("2_city_spire_glass_orm")
+roughness_texture_channel = 1
+ao_enabled = true
+ao_texture = ExtResource("2_city_spire_glass_orm")
+ao_texture_channel = 0
+normal_enabled = true
+normal_texture = ExtResource("3_city_spire_glass_normal")
+emission_enabled = true
+emission = Color(0, 0, 0, 1)
+emission_energy_multiplier = 2.0
+emission_texture = ExtResource("4_city_spire_glass_emission")
