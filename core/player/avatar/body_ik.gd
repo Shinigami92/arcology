@@ -41,7 +41,7 @@ extends SkeletonModifier3D
 ## Most the torso lowers (m) so the legs reach their stepping feet.
 @export var max_hip_drop := 0.15
 ## How far forward of the hips the feet rest while seated (m).
-@export var seated_feet_forward := 0.42
+@export var seated_feet_forward := 0.6
 ## Share of the torso's swing taken by Hips, Spine, Chest and UpperChest (sums to 1).
 @export var spine_shares := PackedFloat32Array([0.2, 0.25, 0.25, 0.3])
 
@@ -191,7 +191,10 @@ func _process_modification_with_delta(delta: float) -> void:
 			var reach_flat := Vector2(root.x - foot.x, root.z - foot.z).length()
 			var length := (leg.upper_len + leg.lower_len) * 0.995
 			drop = maxf(drop, root.y - (foot.y + sqrt(maxf(length * length - reach_flat * reach_flat, 0.0))))
-	_hip_drop = lerpf(_hip_drop, clampf(drop, 0.0, max_hip_drop), clampf(delta * 15.0, 0.0, 1.0))
+	# Down at once (a leg must never come up short of its planted foot, or the
+	# foot gets dragged), back up eased.
+	drop = clampf(drop, 0.0, max_hip_drop)
+	_hip_drop = maxf(drop, lerpf(_hip_drop, drop, clampf(delta * 15.0, 0.0, 1.0)))
 	for i in torso_now.size():
 		torso_now[i].origin.y -= _hip_drop
 	for i in _torso.size():

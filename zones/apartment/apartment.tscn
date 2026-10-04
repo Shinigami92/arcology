@@ -985,7 +985,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 1, 0.15)
 shape = SubResource("BoxShape3D_seat0")
 
 [node name="SofaSeatSit" type="Marker3D" parent="Seats" unique_id=1984326597]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 1.27, 0.85)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 1.27, 0.72)
 
 [node name="SofaSeatStand" type="Marker3D" parent="Seats" unique_id=1077950362]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 0, 0.1)
