@@ -64,6 +64,7 @@ func _registry() -> Array[Array]:
 		["avatar", "body_ik", _test_body_ik],
 		["avatar", "walk", _test_walk],
 		["avatar", "sit_pose", _test_sit_pose],
+		["avatar", "coat_springs", _test_coat_springs],
 		["switches", "lamp_switch", _test_lamp_switches],
 		["doors_fridge", "fridge_alarm", _test_fridge_alarm],
 		["wardrobe", "wardrobe_interior", _test_wardrobe_interior],
@@ -981,6 +982,116 @@ func _test_sit_pose() -> void:
 	await _restore_hands(hands)
 	_check("avatar_sit_pose", absf(hips.y - 0.52) < 0.08 and ahead > 0.3 and bend > 60.0 and bend < 120.0 and foot.y < 0.15 and overhang.min() > 0.03,
 			"hips at %.2f m (cushion 0.44), feet %.2f m ahead, knee bent %.0f degrees, foot at %.2f m, knees %.2f / %.2f m past the cushion edge" % [hips.y, ahead, bend, foot.y, overhang[0], overhang[1]])
+
+
+## The coat skirt hangs calm when standing, swings when walking without
+## going through the legs or blowing up, and lies on the seat when sitting
+## instead of passing through it; the belt's cuffs and passkey dangle and swing
+## without sinking into the thigh (D-044).
+func _test_coat_springs() -> void:
+	var skeleton := _avatar_skeleton("avatar_coat")
+	if skeleton == null:
+		return
+	if skeleton.get_node_or_null("Springs") == null:
+		_check("avatar_coat", false, "no Springs under the avatar skeleton")
+		return
+	var hands: Array[Transform3D] = await _hands_forward()
+	# Eyes at the avatar's standing height (the headset's calibrated 1.8 m).
+	var camera := get_viewport().get_camera_3d()
+	var saved_camera := camera.position
+	camera.position.y = 1.8
+	var hips := skeleton.find_bone("Hips")
+	var joints: Array[int] = []
+	for chain: String in ["FrontLeft", "FrontRight", "SideLeft", "SideRight", "BackLeft", "BackRight"]:
+		for n in [2, 3, 4]:
+			joints.append(skeleton.find_bone("Coat%s%d" % [chain, n]))
+	var legs: Array[Array] = []
+	for side: String in SIDES:
+		legs.append([skeleton.find_bone("%sUpperLeg" % side), skeleton.find_bone("%sLowerLeg" % side), 0.07])
+		legs.append([skeleton.find_bone("%sLowerLeg" % side), skeleton.find_bone("%sFoot" % side), 0.055])
+	# Rest relation of each joint to the hips.
+	var hips_rest := skeleton.get_bone_global_rest(hips)
+	var rest_local: Array[Vector3] = []
+	for j in joints:
+		rest_local.append(hips_rest.affine_inverse() * skeleton.get_bone_global_rest(j).origin)
+
+	await _frames(60)
+	await skeleton.skeleton_updated
+	var hang := _coat_deviation(skeleton, hips, joints, rest_local)
+
+	var ground := _main.get_node("Player/PlayerBody") as XRToolsPlayerBody
+	var start := ground.global_transform
+	var forward := -start.basis.z
+	forward.y = 0.0
+	forward = forward.normalized()
+	# The items' tips (bone tail: the tail lengths in AvatarSprings).
+	var items: Array[int] = [skeleton.find_bone("BeltCuffs2"), skeleton.find_bone("BeltPasskey1")]
+	var tips: Array[Vector3] = [Vector3(0, 0.07, 0), Vector3(0, 0.09, 0)]
+	var items_rest: Array[Vector3] = []
+	for i in items.size():
+		items_rest.append(hips_rest.affine_inverse() * (skeleton.get_bone_global_rest(items[i]) * tips[i]))
+	var thigh: Array[int] = [skeleton.find_bone("RightUpperLeg"), skeleton.find_bone("RightLowerLeg")]
+	var item_swing := 0.0
+	var item_depth := 0.0
+	var swing := 0.0
+	var trail := 0.0  # back panels only: the legs don't push them much
+	var depth := 0.0
+	var finite := true
+	for frame in 108 + 60:
+		if frame < 108:
+			var t := ground.global_transform
+			t.origin += forward * (2.0 / 90.0)
+			ground.teleport(t)
+		await get_tree().physics_frame
+		await skeleton.skeleton_updated
+		swing = maxf(swing, _coat_deviation(skeleton, hips, joints, rest_local))
+		trail = maxf(trail, _coat_deviation(skeleton, hips, joints.slice(12), rest_local.slice(12)))
+		var ta := skeleton.get_bone_global_pose(thigh[0]).origin
+		var tb := skeleton.get_bone_global_pose(thigh[1]).origin
+		var hips_now := skeleton.get_bone_global_pose(hips)
+		for i in items.size():
+			var p := skeleton.get_bone_global_pose(items[i]) * tips[i]
+			finite = finite and p.is_finite()
+			item_swing = maxf(item_swing, p.distance_to(hips_now * items_rest[i]))
+			item_depth = maxf(item_depth, 0.095 + 0.015 - p.distance_to(Geometry3D.get_closest_point_to_segment(p, ta, tb)))
+		for j in joints:
+			var p := skeleton.get_bone_global_pose(j).origin
+			finite = finite and p.is_finite()
+			for leg: Array in legs:
+				var a := skeleton.get_bone_global_pose(leg[0]).origin
+				var b := skeleton.get_bone_global_pose(leg[1]).origin
+				var closest := Geometry3D.get_closest_point_to_segment(p, a, b)
+				depth = maxf(depth, float(leg[2]) + 0.03 - p.distance_to(closest))
+	ground.teleport(start)
+	await _frames(30)
+
+	var player := _main.get_node("Player") as ArcologyPlayer
+	var seat := _main.get_node("Zones/Apartment/Seats/SofaSeat") as Seat
+	await player.sit(seat)
+	await _frames(60)
+	await skeleton.skeleton_updated
+	var lowest := INF
+	for i in joints.size():
+		if i >= 6:  # side and back chains rest on the seat; the front hangs past the knees
+			lowest = minf(lowest, (skeleton.global_transform * skeleton.get_bone_global_pose(joints[i]).origin).y)
+	await player.stand()
+	camera.position = saved_camera
+	await _frames(30)
+	await _restore_hands(hands)
+	_check("avatar_belt_items", finite and item_swing > 0.005 and item_swing < 0.2 and item_depth < 0.02,
+			"cuffs and passkey swing %.3f m while walking, deepest into the thigh %.3f m" % [item_swing, item_depth])
+	_check("avatar_coat", finite and hang < 0.08 and swing < 0.5 and trail > 0.03 and trail < 0.25 and depth < 0.03 and lowest > 0.40,
+			"standing off rest %.3f m, walking: skirt off rest %.3f m (legs push the front), back trails %.3f m, deepest into a leg %.3f m; seated side/back skirt lowest at %.2f m (cushion 0.44)" % [hang, swing, trail, depth, lowest])
+
+
+## Largest distance of the coat joints from where the rest pose puts them
+## relative to the hips.
+func _coat_deviation(skeleton: Skeleton3D, hips: int, joints: Array[int], rest_local: Array[Vector3]) -> float:
+	var hips_pose := skeleton.get_bone_global_pose(hips)
+	var worst := 0.0
+	for i in joints.size():
+		worst = maxf(worst, (hips_pose * rest_local[i]).distance_to(skeleton.get_bone_global_pose(joints[i]).origin))
+	return worst
 
 
 func _test_lamp_switches() -> void:

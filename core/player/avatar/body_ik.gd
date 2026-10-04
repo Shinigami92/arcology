@@ -273,6 +273,11 @@ func _body_basis(head: Basis) -> Basis:
 	return Basis(Vector3.UP, _body_yaw)
 
 
+## The body's world velocity (smoothed hips movement).
+func velocity() -> Vector3:
+	return _velocity
+
+
 ## Snaps the body to the head's current facing (after a teleport or recenter).
 func reset() -> void:
 	_body_yaw = NAN

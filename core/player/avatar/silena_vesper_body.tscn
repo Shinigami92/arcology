@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://core/player/avatar/avatar_body.gd" id="1_body"]
 [ext_resource type="PackedScene" path="res://assets/characters/silena_vesper/silena_vesper_body.glb" id="2_model"]
 [ext_resource type="Script" path="res://core/player/avatar/body_ik.gd" id="3_ik"]
+[ext_resource type="Script" path="res://core/player/avatar/avatar_springs.gd" id="4_springs"]
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_open"]
 animation = &"Open"
@@ -113,6 +114,10 @@ metadata/_doc = "The player's body, Silena Vesper (D-037, D-041): posed by BodyI
 script = ExtResource("3_ik")
 eye_rest = Vector3(0, 1.7899, 0.1268)
 sole_height = -0.012
+
+[node name="Springs" type="SpringBoneSimulator3D" parent="Model/Armature/Skeleton3D"]
+script = ExtResource("4_springs")
+metadata/_doc = "Coat skirt and belt item spring bones (D-044), after BodyIK."
 
 [node name="IndexTipLeft" type="BoneAttachment3D" parent="Model/Armature/Skeleton3D"]
 bone_name = "LeftIndexTip"

@@ -41,7 +41,7 @@ blender/                  .blend sources (LFS) + their build scripts, exported t
   characters/<name>/      one character's stage scripts (character-artist, D-037)
   surfaces/               tileable surface texture generator (vinyl, carpet, concrete, plaster) -> assets/materials/surfaces/
 core/
-  player/                 ArcologyPlayer rig (player.tscn), avatar/ (the player's body: AvatarBody, BodyIK (head, spine, legs, arms from headset and hand targets; hip drop while stepping; seated pose), LimbIK (two-bone, roll-safe), FootSteps (procedural stepping, D-042), generated silena_vesper_body.tscn, D-041), hands/ (AvatarHand: XR Tools hand behavior, the body's hand target and finger curls, generated silena_vesper_hand_*.tscn; left/right_hand.tscn = the old XR Tools hands), StickSprint, GrabRay, player_physics.tres (jump height), Fingertip press areas (D-031)
+  player/                 ArcologyPlayer rig (player.tscn), avatar/ (the player's body: AvatarBody, BodyIK (head, spine, legs, arms from headset and hand targets; hip drop while stepping; seated pose), LimbIK (two-bone, roll-safe), FootSteps (procedural stepping, D-042), AvatarSprings (coat skirt and belt item spring bones, leg and seat colliders, D-044), generated silena_vesper_body.tscn, D-041), hands/ (AvatarHand: XR Tools hand behavior, the body's hand target and finger curls, generated silena_vesper_hand_*.tscn; left/right_hand.tscn = the old XR Tools hands), StickSprint, GrabRay, player_physics.tres (jump height), Fingertip press areas (D-031)
   interaction/            ImpactSound, TrashReceiver, HingeStopSound, HingeBodyBlocker, HingeSwing, HingeLight, SliderSwing, KinematicFollower, GrabPassThrough, Seat, GrabHighlight, LightSwitch, EmissiveMaterials, OpenAlarm, HangingRail, RailHanger; windows: MotorizedShade, SmartGlass, WindowLight, WindowHud, HingeAmbience, NamedMaterialOverride
   debug/                  ABSwitch + ABPanel: blind A/B variants in one spot, flipped by a wall button (D-030); RainDebugButton (temporary "RAIN" button in the living room)
   world_state/            (M2) time of day, weather, overrides
@@ -140,7 +140,7 @@ Asset budgets (realistic style, see the style guide):
 | Player avatar: each arm, glove + coat sleeve (always in view, up close) | ≤ 14 k | ≤ 2048² per material | ≤ 2 |
 | Player avatar: whole body (`Body` incl. arms ≤ 70 k, `HeadMesh` ≤ 10 k, `Collar` ≤ 2 k) | ≤ 80 k | ≤ 2048² per material | ≤ 6 |
 
-Characters (D-037): one skinned mesh per exported part, ≤ 4 bone influences per vertex, ≤ 100 bones, mesh names never equal bone names (glTF), the head shadow-only in first person, spring bones instead of cloth simulation.
+Characters (D-037): one skinned mesh per exported part, ≤ 4 bone influences per vertex, ≤ 104 bones, mesh names never equal bone names (glTF), the head shadow-only in first person, spring bones instead of cloth simulation.
 
 Rules of thumb:
 - **One shadow-casting light per room.** Everything else unshadowed, small range. Emissive materials for neon, not lights.

@@ -71,6 +71,7 @@ func _body_scene(glb: String, body: Node3D) -> String:
 		"[ext_resource type=\"Script\" path=\"res://core/player/avatar/avatar_body.gd\" id=\"1_body\"]",
 		"[ext_resource type=\"PackedScene\" path=\"%s\" id=\"2_model\"]" % glb,
 		"[ext_resource type=\"Script\" path=\"res://core/player/avatar/body_ik.gd\" id=\"3_ik\"]",
+		"[ext_resource type=\"Script\" path=\"res://core/player/avatar/avatar_springs.gd\" id=\"4_springs\"]",
 		"",
 	]
 	lines.append_array(_blend_tree())
@@ -88,6 +89,10 @@ func _body_scene(glb: String, body: Node3D) -> String:
 		"script = ExtResource(\"3_ik\")",
 		"eye_rest = %s" % _vec(AVATAR_EYE),
 		"sole_height = %s" % _num(SOLE_HEIGHT),
+		"",
+		"[node name=\"Springs\" type=\"SpringBoneSimulator3D\" parent=\"Model/Armature/Skeleton3D\"]",
+		"script = ExtResource(\"4_springs\")",
+		"metadata/_doc = \"Coat skirt and belt item spring bones (D-044), after BodyIK.\"",
 		"",
 	])
 	for side: String in SIDES:

@@ -9,9 +9,9 @@ extends Node3D
 ## when looking down).
 ##
 ## Scene (written by tools/player/avatar.gd): AvatarBody -> Model (the glb) with
-## BodyIK and the Fingertip press areas on the skeleton, and an AnimationTree
-## blending "Open" to "Grip" per finger group and side (parameters
-## <Side><Finger>/blend_amount).
+## BodyIK, the AvatarSprings (coat, belt items) and the Fingertip press areas on
+## the skeleton, and an AnimationTree blending "Open" to "Grip" per finger group
+## and side (parameters <Side><Finger>/blend_amount).
 
 const FINGERS: Array[StringName] = [&"Index", &"Middle", &"Ring", &"Thumb"]
 
@@ -20,6 +20,7 @@ const FINGERS: Array[StringName] = [&"Index", &"Middle", &"Ring", &"Thumb"]
 
 var _tree: AnimationTree
 var _ik: BodyIK
+var _springs: AvatarSprings
 
 
 func _ready() -> void:
@@ -27,6 +28,8 @@ func _ready() -> void:
 	_tree = get_node_or_null("AnimationTree") as AnimationTree
 	var found := find_children("*", "BodyIK", true, false)
 	_ik = found[0] as BodyIK if found else null
+	found = find_children("*", "AvatarSprings", true, false)
+	_springs = found[0] as AvatarSprings if found else null
 	for mesh_name in shadow_only_meshes:
 		for node in find_children(mesh_name, "MeshInstance3D", true, false):
 			(node as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
@@ -61,12 +64,17 @@ func set_finger_curls(side: String, curls: Array[float]) -> void:
 func _on_seated_changed(seated: bool) -> void:
 	_ik.seated = seated
 	_ik.reset()
+	if _springs:
+		_springs.set_seated(seated)
+		_springs.reset()
 
 
 ## Snaps the body's facing to the head (after a teleport or recenter).
 func reset() -> void:
 	if _ik:
 		_ik.reset()
+	if _springs:
+		_springs.reset()
 
 
 func _find_origin() -> Node3D:
