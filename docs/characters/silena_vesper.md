@@ -42,9 +42,9 @@ Mostly black, with violet as the only accent color. Violet glows only on tech (t
 
 ## Stages
 
-1. Gloved hands (replace the XR Tools hands).
-2. Coat sleeves up to the elbow, forearm IK.
-3. Body when looking down: top, belt, trousers, boots, coat, full-body IK and leg animation.
-4. Head, face and hair (for a mirror).
+1. Gloved hands (replace the XR Tools hands). Done (D-038, D-039).
+2. Coat sleeves, arm IK. Done: the whole arm to the shoulder (D-040).
+3. Body when looking down: top, belt, trousers, boots, coat, full-body IK and leg animation. Done: one body skeleton (D-041), stepping and sitting (D-042, D-043), coat and belt items on spring bones (D-044).
+4. Head, face and hair (for a mirror). Open: the head is a shadow-only placeholder; see `docs/ideas.md`.
 
 The skeleton and rendering rules are in D-037.

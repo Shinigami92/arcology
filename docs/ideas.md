@@ -19,10 +19,12 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [later] Gravity-glove flick (point, grip, flick the wrist) instead of pull-on-grip.
 - [later] Lie down on the bed.
 - [later] In-world settings panel for comfort options (no flat menus).
-- [later] Hand tracking (Steam Frame) in addition to controllers.
-- [M2] Player avatar: the user's Shadowrun character Silena Vesper (`docs/characters/silena_vesper.md`), IK from head and hands; prerequisite for a meaningful mirror. Stages: gloved hands, coat sleeves, body when looking down, head and hair.
+- [later] Hand tracking (Steam Frame) in addition to controllers. The avatar's skeleton already carries the OpenXR hand joints (`<Side>Palm`, metacarpals, tips; D-037), so `XRHandModifier3D` can drive it; verify the joint orientations in the headset first.
+- [M2] Player avatar stage 4: Silena's head, face and hair (`docs/characters/silena_vesper.md`). The current `HeadMesh` is a shadow-only placeholder (MPFB head, closed eyelids, a simple hair volume). Wanted: violet eyes and smoky makeup, the violet filigree markings on cheek, temple and neck, the messy updo with loose strands (hair cards), the dangling earring, the necklace. Pairs with the working mirror: then `HeadMesh` and `Collar` switch from shadows-only to render layers hidden only from the player's own camera (D-041).
+- [later] Avatar polish (artist's second-pass list): the front of the armholes when reaching forward (sleeve folds into the coat; corrective weights or a helper bone), five small folded faces at the back of the shoulders (a light speck), sharper coat textures (the vine is soft at ~1.2 px/mm; split front/back atlases), notched lapel and collar shaping, a real heel block on the boots, an elbow helper bone for full bends, a second forearm twist bone for wrist rolls beyond 100°. Arm length is 1–2 cm long (negotiable).
+- [later] Per-object grab poses for the avatar's hands: the hand wraps a door lever, a can, the shower head instead of the generic fist. XR Tools pose areas swap in their own animations (wrong bones), so this needs avatar poses per grip type first (D-041).
 - [later] Seated or standing play mode (option in the settings panel). The avatar stands and walks either way; the user plays seated but is fine with a standing body (VRChat habit).
-- [later] Footstep sounds while walking (smooth locomotion and real steps), chosen by the floor under the player: vinyl, carpet, concrete, later street surfaces; quieter or none while seated.
+- [M2] Footstep sounds while walking (smooth locomotion and real steps), chosen by the floor under the player: vinyl, carpet, concrete, later street surfaces; quieter or none while seated. The avatar's `FootSteps` (D-042) knows when and where each foot lands: trigger the sound on each plant, louder when faster.
 
 ## Interaction
 
@@ -38,7 +40,7 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [later] Impact sounds per surface: a falling or thrown object sounds different on vinyl, carpet (muffled), concrete and furniture. Needs a surface tag on static bodies (e.g. a group or metadata per floor material, set by the apartment generator) that `ImpactSound` looks up on contact, plus sound sets per object and surface.
 - [later] Door hardware: levers press down while grabbed (latch: the door opens only with the lever down), bathroom thumb-turn and entrance deadbolt lock the door, smart-lock LED red/green; latch and deadbolt sounds. The glbs already have the levers and turns as separate parts on their axes (D-035).
 - [later] Ceiling trim: maybe a shadow gap with an LED strip. Bathroom wall finish (tiles or a wet-room skirting).
-- [later] Working bathroom mirror. Makes most sense once there's a player avatar. Godot 4.7 has no hardware ray tracing, so the options to measure against the 90 FPS budget are: planar reflection via a SubViewport (renders the room again for both eyes, the expensive but correct one), a box-projected ReflectionProbe updated in real time, or SSR (can't show what's off screen). Good stress test for the budget.
+- [later] Working bathroom mirror. The avatar exists now (D-041); for her to show in it, the head needs stage 4 and render layers instead of shadows-only. Godot 4.7 has no hardware ray tracing, so the options to measure against the 90 FPS budget are: planar reflection via a SubViewport (renders the room again for both eyes, the expensive but correct one), a box-projected ReflectionProbe updated in real time, or SSR (can't show what's off screen). Good stress test for the budget.
 - [M2] Physical light switches and dimmers per room, and/or a smart-home hub panel (could be the same in-world terminal as the world-state control panel).
 - [M2] Windows (D-033): tilt vent in the bedroom, motorized shades and smart-glass tint per room via a wall panel, HUD readout on the living room glass. Done on placeholders; the artist's frame/sash/panel glbs drop in by rerunning `tools/props/window.py`.
 - [M2] Window HUD: drive it from WorldState (time, temperature, weather) once that exists; maybe more readouts (news ticker, messages).
@@ -74,12 +76,16 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [M1] Scripted camera flythrough per zone that logs frame times and fails on budget regressions.
 - [later] Shader precompile helper, if a perf report ever shows pipeline compiles on dropped frames. The M1 hitches (8 frames up to 58 ms) turned out to come from the machine, not compiles (D-025); the XR Tools demo also hitched when first picking up the scoped rifle.
 - [later] Budget SubViewport cameras (scopes, mirrors, security monitors) explicitly.
+- [M2] Refresh the perf baselines with the avatar: the desktop baseline (`tools/perf/baselines/apartment-desktop-approx.json`) and the zone table in CLAUDE.md predate it (last desktop runs: GPU p95 ~5.4 ms, 393 draw calls at peak); then an XR perf run in the headset (the user).
+- [later] Faster interaction tests: with `--fixed-fps 90 --disable-vsync` the full suite takes ~17 s instead of ~87 s, but `HingeSwing`/`SliderSwing` measure release speed with the real clock (`Time.get_ticks_usec`); move them and the tests' throws onto engine time first. Waiting until things stop moving instead of fixed frame counts would save another ~13 s.
 
 ## Rejected or low priority
 
 - Grappling hook (least satisfying in the XR Tools demo; not a fit).
 
 ## Done
+
+- Player avatar stages 1–3 (2026-10-03/04): the user's Shadowrun character Silena Vesper as the player's body (D-037), built on an MPFB2 base: gloved hands with per-finger curl on the control each finger rests on (D-038, D-039), coat sleeves with arm IK (D-040), the full body on one skeleton with head/spine/arm/leg IK (D-041), procedural stepping and seated poses (D-042, D-043; "probably the best VR leg steps I ever experienced"), coat and belt items on spring bones (D-044). Interaction tests now run by group (`--only=avatar`).
 
 - Skirting boards (2026-10-01): painted skirting along every wall, wrapping the archways and butting the door casings, swept in Blender along runs the apartment generator computes (D-036).
 
