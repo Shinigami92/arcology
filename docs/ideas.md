@@ -76,7 +76,6 @@ The user's long-term direction (2026-10-04). Too big for one session: each phase
 
 ### Phase 0: draw only what can be seen (next)
 
-- [M3] Occlusion culling for the apartment: done on desktop (D-048), headset check pending. The generator writes a box occluder per wall, floor and ceiling; the city hides while no window is on screen (`OutsideView`).
 - [M3] Visibility tiers for everything outside: near ring, far city and traffic per window cluster, and per-node `visibility_range` fades instead of hard cuts. The city layers already switch off when no window is in view (D-048).
 - [M3] Zone streaming (`core/zones/`): zones load in the background (`ResourceLoader.load_threaded_request`) when the player nears a connection (door, elevator, station), unload when two connections away; a zone graph says what connects to what. Each zone has tiers: full interior, exterior shell only, impostor. Budget per tier in `tools/perf/budgets.json`.
 - [M3] Perf flythrough per zone and per transition (the hitch of loading a zone counts), in XR before a phase is done.
@@ -132,6 +131,8 @@ New subagents when a phase starts (the user agreed to add or update agents whene
 - Grappling hook (least satisfying in the XR Tools demo; not a fit).
 
 ## Done
+
+- Occlusion culling (2026-10-04, roadmap phase 0): the apartment generator writes a box occluder per wall, floor and ceiling; the city and traffic hide while no window is on screen (`OutsideView`, D-048). Bathroom 271 → 216 draw calls, hallway 465 → 332; no visible difference in the headset.
 
 - City view (2026-10-04): ten Blender towers in the near ring, brutalist megablocks and corporate spires (D-045); the far city repeats them instead of the box placeholders (D-046); height fog toward the street; flying traffic with five vehicle types in lanes at many altitudes, moved on the GPU (D-047). Skyline shimmer from ~5.0 % down to 2.1 %.
 
