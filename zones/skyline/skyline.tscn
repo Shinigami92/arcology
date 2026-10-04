@@ -37,6 +37,8 @@ fog_mode = 0
 fog_light_color = Color(0.11, 0.1, 0.16, 1)
 fog_light_energy = 1.0
 fog_density = 0.0016
+fog_height = -30.0
+fog_height_density = 0.025
 fog_sky_affect = 0.0
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_street"]

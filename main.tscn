@@ -1,27 +1,27 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://copfcdb1eptqo"]
 
-[ext_resource type="Script" path="res://main.gd" id="1_main"]
+[ext_resource type="Script" uid="uid://bbws6xcbycnod" path="res://main.gd" id="1_main"]
 [ext_resource type="PackedScene" uid="uid://clc5dre31iskm" path="res://addons/godot-xr-tools/xr/start_xr.tscn" id="2_start_xr"]
 [ext_resource type="PackedScene" path="res://zones/skyline/skyline.tscn" id="3_skyline"]
-[ext_resource type="PackedScene" path="res://zones/apartment/apartment.tscn" id="4_apartment"]
-[ext_resource type="PackedScene" path="res://core/player/player.tscn" id="5_player"]
-[ext_resource type="Script" path="res://core/weather/rain_on_glass.gd" id="6_rain"]
+[ext_resource type="PackedScene" uid="uid://bd6rw8fw0bab" path="res://zones/apartment/apartment.tscn" id="4_apartment"]
+[ext_resource type="PackedScene" uid="uid://dxpdkfn6mi08q" path="res://core/player/player.tscn" id="5_player"]
+[ext_resource type="Script" uid="uid://csc6fql8ak2g7" path="res://core/weather/rain_on_glass.gd" id="6_rain"]
 
-[node name="Main" type="Node3D"]
+[node name="Main" type="Node3D" unique_id=324402590]
 script = ExtResource("1_main")
 
-[node name="StartXR" parent="." instance=ExtResource("2_start_xr")]
+[node name="StartXR" parent="." unique_id=931352232 instance=ExtResource("2_start_xr")]
 target_refresh_rate = 90.0
 
-[node name="Skyline" parent="." instance=ExtResource("3_skyline")]
+[node name="Skyline" parent="." unique_id=329166165 instance=ExtResource("3_skyline")]
 
-[node name="Zones" type="Node3D" parent="."]
+[node name="Zones" type="Node3D" parent="." unique_id=491480088]
 
-[node name="Apartment" parent="Zones" instance=ExtResource("4_apartment")]
+[node name="Apartment" parent="Zones" unique_id=173145416 instance=ExtResource("4_apartment")]
 
-[node name="Player" parent="." instance=ExtResource("5_player")]
+[node name="Player" parent="." unique_id=525112529 instance=ExtResource("5_player")]
 
-[node name="Weather" type="Node" parent="."]
+[node name="Weather" type="Node" parent="." unique_id=1574576503]
 
-[node name="RainOnGlass" type="Node" parent="Weather"]
+[node name="RainOnGlass" type="Node" parent="Weather" unique_id=801483269]
 script = ExtResource("6_rain")
