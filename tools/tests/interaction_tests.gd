@@ -5,10 +5,22 @@ extends Node
 ##   "$GODOT4_EDITOR" --path . --xr-mode off -- --test=interaction
 ##
 ## Prints one line per check ("TEST PASS/FAIL <name>: <details>") and quits
-## with the number of failures. Runs through main.gd (not --script) so the
-## XR Tools autoloads exist.
+## with the number of failures (2 for a bad --only). Runs through main.gd (not
+## --script) so the XR Tools autoloads exist.
+##
+## Subsets (see _registry()):
+##   --only=<a,b>   groups, or tests whose name contains the word
+##                  (--only=avatar, --only=doors_fridge,windows, --only=arm_ik)
+##   --list         print the groups and their tests, run nothing
+## Before each test the rig is put back (nothing held, pickups at their hands,
+## player at HOME), so a test or group run alone sees what it sees in a full run.
 
 const DOORS := ["DoorLiving", "DoorBedroom", "DoorBathroom", "DoorEntrance"]
+const SIDES: Array[String] = ["Left", "Right"]
+const SKELETON := "Player/Avatar/Model/Armature/Skeleton3D"
+# The player body's spot (Entries/Default, facing -Z) that tests which move the
+# player return to; _reset_rig() puts it there before each test.
+const HOME := Transform3D(Basis.IDENTITY, Vector3(0.4, 0, -0.4))
 const CAN_SCENE := "res://assets/props/beverage_can/beverage_can.tscn"
 # Sweep start and motion through each doorway (capsule center at 0.9 m).
 const DOORWAYS := {
@@ -20,57 +32,155 @@ const DOORWAYS := {
 
 var _main: Node3D
 var _failures := 0
+# The pickups' transforms at the start; restored before each test.
+var _pickup_rest: Array[Transform3D] = []
+
+
+## Every test in run order: [group, name, coroutine]. A full run goes through
+## all of them in this order; --only picks groups or names, keeping the order.
+## Groups follow what a change touches (a group may appear in several places).
+## Adding a test is one line here.
+func _registry() -> Array[Array]:
+	var tests: Array[Array] = [
+		["player", "doorways", _test_doorways],
+		["player", "door_blocker", _test_blocker],
+		["player", "pass_through", _test_pass_through],
+		["player", "push_door_open", _test_push_door_open],
+		["player", "jump", _test_jump],
+		["player", "jump_onto_table", _test_jump_onto_table],
+		["player", "ranged_grab", _test_ranged_grab],
+		["doors_fridge", "fridge", _test_fridge.bind("Fridge")],
+		["doors_fridge", "fridge_swing", _test_swing.bind("Fridge", 20.0, 150.0)],
+		["doors_fridge", "door_swing", _test_swing.bind("DoorLiving", 20.0, 120.0)],
+		["doors_fridge", "fridge_flick_shut", _test_flick_shut.bind("Fridge")],
+		["doors_fridge", "fridge_door_bin", _test_fridge_door_bin],
+		["furniture", "sofa", _test_sofa],
+		["variants", "spare_sofa", _test_spare_sofa],
+		["furniture", "bedroom", _test_bedrooms],
+		["switches", "ab_panel", _test_ab_panel],
+		["avatar", "fingertips", _test_fingertips],
+		# Hand rig and arm IK share the posed hands, so they are one test.
+		["avatar", "hand_rig_arm_ik", _test_hand_rig],
+		["avatar", "body_ik", _test_body_ik],
+		["avatar", "walk", _test_walk],
+		["avatar", "sit_pose", _test_sit_pose],
+		["switches", "lamp_switch", _test_lamp_switches],
+		["doors_fridge", "fridge_alarm", _test_fridge_alarm],
+		["wardrobe", "wardrobe_interior", _test_wardrobe_interior],
+		["furniture", "bed_bedding", _test_bed_bedding_collision],
+		["variants", "spare_variants", _test_spare_variants],
+		["windows", "window_vent", _test_window_vent],
+		["windows", "window_shade", _test_window_shade],
+		["windows", "window_tint", _test_window_tint],
+		["windows", "window_hud", _test_window_hud],
+		["windows", "window_glass", _test_window_glass_collision],
+		["windows", "rain_button", _test_rain_button],
+		["windows", "rain_wetness", _test_rain_wetness],
+		["bathroom", "bath_magnifier", _test_bath_magnifier],
+		["bathroom", "bath_mirror_touch", _test_bath_mirror_touch],
+		["bathroom", "toilet_lid_and_seat", _test_toilet_lid_and_seat],
+		["bathroom", "toilet_soft_close", _test_toilet_soft_close],
+		["bathroom", "toilet_flush", _test_toilet_flush],
+		["bathroom", "toilet_roll", _test_toilet_roll],
+		["bathroom", "vanity_drawers", _test_vanity_drawers],
+		["bathroom", "vanity_lever", _test_vanity_lever],
+		["bathroom", "vanity_dispenser", _test_vanity_dispenser],
+		["bathroom", "shower_controls", _test_shower_controls],
+		["bathroom", "shower_hand", _test_shower_hand],
+		["bathroom", "shower_glass", _test_shower_glass],
+	]
+	return tests
 
 
 func _ready() -> void:
 	_main = get_parent() as Node3D
+	var tests := _registry()
+	var args := OS.get_cmdline_user_args()
+	if args.has("--list"):
+		_print_list(tests)
+		get_tree().quit(0)
+		return
+	var only: PackedStringArray = []
+	for arg in args:
+		if arg.begins_with("--only="):
+			only = arg.trim_prefix("--only=").split(",", false)
+	if not only.is_empty():
+		tests = _select(tests, only)
+		if tests.is_empty():
+			get_tree().quit(2)
+			return
+		var names: Array[String] = []
+		for test in tests:
+			names.append(test[1])
+		print("TEST ONLY %s: %s" % [",".join(only), ", ".join(names)])
+
 	await _frames(30)
-	await _test_doorways()
-	await _test_blocker()
-	await _test_pass_through()
-	await _test_push_door_open()
-	await _test_jump()
-	await _test_jump_onto_table()
-	await _test_ranged_grab()
-	await _test_fridge("Fridge")
-	await _test_swing("Fridge", 20.0, 150.0)
-	await _test_swing("DoorLiving", 20.0, 120.0)
-	await _test_flick_shut("Fridge")
-	await _test_fridge_door_bin()
-	await _test_sofa()
-	await _test_spare_sofa()
-	for variant in _variants("Bed"):
-		await _test_bedroom(variant)
-	await _test_ab_panel()
-	await _test_fingertips()
-	await _test_hand_rig()
-	for variant in _variants("Nightstand"):
-		await _test_lamp_switch(variant)
-	await _test_fridge_alarm()
-	await _test_wardrobe_interior()
-	await _test_bed_bedding_collision()
-	await _test_spare_variants()
-	await _test_window_vent()
-	await _test_window_shade()
-	await _test_window_tint()
-	await _test_window_hud()
-	await _test_window_glass_collision()
-	await _test_rain_button()
-	await _test_rain_wetness()
-	await _test_bath_magnifier()
-	await _test_bath_mirror_touch()
-	await _test_toilet_lid_and_seat()
-	await _test_toilet_soft_close()
-	await _test_toilet_flush()
-	await _test_toilet_roll()
-	await _test_vanity_drawers()
-	await _test_vanity_lever()
-	await _test_vanity_dispenser()
-	await _test_shower_controls()
-	await _test_shower_hand()
-	await _test_shower_glass()
+	for side in SIDES:
+		_pickup_rest.append((_main.get_node("Player/%sHand/CollisionHand/FunctionPickup" % side) as Node3D).transform)
+	var group_ms := {}
+	for test in tests:
+		var start := Time.get_ticks_msec()
+		await _reset_rig()
+		await (test[2] as Callable).call()
+		group_ms[test[0]] = group_ms.get(test[0], 0) + Time.get_ticks_msec() - start
+	var ran: Array[String] = []
+	for group: String in group_ms:
+		ran.append("%s %.1f s" % [group, group_ms[group] / 1000.0])
+	print("TEST GROUPS: %s%s" % [", ".join(ran), "" if only.is_empty() else " (--only=%s)" % ",".join(only)])
 	print("TEST DONE: %d failure(s)" % _failures)
 	get_tree().quit(_failures)
+
+
+## The tests a --only list picks: a token is a group name, or else part of a
+## test's name. An unknown token prints the choices and returns nothing.
+func _select(tests: Array[Array], only: PackedStringArray) -> Array[Array]:
+	var groups: Array[String] = []
+	for test in tests:
+		if not groups.has(test[0]):
+			groups.append(test[0])
+	var picked: Array[Array] = []
+	var unknown: Array[String] = []
+	for token in only:
+		var hit := false
+		for test in tests:
+			if test[0] == token or (not groups.has(token) and (test[1] as String).contains(token)):
+				hit = true
+				if not picked.has(test):
+					picked.append(test)
+		if not hit:
+			unknown.append(token)
+	if not unknown.is_empty():
+		push_error("TEST: no group or test matches %s (groups: %s; --list shows the tests)" % [
+				", ".join(unknown), ", ".join(groups)])
+		return []
+	# Keep the registry order.
+	return tests.filter(func(test: Array) -> bool: return picked.has(test))
+
+
+func _print_list(tests: Array[Array]) -> void:
+	var by_group := {}
+	for test in tests:
+		if not by_group.has(test[0]):
+			by_group[test[0]] = []
+		(by_group[test[0]] as Array).append(test[1])
+	print("TEST LIST: %d tests in %d groups (--only=<group or part of a test name>,...)" % [tests.size(), by_group.size()])
+	for group: String in by_group:
+		var names: Array = by_group[group]
+		print("  %s (%d): %s" % [group, names.size(), ", ".join(names)])
+
+
+## Puts the rig back: nothing held, pickups at their hands, the player body at
+## HOME (waits only if it had moved; at the start the body stands 0.1 m off it).
+func _reset_rig() -> void:
+	for i in SIDES.size():
+		var pickup: XRToolsFunctionPickup = _main.get_node("Player/%sHand/CollisionHand/FunctionPickup" % SIDES[i])
+		if pickup.picked_up_object:
+			pickup.drop_object()
+		pickup.transform = _pickup_rest[i]
+	var body: XRToolsPlayerBody = _main.get_node("Player/PlayerBody")
+	if body.global_position.distance_to(HOME.origin) > 0.05 or body.global_basis.z.dot(HOME.basis.z) < 0.999:
+		body.teleport(HOME)
+		await _frames(30)
 
 
 func _check(name: String, ok: bool, details: String) -> void:
@@ -464,6 +574,11 @@ func _suffix(v: String) -> String:
 	return "" if v.is_empty() else "_" + v
 
 
+func _test_bedrooms() -> void:
+	for variant in _variants("Bed"):
+		await _test_bedroom(variant)
+
+
 ## Bedroom set (bed, wardrobe, nightstand), for variant `v` of an A/B pair or
 ## the placed pieces: the hidden variant has no collision, a can rests on the
 ## bed, the wardrobe doors' collision follows them, and the nightstand drawer
@@ -613,22 +728,42 @@ func _test_fingertips() -> void:
 	_check("fingertip_areas", found == ["Left", "Right"], "fingertips on hands: %s" % [found])
 
 
-## The avatar's hand bones follow the AvatarHand targets, and each hand's
-## controls curl its own fingers, each finger on its own (D-039, D-041).
-func _test_hand_rig() -> void:
-	var skeleton := _main.get_node_or_null("Player/Avatar/Model/Armature/Skeleton3D") as Skeleton3D
+## The avatar skeleton, or null after failing check `name`.
+func _avatar_skeleton(name: String) -> Skeleton3D:
+	var skeleton := _main.get_node_or_null(SKELETON) as Skeleton3D
 	if skeleton == null:
-		_check("hand_rig", false, "no avatar skeleton at Player/Avatar/Model/Armature/Skeleton3D")
-		return
-	# Hands where a seated player holds them: in reach, in front of the chest.
+		_check(name, false, "no avatar skeleton at " + SKELETON)
+	return skeleton
+
+
+## Hands where a seated player holds them: in reach, in front of the chest.
+## Returns the controllers' transforms for _restore_hands().
+func _hands_forward() -> Array[Transform3D]:
 	var camera := get_viewport().get_camera_3d()
 	var saved: Array[Transform3D] = []
-	for side: String in ["Left", "Right"]:
+	for side in SIDES:
 		var controller := _main.get_node("Player/%sHand" % side) as Node3D
 		saved.append(controller.global_transform)
 		var x := -0.2 if side == "Left" else 0.2
 		controller.global_transform = Transform3D(controller.global_basis, camera.global_transform * Vector3(x, -0.45, -0.3))
 	await _frames(5)
+	return saved
+
+
+func _restore_hands(saved: Array[Transform3D]) -> void:
+	for i in SIDES.size():
+		(_main.get_node("Player/%sHand" % SIDES[i]) as Node3D).global_transform = saved[i]
+	await _frames(2)
+
+
+## The avatar's hand bones follow the AvatarHand targets, and each hand's
+## controls curl its own fingers, each finger on its own (D-039, D-041); then
+## the arm IK for that hand (same posed hands).
+func _test_hand_rig() -> void:
+	var skeleton := _avatar_skeleton("hand_rig")
+	if skeleton == null:
+		return
+	var saved: Array[Transform3D] = await _hands_forward()
 	for side: String in ["Left", "Right"]:
 		var hand := _main.get_node_or_null("Player/%sHand/CollisionHand/Hand" % side) as AvatarHand
 		if hand == null or hand.target == null:
@@ -657,12 +792,7 @@ func _test_hand_rig() -> void:
 				moves[1].x > 0.02 and moves[1].y < 0.002 and moves[2].x < 0.002 and moves[2].y > 0.02,
 				"index / middle tip travel: trigger %s, grip %s" % [moves[1].snappedf(0.001), moves[2].snappedf(0.001)])
 		await _test_arm_ik(side, skeleton)
-	await _test_body_ik(skeleton)
-	await _test_walk(skeleton)
-	await _test_sit_pose(skeleton)
-	for i in 2:
-		(_main.get_node("Player/%sHand" % ["Left", "Right"][i]) as Node3D).global_transform = saved[i]
-	await _frames(2)
+	await _restore_hands(saved)
 
 
 ## The arm reaches the hand target from the shoulder without stretching, the
@@ -708,7 +838,12 @@ func _test_arm_ik(side: String, skeleton: Skeleton3D) -> void:
 
 ## The body stands under the headset: eyes at the camera, feet on the floor,
 ## and crouching (a lower head) bends the knees instead of sinking the feet.
-func _test_body_ik(skeleton: Skeleton3D) -> void:
+## (Hands posed in front, as for the hand rig.)
+func _test_body_ik() -> void:
+	var skeleton := _avatar_skeleton("body_ik")
+	if skeleton == null:
+		return
+	var hands: Array[Transform3D] = await _hands_forward()
 	var ik := skeleton.get_node("BodyIK") as BodyIK
 	var camera := get_viewport().get_camera_3d()
 	var ground := _main.get_node("Player/PlayerBody") as Node3D
@@ -735,12 +870,18 @@ func _test_body_ik(skeleton: Skeleton3D) -> void:
 				"eyes %.3f m from the camera, feet %.3f / %.3f m off the floor, knee bent %.0f degrees" % [eye_off, foot_y[0], foot_y[1], bend])
 	camera.position = saved
 	await _frames(2)
+	await _restore_hands(hands)
 
 
-## Walking and running step the feet: a planted foot never slides while
-## walking (at a sprint the legs reach their limit and may slip a little), the
-## feet keep up with the body, lift on an arc, and settle after stopping (D-042).
-func _test_walk(skeleton: Skeleton3D) -> void:
+## Walking and sprinting step the feet: a planted foot never slides (a lagging
+## hip drop used to drag it, D-043), the feet keep up with the body, lift on
+## an arc, and settle after stopping (D-042).
+## Starts at the player's start spot facing -Z (the window wall 2.6 m ahead).
+func _test_walk() -> void:
+	var skeleton := _avatar_skeleton("avatar_walk")
+	if skeleton == null:
+		return
+	var hands: Array[Transform3D] = await _hands_forward()
 	var ground := _main.get_node("Player/PlayerBody") as XRToolsPlayerBody
 	var start := ground.global_transform
 	var forward := -start.basis.z
@@ -796,18 +937,24 @@ func _test_walk(skeleton: Skeleton3D) -> void:
 		var advanced: Array[float] = []
 		for i in 2:
 			advanced.append((last[i] - first[i]).dot(forward))
-		var slip_ok := sliding == 0 if case[0] == "walk" else (sliding <= frames * 0.3 and worst_slip < 0.01)
+		var slip_ok := sliding == 0
 		_check("avatar_%s_steps" % case[0], steps[0] >= 2 and steps[1] >= 2 and slip_ok and lift > 0.03 and absf(advanced[0] - 2.4) < 0.15 and absf(advanced[1] - 2.4) < 0.15,
 				"%.1f m/s: steps %d / %d, frames a planted foot slid %d (worst %.1f mm), lift %.3f m, feet advanced %.2f / %.2f m (body 2.4 m, the window wall is 2.6 m ahead)" % [case[1], steps[0], steps[1], sliding, worst_slip * 1000.0, lift, advanced[0], advanced[1]])
 		ground.teleport(start)
 		await _frames(30)
 	camera.position = saved_camera
 	await _frames(30)
+	await _restore_hands(hands)
 
 
 ## Seated on the sofa, the hips rest on the cushion and the feet stand forward
-## of it on the floor, knees bent (D-042).
-func _test_sit_pose(skeleton: Skeleton3D) -> void:
+## of it on the floor, knees bent (D-042). Leaves the player standing at the
+## sofa (the next test's _reset_rig() brings it back).
+func _test_sit_pose() -> void:
+	var skeleton := _avatar_skeleton("avatar_sit_pose")
+	if skeleton == null:
+		return
+	var hands: Array[Transform3D] = await _hands_forward()
 	var player := _main.get_node("Player") as ArcologyPlayer
 	var seat := _main.get_node("Zones/Apartment/Seats/SofaSeat") as Seat
 	await player.sit(seat)
@@ -821,10 +968,24 @@ func _test_sit_pose(skeleton: Skeleton3D) -> void:
 	var facing := -seat.sit_point.global_basis.z
 	var ahead := (foot - hips).dot(facing)
 	var bend := rad_to_deg(thigh.angle_to(shin))
+	# The knees overhang the cushion's front edge, so the shins hang in front
+	# of the sofa, not through it (headset bug: the shins clipped the front).
+	var sofa := _main.get_node("Zones/Apartment/Props/Sofa") as Node3D
+	var edge := sofa.global_transform * Vector3(0.0, 0.44, 0.445)
+	var overhang: Array[float] = []
+	for side: String in ["Left", "Right"]:
+		var knee := w * skeleton.get_bone_global_pose(skeleton.find_bone("%sLowerLeg" % side)).origin
+		overhang.append((knee - edge).dot(facing))
 	await player.stand()
 	await _frames(20)
-	_check("avatar_sit_pose", absf(hips.y - 0.52) < 0.08 and ahead > 0.3 and bend > 60.0 and bend < 120.0 and foot.y < 0.15,
-			"hips at %.2f m (cushion 0.44), feet %.2f m ahead, knee bent %.0f degrees, foot at %.2f m" % [hips.y, ahead, bend, foot.y])
+	await _restore_hands(hands)
+	_check("avatar_sit_pose", absf(hips.y - 0.52) < 0.08 and ahead > 0.3 and bend > 60.0 and bend < 120.0 and foot.y < 0.15 and overhang.min() > 0.03,
+			"hips at %.2f m (cushion 0.44), feet %.2f m ahead, knee bent %.0f degrees, foot at %.2f m, knees %.2f / %.2f m past the cushion edge" % [hips.y, ahead, bend, foot.y, overhang[0], overhang[1]])
+
+
+func _test_lamp_switches() -> void:
+	for variant in _variants("Nightstand"):
+		await _test_lamp_switch(variant)
 
 
 ## Pressing the lamp's switch turns its light and glow off, pressing again on.

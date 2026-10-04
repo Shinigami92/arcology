@@ -151,14 +151,17 @@ Rules of thumb:
 
 ### Tests
 
-Behavior checks that don't need the headset or the editor. Run `interaction` after any change to the player, props or apartment layout; add a check when fixing a bug found in the headset.
+Behavior checks that don't need the headset or the editor. Run the `interaction` groups your change touches; run the full suite (about 90 s) before proposing a commit that touches shared code (player, props, apartment layout, `core/interaction`) or when unsure. Add a check when fixing a bug found in the headset.
 
 ```sh
-"$GODOT4_EDITOR" --path . --xr-mode off -- --test=interaction   # doors, blocker, pass-through, jump, ranged grab, avatar (hands, fingers, arms, body), props, windows, rain
-"$GODOT4_EDITOR" --path . --xr-mode off -- --test=skyline       # window shimmer (D-020, D-023)
+"$GODOT4_EDITOR" --path . --xr-mode off -- --test=interaction                       # full suite
+"$GODOT4_EDITOR" --path . --xr-mode off -- --test=interaction --only=avatar          # one group
+"$GODOT4_EDITOR" --path . --xr-mode off -- --test=interaction --only=windows,rain    # groups and/or tests whose name contains the word
+"$GODOT4_EDITOR" --path . --xr-mode off -- --test=interaction --list                 # groups and their tests, runs nothing
+"$GODOT4_EDITOR" --path . --xr-mode off -- --test=skyline                            # window shimmer (D-020, D-023)
 ```
 
-Each prints `TEST PASS/FAIL <name>: <details>` and exits with the failure count (2 if the suite doesn't load, e.g. a parse error).
+Groups: `player` (doorways, blocker, pass-through, jump, ranged grab), `doors_fridge`, `furniture` (sofa, bed, wardrobe doors, nightstand), `variants` (spare props), `switches` (A/B panel, lamp), `avatar`, `wardrobe` (interior), `windows` (incl. rain), `bathroom`. Each prints `TEST PASS/FAIL <name>: <details>`, then the time per group and `TEST DONE`, and exits with the failure count (2 if the suite doesn't load, e.g. a parse error, or `--only` matches nothing). Add a test as one line in `_registry()` of `tools/tests/interaction_tests.gd`; tests that move the player or hold something needn't undo it (the runner resets the rig before each test), anything else they change they put back.
 
 Visual check without the headset or editor: `--shots` renders 1920×1080 stills to `tools/shots/results/shot-<n>.png` (views are `x,y,z,yaw,pitch[,fov]`, yaw 0 = -Z, 90 = -X; `--shot-hinge=<Props path>:<deg>` opens hinged props first, e.g. `Fridge:80` or `Wardrobe/A/DoorLeft:80`; `--shot-ab=B` shows every A/B pair's B variant; `--shot-no-player` hides the hands):
 
