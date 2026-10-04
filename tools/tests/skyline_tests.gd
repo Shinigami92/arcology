@@ -6,7 +6,9 @@ extends Node
 ##   "$GODOT4_EDITOR" --path . --xr-mode off -- --test=skyline
 ##
 ## Prints "SHIMMER <variant>: <percent>" and fails if the default view is
-## above [constant MAX_SHIMMER_PCT] (docs/decisions.md D-020).
+## above [constant MAX_SHIMMER_PCT] (docs/decisions.md D-020). Traffic is frozen
+## while measuring (moving vehicles aren't shimmer). Also checks that no traffic
+## lane runs through a near tower (D-047).
 
 const MAX_SHIMMER_PCT := 7.0
 const TRIALS := 4
@@ -20,6 +22,11 @@ func _ready() -> void:
 	player.get_node("PlayerBody").enabled = false
 	player.global_transform = Transform3D.IDENTITY
 	await get_tree().create_timer(1.0).timeout
+
+	var traffic: FlyingTraffic = _main.get_node("Skyline/Traffic")
+	var blocked := traffic.blocked_lanes(_main.get_node("Skyline/NearTowers"))
+	print("TEST %s traffic_lanes_clear: %s" % ["PASS" if blocked.is_empty() else "FAIL", ", ".join(blocked) if blocked else "no lane hits a near tower"])
+	traffic.set_frozen(true)
 
 	var panes := _main.get_node("Zones/Apartment/Windows/LivingWindow").find_children("Glass*", "MeshInstance3D", true, false)
 	var default_pct := await _shimmer()
@@ -41,9 +48,11 @@ func _ready() -> void:
 	print("SHIMMER rain_static: %.2f %%" % await _shimmer())
 	rain.set_rain(0.0, true)
 
+	traffic.set_frozen(false)
+
 	var ok := default_pct <= MAX_SHIMMER_PCT
 	print("TEST %s skyline_shimmer: %.2f %% (max %.1f %%)" % ["PASS" if ok else "FAIL", default_pct, MAX_SHIMMER_PCT])
-	get_tree().quit(0 if ok else 1)
+	get_tree().quit((0 if ok else 1) + (0 if blocked.is_empty() else 1))
 
 
 func _shimmer() -> float:

@@ -11,8 +11,9 @@ extends Node3D
 ## its roof lands at a random height: the street plane hides the rest. Cells
 ## behind [member max_z] (the apartment's window wall faces -Z, nothing behind
 ## it can be seen from inside), inside [member keep_out] (our own building) and
-## around the near towers stay empty. The MultiMeshes are built on load and
-## never saved.
+## around the near towers stay empty; under a traffic corridor roofs stay
+## below its lanes ([method FlyingTraffic.roof_limit]). The MultiMeshes are
+## built on load and never saved.
 
 @export var seed_value := 92
 @export_custom(PROPERTY_HINT_NONE, "suffix:m") var cell_size := 90.0
@@ -37,6 +38,8 @@ extends Node3D
 ## Parent of the near ring's towers (tools/props/city.py): the tower types,
 ## and each child's position and metadata/footprint clears the cells around it.
 @export var near_towers: Node3D
+## Its corridors cap the roofs beneath them.
+@export var traffic: FlyingTraffic
 @export_tool_button("Regenerate") var regenerate_action := generate
 
 
@@ -95,6 +98,10 @@ func generate() -> void:
 			if clear.any(func(c: Vector3) -> bool: return center.distance_to(Vector2(c.x, c.y)) < c.z):
 				continue
 			var roof := lerpf(min_height, max_height, pow(r_height, 2.2))
+			if traffic:
+				roof = minf(roof, traffic.roof_limit(center, cell_size * fit) - street_y)
+				if roof < min_height * 0.5:
+					continue
 			var t := _pick_type(types, roof, cell_size * fit, r_type)
 			if t < 0:
 				continue

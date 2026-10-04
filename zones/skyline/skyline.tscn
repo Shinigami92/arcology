@@ -2,6 +2,16 @@
 
 [ext_resource type="Script" path="res://zones/skyline/far_towers.gd" id="1_far"]
 [ext_resource type="PackedScene" path="res://zones/skyline/near_towers.tscn" id="3_near"]
+[ext_resource type="Script" path="res://zones/skyline/flying_traffic.gd" id="4_traffic"]
+[ext_resource type="PackedScene" path="res://assets/props/traffic/aircar_sedan/aircar_sedan.glb" id="v_aircar_sedan"]
+[ext_resource type="PackedScene" path="res://assets/props/traffic/aircar_taxi/aircar_taxi.glb" id="v_aircar_taxi"]
+[ext_resource type="PackedScene" path="res://assets/props/traffic/hover_van/hover_van.glb" id="v_hover_van"]
+[ext_resource type="PackedScene" path="res://assets/props/traffic/patrol_cruiser/patrol_cruiser.glb" id="v_patrol_cruiser"]
+[ext_resource type="PackedScene" path="res://assets/props/traffic/sky_bus/sky_bus.glb" id="v_sky_bus"]
+[ext_resource type="Texture2D" path="res://assets/props/traffic/_kit/traffic_vehicle_albedo.png" id="t_albedo"]
+[ext_resource type="Texture2D" path="res://assets/props/traffic/_kit/traffic_vehicle_orm.png" id="t_orm"]
+[ext_resource type="Texture2D" path="res://assets/props/traffic/_kit/traffic_vehicle_normal.png" id="t_normal"]
+[ext_resource type="Texture2D" path="res://assets/props/traffic/_kit/traffic_vehicle_emission.png" id="t_emission"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_night"]
 sky_top_color = Color(0.02, 0.028, 0.055, 1)
@@ -51,7 +61,7 @@ emission = Color(1, 0.6, 0.3, 1)
 emission_energy_multiplier = 0.06
 
 [node name="Skyline" type="Node3D"]
-metadata/_doc = "World backdrop outside every zone: sky, environment, moonlight, near towers (tools/props/city.py) and the far city repeating them (FarTowers). M2 world_state drives the environment; see docs/decisions.md D-008 for coordinates."
+metadata/_doc = "World backdrop outside every zone: sky, environment, moonlight, near towers (tools/props/city.py), the far city repeating them (FarTowers), flying traffic (Traffic). M2 world_state drives the environment; see docs/decisions.md D-008 for coordinates."
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_night")
@@ -65,9 +75,21 @@ sky_mode = 1
 
 [node name="NearTowers" parent="." instance=ExtResource("3_near")]
 
-[node name="FarTowers" type="Node3D" parent="." node_paths=PackedStringArray("near_towers")]
+[node name="FarTowers" type="Node3D" parent="." node_paths=PackedStringArray("near_towers", "traffic")]
 script = ExtResource("1_far")
 near_towers = NodePath("../NearTowers")
+traffic = NodePath("../Traffic")
+
+[node name="Traffic" type="Node3D" parent="." node_paths=PackedStringArray("world_environment")]
+script = ExtResource("4_traffic")
+vehicles = Array[PackedScene]([ExtResource("v_aircar_sedan"), ExtResource("v_aircar_taxi"), ExtResource("v_hover_van"), ExtResource("v_patrol_cruiser"), ExtResource("v_sky_bus")])
+weights = PackedFloat32Array(35, 25, 18, 8, 14)
+albedo = ExtResource("t_albedo")
+orm = ExtResource("t_orm")
+normal = ExtResource("t_normal")
+emission = ExtResource("t_emission")
+emission_energy = 6.0
+world_environment = NodePath("../WorldEnvironment")
 
 [node name="StreetGlow" type="MeshInstance3D" parent="."]
 position = Vector3(0, -180, 0)
