@@ -88,6 +88,7 @@ LAYER_HANDLES = 262144        # 19 Grab Handles
 LAYER_PICKABLE = 4            # 3 Pickable Objects
 MASK_PICKABLE = 196615        # 1, 2, 3, 17, 18
 MASK_PLAYER_HANDS = 131072    # 18 Player Hands (fingertips press area buttons)
+RENDER_UNREFLECTED = 2048     # render layer 12: never in reflections (reflective surfaces, HUD; D-049)
 
 # Known resources: key -> (type, path, uid). The uid is given where the
 # committed scenes reference it; None writes the path only (Godot resolves it).
@@ -120,6 +121,7 @@ CATALOG: dict[str, tuple[str, str, str | None]] = {
     "hinge_detents": ("Script", "res://core/interaction/hinge_detents.gd", None),
     "press_sound": ("Script", "res://core/interaction/press_sound.gd", None),
     "holder_snap": ("Script", "res://core/interaction/holder_snap.gd", None),
+    "planar_reflection": ("Script", "res://core/rendering/planar_reflection.gd", None),
 }
 # assets/audio/sfx/<name>.wav referenced as "sfx/<name>"; uid where committed scenes use one.
 SFX_UIDS: dict[str, str | None] = {

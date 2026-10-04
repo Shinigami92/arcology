@@ -10,6 +10,7 @@ extends Node3D
 ##   --test=<suite>       run tools/tests/<suite>_tests.gd and quit with the failure count
 ##   --shots=<views>      render still images and quit (see tools/shots/shots.gd)
 ##   --shot-no-player     with --shots: hide the player rig (hands) in the stills
+##   --shot-player=x,z,yaw  with --shots: stand the player there first (mirrors)
 ##   --rain=<0..1>        start with rain on the glass (wet at once; RainOnGlass)
 ##   --rain-delay=<s>     with --rain: start dry and let the rain set in after s seconds
 
@@ -53,6 +54,8 @@ func _ready() -> void:
 		shots.set("hinges", (args.get("shot-hinge", "") as String).split(",", false))
 		shots.set("ab", args.get("shot-ab", ""))
 		shots.set("calls", (args.get("shot-call", "") as String).split(",", false))
+		shots.set("player_at", args.get("shot-player", ""))
+		shots.set("player", _player)
 		if args.has("shot-no-player"):
 			_player.visible = false
 		add_child(shots)

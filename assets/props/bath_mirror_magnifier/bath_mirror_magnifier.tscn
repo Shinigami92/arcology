@@ -9,8 +9,9 @@
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/vent_latch.wav" id="vent_latch"]
 [ext_resource type="Script" uid="uid://c8otihf11a0u7" path="res://core/interaction/hinge_body_blocker.gd" id="blocker"]
 [ext_resource type="Script" uid="uid://dwnb8l1buro5f" path="res://core/interaction/grab_pass_through.gd" id="pass_through"]
+[ext_resource type="Shader" path="res://assets/shaders/planar_mirror.gdshader" id="planar_mirror"]
 [ext_resource type="Script" path="res://core/interaction/named_material_override.gd" id="named_material_override"]
-[ext_resource type="Material" path="res://assets/materials/mirror.tres" id="mirror"]
+[ext_resource type="Script" path="res://core/rendering/planar_reflection.gd" id="planar_reflection"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_door0"]
 size = Vector3(0.204, 0.204, 0.025)
@@ -18,11 +19,15 @@ size = Vector3(0.204, 0.204, 0.025)
 [sub_resource type="BoxShape3D" id="BoxShape3D_door1"]
 size = Vector3(0.2, 0.013, 0.013)
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_mirror"]
+resource_local_to_scene = true
+shader = ExtResource("planar_mirror")
+
 [sub_resource type="SphereShape3D" id="SphereShape3D_grab"]
 radius = 0.05
 
 [node name="BathMirrorMagnifier" type="Node3D"]
-metadata/_doc = "Swing-arm magnifying mirror on a wall bracket. Origin = wall plane behind the pivot, at pivot height; front +Z. Folded flat along +X at 0 degrees; grab the head's rim and swing it out (0..170 degrees about the vertical pivot 40 mm off the wall, 90 = straight into the room); it stays where it's left."
+metadata/_doc = "Swing-arm magnifying mirror on a wall bracket. Origin = wall plane behind the pivot, at pivot height; front +Z. Folded flat along +X at 0 degrees; grab the head's rim and swing it out (0..170 degrees about the vertical pivot 40 mm off the wall, 90 = straight into the room); it stays where it's left. The glass is a live mirror that enlarges (D-049)."
 
 [node name="Bracket" parent="." instance=ExtResource("bath_mirror_magnifier_bracket")]
 
@@ -87,4 +92,13 @@ handles_root = NodePath("../HingeOrigin/InteractableHinge/Leaf")
 script = ExtResource("named_material_override")
 root = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody/Arm")
 material_name = "mirror_glass"
-material = ExtResource("mirror")
+material = SubResource("ShaderMaterial_mirror")
+layers = 2048
+
+[node name="Reflection" type="Node3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody"]
+position = Vector3(0.315, 0, 0.0062)
+script = ExtResource("planar_reflection")
+size = Vector2(0.189, 0.189)
+materials = [SubResource("ShaderMaterial_mirror")]
+reach = 3.0
+magnification = 3.0

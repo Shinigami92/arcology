@@ -155,8 +155,8 @@ func _process_modification_with_delta(delta: float) -> void:
 		torso_now.clear()
 		var parent := Transform3D()
 		for i in _torso.size():
-			var position := hips if i == 0 else parent * (_torso_rest[i - 1].affine_inverse() * _torso_rest[i].origin)
-			parent = Transform3D(bases[i], position)
+			var origin := hips if i == 0 else parent * (_torso_rest[i - 1].affine_inverse() * _torso_rest[i].origin)
+			parent = Transform3D(bases[i], origin)
 			torso_now.append(parent)
 		hips += neck_target - parent * (upper_chest_rest.affine_inverse() * _neck_rest.origin)
 	hips = torso_now[0].origin

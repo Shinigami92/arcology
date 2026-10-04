@@ -142,6 +142,8 @@ func _build_beam() -> void:
 	_beam.mesh = mesh
 	_beam.material_override = _material
 	_beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# A pointer, not a light: never drawn in mirrors (D-049).
+	_beam.layers = PlanarReflection.LAYER_UNREFLECTED
 	_beam.visible = false
 	add_child(_beam)
 

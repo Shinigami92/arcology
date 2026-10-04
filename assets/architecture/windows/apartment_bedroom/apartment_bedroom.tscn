@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" path="res://assets/architecture/windows/apartment_bedroom/apartment_bedroom_frame.glb" id="apartment_bedroom_frame"]
 [ext_resource type="Script" path="res://core/interaction/named_material_override.gd" id="named_material_override"]
 [ext_resource type="Material" path="res://assets/materials/window_led_warm.tres" id="window_led_warm"]
+[ext_resource type="Script" path="res://core/rendering/planar_reflection.gd" id="planar_reflection"]
 [ext_resource type="PackedScene" path="res://assets/architecture/windows/apartment_bedroom/apartment_bedroom_shade_bar.glb" id="apartment_bedroom_shade_bar"]
 [ext_resource type="Material" path="res://assets/materials/shade_fabric.tres" id="shade_fabric"]
 [ext_resource type="Script" uid="uid://c8gx2wc7hsxf5" path="res://addons/godot-xr-tools/interactables/interactable_hinge.gd" id="hinge"]
@@ -141,8 +142,18 @@ material = ExtResource("window_led_warm")
 [node name="Glass0" type="MeshInstance3D" parent="." groups=["window_glass"]]
 position = Vector3(-0.64, 1.4, -0.05)
 cast_shadow = 0
+layers = 2048
 mesh = SubResource("QuadMesh_0")
 material_override = SubResource("ShaderMaterial_glass")
+
+[node name="Reflection" type="Node3D" parent="."]
+position = Vector3(0, 1.4, -0.05)
+script = ExtResource("planar_reflection")
+size = Vector2(2.51, 1.91)
+materials = [SubResource("ShaderMaterial_glass")]
+pixels_per_meter = 400.0
+msaa = false
+reach = 6.8
 
 [node name="Shade0" type="Node3D" parent="."]
 position = Vector3(-0.64, 2.355, -0.02)
@@ -220,6 +231,7 @@ handles_root = NodePath("../HingeOrigin/InteractableHinge/Leaf")
 [node name="Glass1" type="MeshInstance3D" parent="Vent/HingeOrigin/InteractableHinge/Leaf/DoorBody" groups=["window_glass"]]
 position = Vector3(0, 0.955, -0.05)
 cast_shadow = 0
+layers = 2048
 mesh = SubResource("QuadMesh_2")
 material_override = SubResource("ShaderMaterial_glass")
 

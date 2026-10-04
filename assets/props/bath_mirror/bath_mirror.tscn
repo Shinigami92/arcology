@@ -1,17 +1,22 @@
 [gd_scene format=3]
 
 [ext_resource type="PackedScene" path="res://assets/props/bath_mirror/bath_mirror.glb" id="bath_mirror"]
+[ext_resource type="Shader" path="res://assets/shaders/planar_mirror.gdshader" id="planar_mirror"]
 [ext_resource type="Script" path="res://core/interaction/named_material_override.gd" id="named_material_override"]
-[ext_resource type="Material" path="res://assets/materials/mirror.tres" id="mirror"]
+[ext_resource type="Script" path="res://core/rendering/planar_reflection.gd" id="planar_reflection"]
 [ext_resource type="Script" uid="uid://dq042kibpfryy" path="res://addons/godot-xr-tools/interactables/interactable_area_button.gd" id="area_button"]
 [ext_resource type="Script" path="res://core/interaction/light_switch.gd" id="light_switch"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/button_click.wav" id="button_click"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_mirror"]
+resource_local_to_scene = true
+shader = ExtResource("planar_mirror")
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_Halo"]
 size = Vector3(0.05, 0.05, 0.03)
 
 [node name="BathMirror" type="Node3D"]
-metadata/_doc = "Backlit bathroom mirror, frame 1.20 x 0.90 m, 35 mm off the wall, with a warm LED halo on the wall around it. Origin = bottom center of its back, on the wall plane; front +Z. Touch the round sensor near the bottom of the glass to switch the halo and the vanity light (on by default; the sensor ring stays dimly lit when off). The glass reflects the room's ReflectionProbe (no live mirror yet)."
+metadata/_doc = "Backlit bathroom mirror, frame 1.20 x 0.90 m, 35 mm off the wall, with a warm LED halo on the wall around it. Origin = bottom center of its back, on the wall plane; front +Z. Touch the round sensor near the bottom of the glass to switch the halo and the vanity light (on by default; the sensor ring stays dimly lit when off). The glass is a live mirror, one reflection per eye while it's in view (D-049)."
 
 [node name="Model" parent="." instance=ExtResource("bath_mirror")]
 
@@ -19,7 +24,15 @@ metadata/_doc = "Backlit bathroom mirror, frame 1.20 x 0.90 m, 35 mm off the wal
 script = ExtResource("named_material_override")
 root = NodePath("../Model")
 material_name = "mirror_glass"
-material = ExtResource("mirror")
+material = SubResource("ShaderMaterial_mirror")
+layers = 2048
+
+[node name="Reflection" type="Node3D" parent="."]
+position = Vector3(0, 0.45, 0.0553)
+script = ExtResource("planar_reflection")
+size = Vector2(1.184, 0.884)
+materials = [SubResource("ShaderMaterial_mirror")]
+reach = 5.0
 
 [node name="HaloMaterial" type="Node" parent="." node_paths=PackedStringArray("root")]
 script = ExtResource("named_material_override")

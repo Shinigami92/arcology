@@ -1,5 +1,5 @@
 // Window glass (D-033, D-034): one transparent layer per pane, nearly clear, with
-// reflections (the room's ReflectionProbe at night), low-frequency smudges,
+// reflections (live per eye while in view, D-049; else the room's ReflectionProbe), low-frequency smudges,
 // smart-glass tint, an optional HUD readout and rain on the outside.
 // Style guide: a single pane, no stacked transparent layers.
 //
@@ -17,6 +17,10 @@
 // RainOnGlass puts the window materials on the wet one only while the glass is
 // wet, because a shader that reads the screen makes Godot copy it every frame.
 
+// Live reflection (D-049): a PlanarReflection per window renders the room as seen
+// in the glass while the window is in view; then it replaces the probe reflection.
+#include "res://assets/shaders/planar_reflection.gdshaderinc"
+
 // ---- glass
 uniform vec3 glass_color : source_color = vec3(0.78, 0.85, 0.9);
 // Share of the view behind that the clear glass takes away (dust, absorption).
@@ -24,6 +28,8 @@ uniform float clear_alpha : hint_range(0.0, 0.3) = 0.035;
 // Specular level (0.5 = F0 0.04, real float glass); a little more reads better in VR.
 uniform float reflectivity : hint_range(0.0, 1.0) = 0.6;
 uniform float roughness : hint_range(0.0, 0.5) = 0.025;
+// Live reflection strength over one face's Fresnel: double glazing reflects from both panes.
+uniform float reflection_gain : hint_range(0.0, 4.0) = 1.6;
 
 // ---- smudges: large, soft wipes only (no high-frequency noise: it shimmers in stereo)
 uniform float smudge_amount : hint_range(0.0, 1.0) = 0.5;
@@ -455,6 +461,21 @@ void fragment() {
 	coverage = clamp(coverage + (1.0 - coverage) * fresnel * 0.9, 0.0, 1.0);
 
 	vec3 emission = tint_color * tint_glow * t;
+
+	// Live reflection, on panes in the reflection's plane only (not a tilted vent):
+	// Schlick's Fresnel with the glass's F0 (SPECULAR 0.5 = 0.04), added as light.
+	float specular = clamp(reflectivity + tint_reflectivity * t, 0.0, 1.0);
+	float live = 0.0;
+	if (reflection_enabled > 0.0) {
+		vec3 world_n = normalize((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).xyz);
+		live = reflection_enabled * smoothstep(0.998, 0.9999, abs(dot(world_n, reflection_normal)));
+		if (live > 0.0) {
+			vec3 world_pos = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
+			float f0 = 0.08 * specular;
+			float reflect_f = f0 + (1.0 - f0) * fresnel;
+			emission += planar_reflection(world_pos, VIEW_INDEX) * reflect_f * reflection_gain * live * (1.0 - m * 0.3);
+		}
+	}
 	// The rain layer is outside: seen through the glass, over the view behind.
 	// The glass itself (lit albedo) keeps its own coverage.
 	float glass_coverage = coverage;
@@ -482,7 +503,8 @@ void fragment() {
 	ALPHA = coverage;
 	PREMUL_ALPHA_FACTOR = 1.0;
 	METALLIC = 0.0;
-	SPECULAR = clamp(reflectivity + tint_reflectivity * t, 0.0, 1.0);
+	// The probe's reflection (and the lamps' highlights) only where the live one isn't.
+	SPECULAR = specular * (1.0 - live);
 #ifdef WINDOW_GLASS_RAIN
 	ROUGHNESS = clamp(roughness + m * 0.18 + r.rough, 0.0, 1.0);
 #else

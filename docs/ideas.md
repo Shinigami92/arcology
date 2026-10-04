@@ -20,7 +20,7 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [later] Lie down on the bed.
 - [later] In-world settings panel for comfort options (no flat menus).
 - [later] Hand tracking (Steam Frame) in addition to controllers. The avatar's skeleton already carries the OpenXR hand joints (`<Side>Palm`, metacarpals, tips; D-037), so `XRHandModifier3D` can drive it; verify the joint orientations in the headset first.
-- [M2] Player avatar stage 4: Silena's head, face and hair (`docs/characters/silena_vesper.md`). The current `HeadMesh` is a shadow-only placeholder (MPFB head, closed eyelids, a simple hair volume). Wanted: violet eyes and smoky makeup, the violet filigree markings on cheek, temple and neck, the messy updo with loose strands (hair cards), the dangling earring, the necklace. Pairs with the working mirror: then `HeadMesh` and `Collar` switch from shadows-only to render layers hidden only from the player's own camera (D-041).
+- [M2] Player avatar stage 4: Silena's head, face and hair (`docs/characters/silena_vesper.md`). The current `HeadMesh` is a shadow-only placeholder (MPFB head, closed eyelids, a simple hair volume). Wanted: violet eyes and smoky makeup, the violet filigree markings on cheek, temple and neck, the messy updo with loose strands (hair cards), the dangling earring, the necklace. The mirror works (D-049) and already shows the placeholder head (render layer 11, hidden from the player's own camera).
 - [later] Avatar polish (artist's second-pass list): the front of the armholes when reaching forward (sleeve folds into the coat; corrective weights or a helper bone), five small folded faces at the back of the shoulders (a light speck), sharper coat textures (the vine is soft at ~1.2 px/mm; split front/back atlases), notched lapel and collar shaping, a real heel block on the boots, an elbow helper bone for full bends, a second forearm twist bone for wrist rolls beyond 100°. Arm length is 1–2 cm long (negotiable).
 - [later] Per-object grab poses for the avatar's hands: the hand wraps a door lever, a can, the shower head instead of the generic fist. XR Tools pose areas swap in their own animations (wrong bones), so this needs avatar poses per grip type first (D-041).
 - [later] Seated or standing play mode (option in the settings panel). The avatar stands and walks either way; the user plays seated but is fine with a standing body (VRChat habit).
@@ -40,7 +40,7 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [later] Impact sounds per surface: a falling or thrown object sounds different on vinyl, carpet (muffled), concrete and furniture. Needs a surface tag on static bodies (e.g. a group or metadata per floor material, set by the apartment generator) that `ImpactSound` looks up on contact, plus sound sets per object and surface.
 - [later] Door hardware: levers press down while grabbed (latch: the door opens only with the lever down), bathroom thumb-turn and entrance deadbolt lock the door, smart-lock LED red/green; latch and deadbolt sounds. The glbs already have the levers and turns as separate parts on their axes (D-035).
 - [later] Ceiling trim: maybe a shadow gap with an LED strip. Bathroom wall finish (tiles or a wet-room skirting).
-- [later] Working bathroom mirror. The avatar exists now (D-041); for her to show in it, the head needs stage 4 and render layers instead of shadows-only. Godot 4.7 has no hardware ray tracing, so the options to measure against the 90 FPS budget are: planar reflection via a SubViewport (renders the room again for both eyes, the expensive but correct one), a box-projected ReflectionProbe updated in real time, or SSR (can't show what's off screen). Good stress test for the budget.
+- [later] Live reflections: a cheaper pass (skip small props via a render layer), a curved magnifier (today a planar zoom), rain and steam on the mirror and the shower screen (D-049).
 - [M2] Physical light switches and dimmers per room, and/or a smart-home hub panel (could be the same in-world terminal as the world-state control panel).
 - [M2] Windows (D-033): tilt vent in the bedroom, motorized shades and smart-glass tint per room via a wall panel, HUD readout on the living room glass. Done on placeholders; the artist's frame/sash/panel glbs drop in by rerunning `tools/props/window.py`.
 - [M2] Window HUD: drive it from WorldState (time, temperature, weather) once that exists; maybe more readouts (news ticker, messages).
@@ -131,6 +131,8 @@ New subagents when a phase starts (the user agreed to add or update agents whene
 - Grappling hook (least satisfying in the XR Tools demo; not a fit).
 
 ## Done
+
+- Live reflections (2026-10-04): the bathroom mirror, the magnifier (3× zoom), the shower screen and the window glass reflect the room and the avatar, per eye, while in view; the windows share one renderer (D-049).
 
 - Occlusion culling (2026-10-04, roadmap phase 0): the apartment generator writes a box occluder per wall, floor and ceiling; the city and traffic hide while no window is on screen (`OutsideView`, D-048). Bathroom 271 → 216 draw calls, hallway 465 → 332; no visible difference in the headset.
 

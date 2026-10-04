@@ -1,200 +1,239 @@
 {
   "budget": {
     "cpu_ms_p95": 6.0,
-    "draw_calls_max": 600.0,
+    "draw_calls_max": 750.0,
     "frames_dropped_pct": 0.5,
     "gpu_ms_p95": 8.0,
     "primitives_max": 1500000.0
   },
-  "cpu_ms_p95": 2.53999996185303,
-  "date": "2026-10-04T20:42:08",
-  "draw_calls_max": 370,
+  "cpu_ms_p95": 3.4520001411438,
+  "date": "2026-10-04T21:51:09",
+  "draw_calls_max": 732,
   "failures": [],
-  "frame_ms_avg": 5.81867665154673,
-  "frame_ms_max": 54.0449981689453,
-  "frame_ms_p95": 7.01599979400635,
-  "frame_ms_p99": 7.35799980163574,
-  "frames": 3439,
-  "frames_dropped": 4,
+  "frame_ms_avg": 6.23411896784927,
+  "frame_ms_max": 58.7270011901855,
+  "frame_ms_p95": 7.75400018692017,
+  "frame_ms_p99": 8.24499988555908,
+  "frames": 3211,
+  "frames_dropped": 6,
   "frames_dropped_at": [
     {
-      "cpu_ms": 2.3,
-      "gpu_ms": 5.3,
-      "marker": "P3",
-      "ms": 54.0,
+      "cpu_ms": 2.2,
+      "gpu_ms": 4.6,
+      "marker": "P4",
+      "ms": 39.1,
       "pipeline_compiles": 0,
-      "t": 5.64
+      "t": 7.81
     },
     {
-      "cpu_ms": 1.9,
-      "gpu_ms": 4.7,
-      "marker": "P4",
-      "ms": 22.2,
+      "cpu_ms": 3.5,
+      "gpu_ms": 6.1,
+      "marker": "P5",
+      "ms": 58.7,
       "pipeline_compiles": 0,
-      "t": 8.33
+      "t": 9.87
+    },
+    {
+      "cpu_ms": 2.1,
+      "gpu_ms": 5.1,
+      "marker": "P6",
+      "ms": 38.0,
+      "pipeline_compiles": 0,
+      "t": 12.06
     },
     {
       "cpu_ms": 2.1,
       "gpu_ms": 4.8,
-      "marker": "P5",
-      "ms": 45.3,
-      "pipeline_compiles": 0,
-      "t": 10.66
+      "marker": "P6",
+      "ms": 16.9,
+      "pipeline_compiles": 2,
+      "t": 13.44
     },
     {
-      "cpu_ms": 1.9,
-      "gpu_ms": 5.6,
+      "cpu_ms": 3.0,
+      "gpu_ms": 6.3,
       "marker": "P7",
-      "ms": 17.8,
+      "ms": 19.3,
+      "pipeline_compiles": 23,
+      "t": 13.86
+    },
+    {
+      "cpu_ms": 2.0,
+      "gpu_ms": 4.2,
+      "marker": "P9",
+      "ms": 20.2,
       "pipeline_compiles": 0,
-      "t": 15.64
+      "t": 17.79
     }
   ],
-  "frames_dropped_pct": 0.116312881651643,
-  "frames_over_budget_pct": 0.145391102064554,
+  "frames_dropped_pct": 0.186857676736219,
+  "frames_over_budget_pct": 0.218000622858922,
   "gpu": "NVIDIA GeForce RTX 4080 SUPER",
-  "gpu_ms_avg": 5.12961122351145,
-  "gpu_ms_p95": 5.75299978256226,
+  "gpu_ms_avg": 5.53935347298379,
+  "gpu_ms_p95": 6.54099988937378,
   "hidden": [],
   "mode": "desktop-approx",
-  "objects_max": 411,
+  "objects_max": 770,
   "pass": true,
   "per_marker": [
     {
-      "draw_calls_max": 241,
-      "frames": 21,
-      "gpu_ms_avg": 5.78,
+      "draw_calls_max": 690,
+      "frames": 19,
+      "gpu_ms_avg": 6.61,
       "marker": "P1",
-      "objects_max": 249,
-      "primitives_max": 569559
+      "objects_max": 766,
+      "primitives_max": 855372,
+      "reflection_gpu_ms_avg": 0.78
     },
     {
-      "draw_calls_max": 303,
-      "frames": 354,
-      "gpu_ms_avg": 5.21,
+      "draw_calls_max": 690,
+      "frames": 324,
+      "gpu_ms_avg": 5.79,
       "marker": "P2",
-      "objects_max": 314,
-      "primitives_max": 559326
+      "objects_max": 770,
+      "primitives_max": 841709,
+      "reflection_gpu_ms_avg": 0.54
     },
     {
-      "draw_calls_max": 276,
-      "frames": 347,
-      "gpu_ms_avg": 5.22,
+      "draw_calls_max": 636,
+      "frames": 322,
+      "gpu_ms_avg": 5.86,
       "marker": "P3",
-      "objects_max": 284,
-      "primitives_max": 534615
+      "objects_max": 673,
+      "primitives_max": 739789,
+      "reflection_gpu_ms_avg": 0.58
     },
     {
-      "draw_calls_max": 236,
-      "frames": 400,
-      "gpu_ms_avg": 4.55,
+      "draw_calls_max": 310,
+      "frames": 393,
+      "gpu_ms_avg": 4.59,
       "marker": "P4",
-      "objects_max": 262,
-      "primitives_max": 370765
+      "objects_max": 327,
+      "primitives_max": 380176,
+      "reflection_gpu_ms_avg": 0.0
     },
     {
-      "draw_calls_max": 370,
-      "frames": 356,
-      "gpu_ms_avg": 5.09,
+      "draw_calls_max": 641,
+      "frames": 341,
+      "gpu_ms_avg": 5.34,
       "marker": "P5",
-      "objects_max": 411,
-      "primitives_max": 589303
+      "objects_max": 726,
+      "primitives_max": 783371,
+      "reflection_gpu_ms_avg": 0.21
     },
     {
-      "draw_calls_max": 214,
-      "frames": 381,
-      "gpu_ms_avg": 4.83,
-      "marker": "P6",
-      "objects_max": 221,
-      "primitives_max": 402482
-    },
-    {
-      "draw_calls_max": 216,
+      "draw_calls_max": 534,
       "frames": 370,
-      "gpu_ms_avg": 4.96,
-      "marker": "P7",
-      "objects_max": 222,
-      "primitives_max": 402356
+      "gpu_ms_avg": 4.88,
+      "marker": "P6",
+      "objects_max": 552,
+      "primitives_max": 531742,
+      "reflection_gpu_ms_avg": 0.06
     },
     {
-      "draw_calls_max": 293,
-      "frames": 366,
-      "gpu_ms_avg": 5.06,
+      "draw_calls_max": 732,
+      "frames": 300,
+      "gpu_ms_avg": 6.29,
+      "marker": "P7",
+      "objects_max": 755,
+      "primitives_max": 929415,
+      "reflection_gpu_ms_avg": 1.22
+    },
+    {
+      "draw_calls_max": 531,
+      "frames": 355,
+      "gpu_ms_avg": 5.24,
       "marker": "P8",
-      "objects_max": 311,
-      "primitives_max": 609151
+      "objects_max": 574,
+      "primitives_max": 609151,
+      "reflection_gpu_ms_avg": 0.06
     },
     {
       "draw_calls_max": 332,
-      "frames": 342,
-      "gpu_ms_avg": 5.5,
+      "frames": 330,
+      "gpu_ms_avg": 5.66,
       "marker": "P9",
       "objects_max": 343,
-      "primitives_max": 612855
+      "primitives_max": 620781,
+      "reflection_gpu_ms_avg": 0.0
     },
     {
-      "draw_calls_max": 290,
-      "frames": 334,
-      "gpu_ms_avg": 5.62,
+      "draw_calls_max": 629,
+      "frames": 305,
+      "gpu_ms_avg": 6.22,
       "marker": "P10",
-      "objects_max": 304,
-      "primitives_max": 641705
+      "objects_max": 666,
+      "primitives_max": 806398,
+      "reflection_gpu_ms_avg": 0.51
     },
     {
-      "draw_calls_max": 183,
-      "frames": 168,
-      "gpu_ms_avg": 5.61,
+      "draw_calls_max": 686,
+      "frames": 152,
+      "gpu_ms_avg": 6.3,
       "marker": "P11",
-      "objects_max": 189,
-      "primitives_max": 300084
+      "objects_max": 753,
+      "primitives_max": 830479,
+      "reflection_gpu_ms_avg": 0.66
     }
   ],
-  "physics_ms_p95": 1.11500000953674,
-  "pipeline_compiles": 107,
+  "physics_ms_p95": 1.45200002193451,
+  "pipeline_compiles": 184,
   "pipeline_compiles_at": [
     {
-      "ms": 7.8,
-      "n": 95,
+      "ms": 7.1,
+      "n": 144,
       "t": 3.0
     },
     {
-      "ms": 6.5,
-      "n": 1,
-      "t": 3.26
-    },
-    {
-      "ms": 7.3,
+      "ms": 7.8,
       "n": 2,
       "t": 3.43
     },
     {
-      "ms": 5.2,
+      "ms": 7.7,
       "n": 4,
-      "t": 3.68
+      "t": 3.7
+    },
+    {
+      "ms": 5.5,
+      "n": 4,
+      "t": 4.12
+    },
+    {
+      "ms": 4.5,
+      "n": 1,
+      "t": 8.93
+    },
+    {
+      "ms": 8.5,
+      "n": 1,
+      "t": 12.08
     },
     {
       "ms": 5.8,
       "n": 1,
-      "t": 8.94
-    },
-    {
-      "ms": 6.4,
-      "n": 1,
-      "t": 12.07
-    },
-    {
-      "ms": 6.7,
-      "n": 1,
       "t": 12.16
     },
     {
-      "ms": 6.1,
+      "ms": 16.9,
       "n": 2,
-      "t": 17.9
+      "t": 13.44
+    },
+    {
+      "ms": 19.3,
+      "n": 23,
+      "t": 13.86
+    },
+    {
+      "ms": 5.0,
+      "n": 2,
+      "t": 17.91
     }
   ],
-  "primitives_max": 641705,
-  "process_ms_p95": 0.150999993085861,
-  "render_cpu_ms_p95": 1.42700004577637,
+  "primitives_max": 929415,
+  "process_ms_p95": 0.167999997735024,
+  "reflection_gpu_ms_avg": 0.346795702919861,
+  "reflection_gpu_ms_p95": 1.16200006008148,
+  "render_cpu_ms_p95": 2.18400001525879,
   "zone": "apartment"
 }

@@ -1276,6 +1276,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 0, 0.1)
 
 [node name="SofaSeatPrompt" type="Label3D" parent="Seats" unique_id=736016224]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 0.9, 0.9)
+layers = 2048
 pixel_size = 0.0015
 billboard = 1
 modulate = Color(0.02, 0.85, 0.91, 1)
@@ -1304,6 +1305,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.3, 0, -2.3)
 
 [node name="BedSeatPrompt" type="Label3D" parent="Seats" unique_id=309468014]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.3, 0.85, -1.6)
+layers = 2048
 pixel_size = 0.0015
 billboard = 1
 modulate = Color(0.02, 0.85, 0.91, 1)
@@ -1332,6 +1334,7 @@ transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 1.45
 
 [node name="ToiletSeatPrompt" type="Label3D" parent="Seats" unique_id=1422601524]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.05, 0.75, 5.1)
+layers = 2048
 pixel_size = 0.0015
 billboard = 1
 modulate = Color(0.02, 0.85, 0.91, 1)

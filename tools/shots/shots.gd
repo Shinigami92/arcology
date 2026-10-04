@@ -10,8 +10,9 @@ extends Node
 ## Windows/BedroomWindow/Vent:10) and --shot-ab=B shows the B variant of
 ## every ABSwitch first. --shot-call=<zone path>:<method>:<number>[,...] calls
 ## a method first, e.g. Windows/LivingWindow/Shade:set_closure:0.6 or
-## Windows/LivingWindow/SmartGlass:set_tint:0.9. Writes tools/shots/results/shot-<n>.png (gitignored) at
-## [constant SIZE] and quits.
+## Windows/LivingWindow/SmartGlass:set_tint:0.9. --shot-player=x,z,yaw stands the
+## player there first (e.g. in front of a mirror, D-049). Writes
+## tools/shots/results/shot-<n>.png (gitignored) at [constant SIZE] and quits.
 
 const SIZE := Vector2i(1920, 1080)
 const OUT_DIR := "res://tools/shots/results"
@@ -23,6 +24,9 @@ var views: PackedStringArray = []
 var hinges: PackedStringArray = []
 var ab := ""
 var calls: PackedStringArray = []
+## "x,z,yaw" to stand the player at (the avatar shows in mirrors), or "".
+var player_at := ""
+var player: Node3D
 
 
 func _ready() -> void:
@@ -30,6 +34,7 @@ func _ready() -> void:
 	sub.size = SIZE
 	sub.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	sub.msaa_3d = Viewport.MSAA_4X
+	sub.use_occlusion_culling = get_viewport().use_occlusion_culling
 	sub.world_3d = get_viewport().world_3d
 	var cam := Camera3D.new()
 	cam.near = 0.03
@@ -38,6 +43,16 @@ func _ready() -> void:
 	add_child(sub)
 	cam.current = true
 	get_viewport().disable_3d = true
+	PlanarReflection.view_camera = cam
+
+	if player_at and player:
+		var p := player_at.split_floats(",")
+		var body := player.get_node_or_null("PlayerBody")
+		if body and p.size() >= 2:
+			var yaw := deg_to_rad(p[2]) if p.size() > 2 else 0.0
+			body.call("teleport", Transform3D(Basis(Vector3.UP, yaw), Vector3(p[0], 0.0, p[1])))
+		else:
+			push_warning("SHOTS: can't place the player at %s" % player_at)
 
 	if ab == "B":
 		ABSwitch.toggle_all(get_tree())

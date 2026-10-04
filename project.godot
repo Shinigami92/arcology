@@ -36,6 +36,8 @@ player/standard_height=1.8
 
 [layer_names]
 
+3d_render/layer_11="Third Person"
+3d_render/layer_12="Unreflected"
 3d_physics/layer_1="Static World"
 3d_physics/layer_2="Dynamic World"
 3d_physics/layer_3="Pickable Objects"

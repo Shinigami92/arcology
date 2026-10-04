@@ -86,7 +86,7 @@ func blocked_lanes(near_towers: Node3D) -> PackedStringArray:
 	for tower: Node3D in near_towers.get_children():
 		var footprint: Vector2 = tower.get_meta(&"footprint", Vector2.ZERO)
 		var top := tower.global_position.y + _model_height(tower)
-		var to_local := tower.global_transform.affine_inverse()
+		var world_to_tower := tower.global_transform.affine_inverse()
 		for ci in CORRIDORS.size():
 			var c: Dictionary = CORRIDORS[ci]
 			for level: float in c["levels"]:
@@ -97,7 +97,7 @@ func blocked_lanes(near_towers: Node3D) -> PackedStringArray:
 					var dir: Vector3 = lane[1]
 					var length: float = lane[2]
 					for s in range(0, int(length) + 1, 4):
-						var p := to_local * (start + dir * s)
+						var p := world_to_tower * (start + dir * s)
 						if absf(p.x) < footprint.x * 0.5 + CLEARANCE and absf(p.z) < footprint.y * 0.5 + CLEARANCE:
 							hits.append("%d/%.0f -> %s" % [ci, level, tower.name])
 							break
@@ -228,7 +228,7 @@ func _vehicle_types() -> Array[Dictionary]:
 		# Read the mesh from the scene's data: instancing a glb and freeing it
 		# again left ~130 meshes rendering (+150 draw calls, D-047).
 		var state := scene.get_state()
-		var mesh: Mesh
+		var mesh: Mesh = null
 		for n in state.get_node_count():
 			for p in state.get_node_property_count(n):
 				if not mesh and state.get_node_property_name(n, p) == &"mesh":

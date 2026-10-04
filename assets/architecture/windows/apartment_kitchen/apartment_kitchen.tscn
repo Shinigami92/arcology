@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" path="res://assets/architecture/windows/apartment_kitchen/apartment_kitchen_frame.glb" id="apartment_kitchen_frame"]
 [ext_resource type="Script" path="res://core/interaction/named_material_override.gd" id="named_material_override"]
 [ext_resource type="Material" path="res://assets/materials/window_led_cyan.tres" id="window_led_cyan"]
+[ext_resource type="Script" path="res://core/rendering/planar_reflection.gd" id="planar_reflection"]
 [ext_resource type="PackedScene" path="res://assets/architecture/windows/apartment_kitchen/apartment_kitchen_shade_bar.glb" id="apartment_kitchen_shade_bar"]
 [ext_resource type="Material" path="res://assets/materials/shade_fabric.tres" id="shade_fabric"]
 [ext_resource type="PackedScene" path="res://assets/architecture/windows/_kit/window_panel.glb" id="window_panel"]
@@ -109,8 +110,18 @@ material = ExtResource("window_led_cyan")
 [node name="Glass0" type="MeshInstance3D" parent="." groups=["window_glass"]]
 position = Vector3(0, 1.65, -0.05)
 cast_shadow = 0
+layers = 2048
 mesh = SubResource("QuadMesh_0")
 material_override = SubResource("ShaderMaterial_glass")
+
+[node name="Reflection" type="Node3D" parent="."]
+position = Vector3(0, 1.65, -0.05)
+script = ExtResource("planar_reflection")
+size = Vector2(1.81, 1.41)
+materials = [SubResource("ShaderMaterial_glass")]
+pixels_per_meter = 400.0
+msaa = false
+reach = 6.8
 
 [node name="Shade0" type="Node3D" parent="."]
 position = Vector3(0, 2.355, -0.02)

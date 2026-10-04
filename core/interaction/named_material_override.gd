@@ -7,7 +7,8 @@ extends Node
 ## Without [member material], it overrides those surfaces with a copy of the
 ## imported material instead. Either way [member properties] are then set on
 ## the override (e.g. {"blend_mode": 1} to turn an emissive glow additive), and
-## [member cast_shadow] (if >= 0) on the meshes that carry it.
+## [member cast_shadow] (if >= 0) and [member layers] (if not 0) on the meshes
+## that carry it.
 ## Put it before nodes that look the material up by name (LightSwitch): the
 ## copy keeps the name.
 
@@ -18,6 +19,9 @@ extends Node
 @export var properties: Dictionary = {}
 ## GeometryInstance3D.ShadowCastingSetting for meshes with this material; -1 = unchanged.
 @export_range(-1, 3) var cast_shadow := -1
+## Render layers for meshes with this material; 0 = unchanged (e.g. a mirror's
+## glass on the reflective layer, D-049).
+@export_flags_3d_render var layers := 0
 
 var _override: Material
 
@@ -48,6 +52,8 @@ func _apply(node: Node) -> int:
 				mesh_instance.set_surface_override_material(i, _override)
 				if cast_shadow >= 0:
 					mesh_instance.cast_shadow = cast_shadow as GeometryInstance3D.ShadowCastingSetting
+				if layers != 0:
+					mesh_instance.layers = layers
 				count += 1
 	for child in node.get_children():
 		count += _apply(child)

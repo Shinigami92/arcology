@@ -131,10 +131,10 @@ func update(delta: float, homes: Array[Transform3D], velocity: Vector3, on_groun
 		# a stance lasting about one step of the other foot.
 		var target := homes[i]
 		target.origin += flat * (_duration[i] * (1.0 - _t[i]) + _duration[i] * 0.5)
-		var reach := target.origin - _from[i].origin
-		reach.y = 0.0
-		if reach.length() > max_stride:
-			target.origin = _from[i].origin + reach.normalized() * max_stride + Vector3.UP * (target.origin.y - _from[i].origin.y)
+		var stride := target.origin - _from[i].origin
+		stride.y = 0.0
+		if stride.length() > max_stride:
+			target.origin = _from[i].origin + stride.normalized() * max_stride + Vector3.UP * (target.origin.y - _from[i].origin.y)
 		_t[i] = minf(_t[i] + delta / _duration[i], 1.0)
 		var s := smoothstep(0.0, 1.0, _t[i])
 		var basis := Basis(_from[i].basis.get_rotation_quaternion().slerp(target.basis.get_rotation_quaternion(), s))

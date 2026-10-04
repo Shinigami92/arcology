@@ -4,9 +4,10 @@ extends Node3D
 ## Connects BodyIK to the headset, the floor (XR Tools' PlayerBody, which
 ## stands on the ground under the camera; the origin is raised by the seated
 ## height calibration) and the AvatarHand targets, receives the finger curls
-## from the hands, and renders the meshes in [member shadow_only_meshes] as
-## shadows only (first person: the head, and the collar, which crowds the view
-## when looking down).
+## from the hands, and puts the meshes in [member third_person_meshes] on the
+## Third Person render layer, which the player's camera skips and reflections
+## show (D-049): the head, and the collar, which crowds the view when looking
+## down. They still cast shadows.
 ##
 ## Scene (written by tools/player/avatar.gd): AvatarBody -> Model (the glb) with
 ## BodyIK, the AvatarSprings (coat, belt items) and the Fingertip press areas on
@@ -15,8 +16,8 @@ extends Node3D
 
 const FINGERS: Array[StringName] = [&"Index", &"Middle", &"Ring", &"Thumb"]
 
-## Meshes (node names under the skeleton) drawn as shadows only.
-@export var shadow_only_meshes: PackedStringArray = ["HeadMesh", "Collar"]
+## Meshes (node names under the skeleton) hidden from the player's own camera.
+@export var third_person_meshes: PackedStringArray = ["HeadMesh", "Collar"]
 
 var _tree: AnimationTree
 var _ik: BodyIK
@@ -30,9 +31,9 @@ func _ready() -> void:
 	_ik = found[0] as BodyIK if found else null
 	found = find_children("*", "AvatarSprings", true, false)
 	_springs = found[0] as AvatarSprings if found else null
-	for mesh_name in shadow_only_meshes:
+	for mesh_name in third_person_meshes:
 		for node in find_children(mesh_name, "MeshInstance3D", true, false):
-			(node as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+			(node as MeshInstance3D).layers = PlanarReflection.LAYER_THIRD_PERSON
 	_connect.call_deferred()
 
 
@@ -44,6 +45,8 @@ func _connect() -> void:
 	if origin:
 		var cameras := origin.find_children("*", "XRCamera3D", true, false)
 		_ik.camera = cameras[0] as Node3D if cameras else null
+		for cam: Camera3D in cameras:
+			cam.cull_mask &= ~PlanarReflection.LAYER_THIRD_PERSON
 		for node in origin.find_children("*", "CharacterBody3D", true, false):
 			if node is XRToolsPlayerBody:
 				_ik.ground = node as Node3D

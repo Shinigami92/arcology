@@ -1,8 +1,9 @@
 [gd_scene format=3]
 
 [ext_resource type="PackedScene" path="res://assets/props/shower/shower_body.glb" id="shower_body"]
+[ext_resource type="Shader" path="res://assets/shaders/shower_glass.gdshader" id="shower_glass"]
 [ext_resource type="Script" path="res://core/interaction/named_material_override.gd" id="named_material_override"]
-[ext_resource type="Material" path="res://assets/materials/shower_glass.tres" id="shower_glass"]
+[ext_resource type="Script" path="res://core/rendering/planar_reflection.gd" id="planar_reflection"]
 [ext_resource type="Script" uid="uid://c8gx2wc7hsxf5" path="res://addons/godot-xr-tools/interactables/interactable_hinge.gd" id="hinge"]
 [ext_resource type="Script" uid="uid://ccxwohhkuuyo1" path="res://core/interaction/kinematic_follower.gd" id="follower"]
 [ext_resource type="PackedScene" path="res://assets/props/shower/shower_mixer_flow.glb" id="shower_mixer_flow"]
@@ -15,6 +16,11 @@
 [ext_resource type="Script" uid="uid://0qo7w8nlh6eu" path="res://core/interaction/hinge_stop_sound.gd" id="stop_sound"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/button_click.wav" id="button_click"]
 [ext_resource type="PackedScene" path="res://assets/props/shower/shower_handheld.tscn" id="shower_handheld"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_glass"]
+resource_local_to_scene = true
+render_priority = 0
+shader = ExtResource("shower_glass")
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_flow0"]
 size = Vector3(0.047, 0.11, 0.03)
@@ -34,8 +40,19 @@ metadata/_doc = "Walk-in shower 2.80 x 1.40 m with a frameless glass screen (ent
 script = ExtResource("named_material_override")
 root = NodePath("../Body")
 material_name = "shower_glass"
-material = ExtResource("shower_glass")
+material = SubResource("ShaderMaterial_glass")
 cast_shadow = 0
+layers = 2048
+
+[node name="Reflection" type="Node3D" parent="."]
+position = Vector3(0.493, 1, 0.7)
+script = ExtResource("planar_reflection")
+size = Vector2(1.786, 2)
+materials = [SubResource("ShaderMaterial_glass")]
+two_sided = true
+pixels_per_meter = 350.0
+msaa = false
+reach = 3.5
 
 [node name="FlowLever" type="Node3D" parent="."]
 

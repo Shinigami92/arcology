@@ -5,7 +5,7 @@
       "frames_dropped_pct": 0.5,
       "gpu_ms_p95": 8.0,
       "cpu_ms_p95": 6.0,
-      "draw_calls_max": 600,
+      "draw_calls_max": 750,
       "primitives_max": 1500000
     }
   }

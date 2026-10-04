@@ -42,6 +42,7 @@ var _physics_ms: PackedFloat32Array = []
 var _draw_calls: PackedInt32Array = []
 var _primitives: PackedInt32Array = []
 var _objects: PackedInt32Array = []
+var _reflection_gpu_ms: PackedFloat32Array = []
 # Where each sampled frame was: seconds since start, nearest PerfPath marker.
 var _frame_time: PackedFloat32Array = []
 var _frame_marker: PackedInt32Array = []
@@ -50,6 +51,8 @@ var _frame_marker: PackedInt32Array = []
 var _frame_compiles: PackedInt32Array = []
 var _last_compiles := 0
 var _frame_start := _FrameStart.new()
+# Other viewports that render 3D (live reflections, D-049): their GPU/CPU time counts too.
+var _extra_viewports: Array[SubViewport] = []
 
 
 ## Runs first in every idle frame so the flythrough (which runs last) can
@@ -104,6 +107,9 @@ func _ready() -> void:
 		# Only the SubViewport should cost GPU time.
 		get_viewport().disable_3d = true
 		_mover = cam
+		# Live reflections follow this camera and render both eyes, as in the headset.
+		PlanarReflection.view_camera = cam
+		PlanarReflection.simulate_stereo = true
 		_viewport_rid = sub.get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(_viewport_rid, true)
 	# Disable player movement so the physics body doesn't fight the path.
@@ -133,9 +139,22 @@ func _process(delta: float) -> void:
 		var compiles := _pipeline_compiles()
 		_frame_compiles.append(compiles - _last_compiles)
 		_last_compiles = compiles
-		_gpu_ms.append(RenderingServer.viewport_get_measured_render_time_gpu(_viewport_rid))
+		var gpu := RenderingServer.viewport_get_measured_render_time_gpu(_viewport_rid)
 		# Physics monitor is in seconds; render time is in ms.
 		var render_cpu := RenderingServer.viewport_get_measured_render_time_cpu(_viewport_rid)
+		var reflections := 0.0
+		for vp in PlanarReflection.rendering_viewports():
+			var rid := vp.get_viewport_rid()
+			if vp not in _extra_viewports:
+				# Created on first use; measured from the next frame on.
+				_extra_viewports.append(vp)
+				RenderingServer.viewport_set_measure_render_time(rid, true)
+				continue
+			reflections += RenderingServer.viewport_get_measured_render_time_gpu(rid)
+			render_cpu += RenderingServer.viewport_get_measured_render_time_cpu(rid)
+		gpu += reflections
+		_gpu_ms.append(gpu)
+		_reflection_gpu_ms.append(reflections)
 		var process := (Time.get_ticks_usec() - _frame_start.usec) / 1000.0
 		var physics := Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0
 		_render_cpu_ms.append(render_cpu)
@@ -221,6 +240,9 @@ func _finish() -> void:
 		"pipeline_compiles_at": compiles_at,
 		"gpu_ms_avg": _avg(_gpu_ms),
 		"gpu_ms_p95": _pct(_gpu_ms, 0.95),
+		# Live reflections' share of gpu_ms (D-049).
+		"reflection_gpu_ms_avg": _avg(_reflection_gpu_ms),
+		"reflection_gpu_ms_p95": _pct(_reflection_gpu_ms, 0.95),
 		"cpu_ms_p95": _pct(_cpu_ms, 0.95),
 		"render_cpu_ms_p95": _pct(_render_cpu_ms, 0.95),
 		"process_ms_p95": _pct(_process_ms, 0.95),
@@ -263,12 +285,14 @@ func _per_marker() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for m in _markers.size():
 		var gpu: PackedFloat32Array = []
+		var refl: PackedFloat32Array = []
 		var draws: PackedInt32Array = []
 		var prims: PackedInt32Array = []
 		var objects: PackedInt32Array = []
 		for i in _frame_marker.size():
 			if _frame_marker[i] == m:
 				gpu.append(_gpu_ms[i])
+				refl.append(_reflection_gpu_ms[i])
 				draws.append(_draw_calls[i])
 				prims.append(_primitives[i])
 				objects.append(_objects[i])
@@ -278,6 +302,7 @@ func _per_marker() -> Array[Dictionary]:
 			"marker": _markers[m].name,
 			"frames": gpu.size(),
 			"gpu_ms_avg": snappedf(_avg(gpu), 0.01),
+			"reflection_gpu_ms_avg": snappedf(_avg(refl), 0.01),
 			"draw_calls_max": _max_i(draws),
 			"primitives_max": _max_i(prims),
 			"objects_max": _max_i(objects),

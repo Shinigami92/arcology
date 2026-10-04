@@ -49,7 +49,6 @@ const SEAT_AWAY := 100.0
 var _seat: SpringBoneCollisionPlane3D
 var _belt_thigh: SpringBoneCollisionCapsule3D
 var _ik: BodyIK
-var _seat_up := Vector3.UP
 var _hips_rest_basis := Basis.IDENTITY
 
 

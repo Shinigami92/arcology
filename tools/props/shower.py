@@ -23,8 +23,8 @@ from __future__ import annotations
 
 import sys
 
-from prop_scenes import (TEXTURE_IMPORT, Scene, Sound, TextResource, glb_images, glb_import_text, glb_node_position,
-                         main, pickable_scene, ref, raw, write_new_file)
+from prop_scenes import (RENDER_UNREFLECTED, TEXTURE_IMPORT, Scene, Sound, TextResource, glb_images, glb_import_text,
+                         glb_node_position, main, pickable_scene, ref, raw, write_new_file)
 
 D = "assets/props/shower"
 BODY = f"{D}/shower_body.glb"
@@ -32,7 +32,13 @@ FLOW, TEMP, HANDHELD = f"{D}/shower_mixer_flow.glb", f"{D}/shower_mixer_temp.glb
 HANDHELD_TSCN = f"{D}/shower_handheld.tscn"
 PARTS_MAT = f"{D}/shower_parts.tres"
 PARTS_TEX = {kind: f"{D}/shower_parts_{kind}.png" for kind in ("albedo", "orm", "normal")}
-GLASS_MAT = "assets/materials/shower_glass.tres"
+GLASS_SHADER = "assets/shaders/shower_glass.gdshader"
+# The screen (shower_body.glb `ShowerGlass`): plane z 0.70, x -0.40..1.386, y 0..2. Live reflection on
+# both faces (D-049), faint like the windows, reaching across the bathroom.
+GLASS_CENTER = (0.493, 1.0, 0.70)
+GLASS_SIZE = (1.786, 2.0)
+GLASS_PPM = 350.0
+GLASS_REACH = 3.5
 
 # Lever and dial turn about local +Z (the wall normal), positive = counterclockwise seen from the
 # room. The XR Tools hinge turns about its local X: the HingeOrigin turned -90 about Y puts it on +Z.
@@ -85,9 +91,15 @@ def parts_material() -> TextResource:
 def shower() -> Scene:
     s = Scene("Shower", DOC)
     s.instance("Body", BODY)
+    glass = s.sub("ShaderMaterial", "ShaderMaterial_glass", {"resource_local_to_scene": True, "render_priority": 0,
+                                                             "shader": s.ext(GLASS_SHADER)})
     s.node("GlassMaterial", "Node", props={"script": s.ext("named_material_override"), "root": ref("Body"),
-                                           "material_name": "shower_glass", "material": s.ext(GLASS_MAT),
-                                           "cast_shadow": 0})
+                                           "material_name": "shower_glass", "material": glass,
+                                           "cast_shadow": 0, "layers": RENDER_UNREFLECTED})
+    s.node("Reflection", "Node3D", props={
+        "position": GLASS_CENTER, "script": s.ext("planar_reflection"),
+        "size": raw("Vector2(%g, %g)" % GLASS_SIZE), "materials": [glass], "two_sided": True,
+        "pixels_per_meter": GLASS_PPM, "msaa": False, "reach": GLASS_REACH})
     flow = s.hinged_door(
         group="FlowLever", glb=FLOW, hinge_position=FLOW_PIVOT, hinge_rotation=WALL_AXIS,
         limit_min=-90.0, open_max=90.0,

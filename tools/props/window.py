@@ -10,7 +10,9 @@ x = 0 at the opening's center, z = 0 on the wall's center line, +Z = room, -Z = 
   material), or placeholder boxes until it exists;
 - one glass quad per bay (assets/shaders/window_glass.gdshader; one ShaderMaterial per
   window, local to the scene, so rooms tint independently; the HUD bay's pane has
-  `hud_enabled`);
+  `hud_enabled`), on render layer 12 (never in reflections);
+- a PlanarReflection over all bays in the glass plane: the live reflection (D-049; windows in one
+  wall plane share one renderer);
 - static collision (layer 1) for frame, mullions, sill and every fixed pane;
 - a tilt vent where the spec has one: a sash on a horizontal hinge (HINGE_BOTTOM) with its
   pane, HingeStopSound (latch click), HingeSwing with a latch, blocker, pass-through and a
@@ -40,8 +42,8 @@ import json
 import sys
 from pathlib import Path
 
-from prop_scenes import (HINGE_BOTTOM, ROOT, Scene, Sound, TextResource, glb_bounds, glb_node_position, main, raw,
-                         ref, v2)
+from prop_scenes import (HINGE_BOTTOM, RENDER_UNREFLECTED, ROOT, Scene, Sound, TextResource, glb_bounds,
+                         glb_node_position, main, raw, ref, v2)
 
 SPECS = Path(__file__).resolve().parent / "windows"
 OUT = "assets/architecture/windows"
@@ -68,6 +70,11 @@ KIT_BUTTON_EMPTIES = {"ShadeButton": "ButtonTop", "TintButton": "ButtonBottom"}
 BUTTON_RADIUS = 0.018
 BUTTON_TRAVEL = 0.004
 GLASS_GROUP = ["window_glass"]   # RainOnGlass finds the panes by it
+# Live reflection in the glass (D-049): texture pixels per meter of glass (the reflection is
+# faint, about 4-10 %, so less than a mirror's 900).
+REFLECTION_PPM = 400.0
+# How far the reflection reaches into the apartment (m): the room and the hallway behind it.
+REFLECTION_REACH = 6.8
 HUD_MARGIN = 0.08        # readout's right edge from the bay's east edge
 HUD_Y = 1.2              # readout's lower edge above the floor
 LED_STRIP = (0.012, 0.015)
@@ -201,8 +208,14 @@ def window(profile: dict, w: dict) -> Scene:
         props: dict = {}
         if hud and hud["bay"] == i:
             props = hud_props(bay_w, cy)
+        props = {"layers": RENDER_UNREFLECTED, **props}
         panes.append(s.mesh(f"Glass{i}", s.quad_mesh(r(bay_w), r(ch)), position=rv(g["bay_x"][i], cy, g["gz"]),
                             material=glass_mat, override=True, shadow=False, props=props, groups=GLASS_GROUP))
+    # The live reflection: one rectangle over all bays, in the glass plane (a tilted vent fades it out).
+    s.node("Reflection", "Node3D", props={
+        "position": rv(0, cy, g["gz"]), "script": s.ext("planar_reflection"),
+        "size": raw("Vector2(%g, %g)" % (r(W - 2 * ff), r(ch))), "materials": [glass_mat],
+        "pixels_per_meter": REFLECTION_PPM, "msaa": False, "reach": REFLECTION_REACH})
 
     # Shades: a head slot per bay.
     def bar_size(glb: str) -> tuple[float, float] | None:
@@ -270,7 +283,7 @@ def window(profile: dict, w: dict) -> Scene:
                    material=METAL_MAT)
         panes.append(s.mesh(f"Glass{vent_bay}", s.quad_mesh(r(bay_w - 2 * sf), r(ch - 2 * sf)), parent=body,
                             position=rv(0, ch / 2, g["gz"] - sz1), material=glass_mat, override=True, shadow=False,
-                            groups=GLASS_GROUP))
+                            props={"layers": RENDER_UNREFLECTED}, groups=GLASS_GROUP))
         if w.get("shade"):
             vent_bar_h = (bar_size(p["bar_vent"]) or (0, bar_h))[1]
             shade(body, vent_bay, rv(0, ch - sf, SHADE_Z - sz1), bay_w - 2 * sf, ch - 2 * sf - vent_bar_h, p["bar_vent"])

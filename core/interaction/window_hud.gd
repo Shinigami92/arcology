@@ -49,6 +49,7 @@ func refresh() -> void:
 	if key == _shown:
 		return
 	_shown = key
+	@warning_ignore("integer_division")
 	var digits := Vector4i(hour / 10, hour % 10, minute / 10, minute % 10)
 	for mat in _materials:
 		mat.set_shader_parameter("hud_time", digits)

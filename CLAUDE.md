@@ -46,6 +46,7 @@ blender/                  .blend sources (LFS) + their build scripts, exported t
 core/
   player/                 ArcologyPlayer rig (player.tscn), avatar/ (the player's body: AvatarBody, BodyIK (head, spine, legs, arms from headset and hand targets; hip drop while stepping; seated pose), LimbIK (two-bone, roll-safe), FootSteps (procedural stepping, D-042), AvatarSprings (coat skirt and belt item spring bones, leg and seat colliders, D-044), generated silena_vesper_body.tscn, D-041), hands/ (AvatarHand: XR Tools hand behavior, the body's hand target and finger curls, generated silena_vesper_hand_*.tscn; left/right_hand.tscn = the old XR Tools hands), StickSprint, GrabRay, player_physics.tres (jump height), Fingertip press areas (D-031)
   interaction/            ImpactSound, TrashReceiver, HingeStopSound, HingeBodyBlocker, HingeSwing, HingeLight, SliderSwing, KinematicFollower, GrabPassThrough, Seat, GrabHighlight, LightSwitch, EmissiveMaterials, OpenAlarm, HangingRail, RailHanger; windows: MotorizedShade, SmartGlass, WindowLight, WindowHud, HingeAmbience, NamedMaterialOverride
+  rendering/              PlanarReflection: live mirror and glass reflections, one SubViewport per eye; coplanar surfaces share one renderer, up to 3 planes at once (D-049)
   debug/                  ABSwitch + ABPanel: blind A/B variants in one spot, flipped by a wall button (D-030); RainDebugButton (temporary "RAIN" button in the living room)
   world_state/            (M2) time of day, weather, overrides
   weather/                RainOnGlass (rain on the windows: smoothing, wetness, shader swap, rain sounds; set_rain() is the entry point, D-034); more in M2
@@ -91,6 +92,14 @@ tools/
 | 22 | Hand Pose Areas | hand pose overrides |
 | 23 | UI Objects | in-world UI |
 
+### Render layers
+
+| Layer | Name | Used by |
+|---|---|---|
+| 1 | (default) | everything else |
+| 11 | Third Person | the avatar's head and collar: hidden from the player's camera, shown in reflections (D-049) |
+| 12 | Unreflected | never drawn in reflections: mirror glass, window panes, shower screen, seat prompts, the grab ray (D-049) |
+
 ### Tags
 
 Tags are **node groups** on the rigid body. Current tags:
@@ -133,7 +142,7 @@ Per-zone budgets live in `tools/perf/budgets.json`. Current zones:
 
 | Zone | Draw calls | Triangles | Lights (shadowed) | GI | Last measured |
 |---|---|---|---|---|---|
-| apartment (5 rooms) | ≤ 600 | ≤ 1.5 M | ≤ 16 (1) | none (D-012); 1 ReflectionProbe per room | XR: GPU p95 5.0 ms, CPU p95 1.7 ms, 151 draw calls, 23 k tris, 8 dropped frames (0.45 %): 50–58 ms hitches caused by the machine, not the zone (D-025) |
+| apartment (5 rooms) | ≤ 750 (a live reflection adds two scene passes, D-049) | ≤ 1.5 M | ≤ 16 (1) | none (D-012); 1 ReflectionProbe per room | XR: GPU p95 5.0 ms, CPU p95 1.7 ms, 151 draw calls, 23 k tris, 8 dropped frames (0.45 %): 50–58 ms hitches caused by the machine, not the zone (D-025) |
 
 Asset budgets (realistic style, see the style guide):
 
@@ -144,12 +153,14 @@ Asset budgets (realistic style, see the style guide):
 | Player avatar: each arm, glove + coat sleeve (always in view, up close) | ≤ 14 k | ≤ 2048² per material | ≤ 2 |
 | Player avatar: whole body (`Body` incl. arms ≤ 70 k, `HeadMesh` ≤ 10 k, `Collar` ≤ 2 k) | ≤ 80 k | ≤ 2048² per material | ≤ 6 |
 
-Characters (D-037): one skinned mesh per exported part, ≤ 4 bone influences per vertex, ≤ 104 bones, mesh names never equal bone names (glTF), the head shadow-only in first person, spring bones instead of cloth simulation.
+Live reflections (`PlanarReflection`, D-049): up to 3 planes at once (`max_active`), two scene passes each (one per eye), no shadows, no occlusion culling, cut by `reach`; coplanar surfaces (the windows) share one plane. Budget: ≤ 1.5 ms GPU and ≤ 400 draw calls for all of them. Measured on desktop: 0.35 ms avg, 1.22 ms and +330 draw calls in the bathroom (mirror, magnifier, shower screen).
+
+Characters (D-037): one skinned mesh per exported part, ≤ 4 bone influences per vertex, ≤ 104 bones, mesh names never equal bone names (glTF), the head and collar on render layer 11 (hidden from the player's camera, shown in mirrors), spring bones instead of cloth simulation.
 
 Rules of thumb:
 - **One shadow-casting light per room.** Everything else unshadowed, small range. Emissive materials for neon, not lights.
 - **No large stacked transparent surfaces.** Each costs fill rate twice in stereo.
-- **No new SubViewport cameras** (mirrors, scopes, monitors) without a budget line here.
+- **No new SubViewport cameras** (mirrors, scopes, monitors) without a budget line here. Mirrors and reflective glass use `PlanarReflection` (budget line above), never their own cameras.
 - **Scripts:** nothing heavy in `_process`/`_physics_process`; no per-frame allocations; disable processing when idle (`set_physics_process(false)`), as `TrashReceiver` does.
 - **Hitches count:** first-use shader compiles and main-thread loads show up as `frame_ms_max`. Preload/precompile.
 
@@ -162,12 +173,12 @@ Behavior checks that don't need the headset or the editor. Run the `interaction`
 "$GODOT4_EDITOR" --path . --xr-mode off -- --test=interaction --only=avatar          # one group
 "$GODOT4_EDITOR" --path . --xr-mode off -- --test=interaction --only=windows,rain    # groups and/or tests whose name contains the word
 "$GODOT4_EDITOR" --path . --xr-mode off -- --test=interaction --list                 # groups and their tests, runs nothing
-"$GODOT4_EDITOR" --path . --xr-mode off -- --test=skyline                            # window shimmer (D-020, D-023), traffic lanes clear the near towers (D-047), city hidden without a window in view (D-048)
+"$GODOT4_EDITOR" --path . --xr-mode off -- --test=skyline                            # window shimmer (D-020, D-023), traffic lanes clear the near towers (D-047), city hidden without a window in view (D-048), live reflections (D-049)
 ```
 
 Groups: `player` (doorways, blocker, pass-through, jump, ranged grab), `doors_fridge`, `furniture` (sofa, bed, wardrobe doors, nightstand), `variants` (spare props), `switches` (A/B panel, lamp), `avatar`, `wardrobe` (interior), `windows` (incl. rain), `bathroom`. Each prints `TEST PASS/FAIL <name>: <details>`, then the time per group and `TEST DONE`, and exits with the failure count (2 if the suite doesn't load, e.g. a parse error, or `--only` matches nothing). Add a test as one line in `_registry()` of `tools/tests/interaction_tests.gd`; tests that move the player or hold something needn't undo it (the runner resets the rig before each test), anything else they change they put back.
 
-Visual check without the headset or editor: `--shots` renders 1920×1080 stills to `tools/shots/results/shot-<n>.png` (views are `x,y,z,yaw,pitch[,fov]`, yaw 0 = -Z, 90 = -X; `--shot-hinge=<Props path>:<deg>` opens hinged props first, e.g. `Fridge:80` or `Wardrobe/A/DoorLeft:80`; `--shot-ab=B` shows every A/B pair's B variant; `--shot-no-player` hides the hands):
+Visual check without the headset or editor: `--shots` renders 1920×1080 stills to `tools/shots/results/shot-<n>.png` (views are `x,y,z,yaw,pitch[,fov]`, yaw 0 = -Z, 90 = -X; `--shot-hinge=<Props path>:<deg>` opens hinged props first, e.g. `Fridge:80` or `Wardrobe/A/DoorLeft:80`; `--shot-ab=B` shows every A/B pair's B variant; `--shot-no-player` hides the hands; `--shot-player=x,z,yaw` stands the player there first, e.g. in front of a mirror):
 
 ```sh
 "$GODOT4_EDITOR" --path . --xr-mode off -- --shots="4.2,1.5,-2.0,-75,-8,60" --shot-hinge=Fridge:88
@@ -250,6 +261,10 @@ Windows are specs, not scenes (D-033). Add an entry to a `tools/props/windows/*.
 - **Rain:** panes are in the `window_glass` group, each window has a `RainPatter` player (`rain_patter` group) and a vent a `RainAmbience` (`rain_ambience` group, a `HingeAmbience` whose `gain` follows the rain); `RainOnGlass` (in `main.tscn` under `Weather`) finds them by group. `--rain=<0..1>` starts wet (tests, shots, perf), `--rain-delay=<s>` lets it set in later (hitch checks). The living room's temporary `RainDebugButton` cycles 0 → 0.4 → 1 → 0.
 - **Stills:** `--shot-hinge=Windows/BedroomWindow/Vent:10` tilts the vent; `--shot-call=Windows/LivingWindow/Shade:set_closure:0.6,Windows/LivingWindow/SmartGlass:set_tint:0.9` sets shades and tint.
 
+### Add a mirror or reflective glass
+
+Put a `PlanarReflection` (`core/rendering/planar_reflection.gd`) on the surface: origin at the reflecting rectangle's center, local +Z toward the viewer, `size` in meters, `materials` = the surface's `ShaderMaterial`(s) (`resource_local_to_scene`), whose shader includes `assets/shaders/planar_reflection.gdshaderinc` (`planar_mirror.gdshader` for a plain mirror; window glass has it built in). Put the surface mesh on render layer 12 (`layers = 2048`; `NamedMaterialOverride` has `layers` for a glb's surface); in-world HUD (prompts, pointers) goes there too. Tune `pixels_per_meter`, `msaa` and `reach` (the far plane: the room and what's behind its door, no more); `two_sided` for glass seen from both sides, `magnification` for a cosmetic mirror. It renders while a ray from the head reaches it (physics layer 1 blocks), so a surface needs no collision of its own in front of it. Generated props set all of this in their definition (`tools/props/bath_mirror.py`, `tools/props/window.py`). Check the look with `--shots ... --shot-player=x,z,yaw` and the cost with the perf flythrough (`reflection_gpu_ms_*`).
+
 ### Update the avatar
 
 The `character-artist` rebuilds `assets/characters/<name>/<name>_body.glb` (stage scripts in `blender/characters/<name>/`; meshes `Body`, `HeadMesh`, `Collar`; poses `Open` and `Grip`; humanoid bones plus OpenXR hand joints, `<Side>LowerArmTwist` and the coat chains). Wait for the imports, then run `"$GODOT4_EDITOR" --headless --path . --script res://tools/player/avatar.gd` (`-- --check` compares): it fits each hand target onto the XR Tools hand placement, prints how far wrist and knuckles land from it, and writes `core/player/avatar/<name>_body.tscn` and `core/player/hands/<name>_hand_<side>.tscn`. Landmarks the glb can't tell (`AVATAR_EYE`, `SOLE_HEIGHT`) and headset corrections (`TUNE`) live in the generator, never in the scenes. Then scan and run the `interaction` tests (`hand_rig_*`, `arm_ik_*`, `body_ik_*`, `avatar_*`).
@@ -289,5 +304,7 @@ When asking the user to test, give a short checklist: what to do, what should ha
 - **Before blaming collision,** sweep a shape (`cast_motion`) or ray-cast it: a can that ends up low on a pillow rolled off the slope; it didn't fall through.
 - **Byte-identical rebuilds:** the glTF exporter's tangent rounding and `create_uvsphere` face order can vary between runs; use `blender -t 1` for old-vs-new checks (see `blender/lib/README.md`).
 - **Occlusion culling can't hide bounds that contain the camera or reach behind it** (a MultiMesh spanning the horizon, a custom AABB around the lanes): split it, clamp its bounds, or hide it with `OutsideView` (D-048). A SubViewport doesn't inherit `use_occlusion_culling` from the project setting; set it.
+- **Shader built-ins aren't visible in helper functions** (`VIEW_INDEX`, `INV_VIEW_MATRIX`): pass them in, as `planar_reflection()` takes the view index.
+- **Viewports a tool renders through itself** (perf flythrough, `--shots`) must set `use_occlusion_culling` and `PlanarReflection.view_camera`, or occlusion and reflections follow the wrong camera.
 - **Don't instance a glb just to read its mesh** (`instantiate()` + `free()`): in FlyingTraffic that left ~130 meshes rendering (+150 draw calls). Read it from `PackedScene.get_state()` instead.
 - **Shell scripts:** for anything longer than a few lines of Python, write a scratchpad file and run it; long heredocs with quotes break in the Bash tool.

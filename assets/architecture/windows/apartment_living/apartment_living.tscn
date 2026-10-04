@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" path="res://assets/architecture/windows/apartment_living/apartment_living_frame.glb" id="apartment_living_frame"]
 [ext_resource type="Script" path="res://core/interaction/named_material_override.gd" id="named_material_override"]
 [ext_resource type="Material" path="res://assets/materials/window_led_warm.tres" id="window_led_warm"]
+[ext_resource type="Script" path="res://core/rendering/planar_reflection.gd" id="planar_reflection"]
 [ext_resource type="PackedScene" path="res://assets/architecture/windows/apartment_living/apartment_living_shade_bar.glb" id="apartment_living_shade_bar"]
 [ext_resource type="Material" path="res://assets/materials/shade_fabric.tres" id="shade_fabric"]
 [ext_resource type="PackedScene" path="res://assets/architecture/windows/_kit/window_panel.glb" id="window_panel"]
@@ -131,22 +132,34 @@ material = ExtResource("window_led_warm")
 [node name="Glass0" type="MeshInstance3D" parent="." groups=["window_glass"]]
 position = Vector3(-1.65333, 1.225, -0.05)
 cast_shadow = 0
+layers = 2048
 mesh = SubResource("QuadMesh_0")
 material_override = SubResource("ShaderMaterial_glass")
 
 [node name="Glass1" type="MeshInstance3D" parent="." groups=["window_glass"]]
 position = Vector3(0, 1.225, -0.05)
 cast_shadow = 0
+layers = 2048
 mesh = SubResource("QuadMesh_0")
 material_override = SubResource("ShaderMaterial_glass")
 
 [node name="Glass2" type="MeshInstance3D" parent="." groups=["window_glass"]]
 position = Vector3(1.65333, 1.225, -0.05)
 cast_shadow = 0
+layers = 2048
 instance_shader_parameters/hud_enabled = true
 instance_shader_parameters/hud_anchor = Vector2(0.72167, -0.025)
 mesh = SubResource("QuadMesh_0")
 material_override = SubResource("ShaderMaterial_glass")
+
+[node name="Reflection" type="Node3D" parent="."]
+position = Vector3(0, 1.225, -0.05)
+script = ExtResource("planar_reflection")
+size = Vector2(4.91, 2.36)
+materials = [SubResource("ShaderMaterial_glass")]
+pixels_per_meter = 400.0
+msaa = false
+reach = 6.8
 
 [node name="Shade0" type="Node3D" parent="."]
 position = Vector3(-1.65333, 2.405, -0.02)

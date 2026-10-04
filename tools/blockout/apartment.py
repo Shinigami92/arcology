@@ -523,8 +523,9 @@ def main():
                      + (f"rotation_degrees = Vector3(0, {sit_yaw}, 0)\n" if sit_yaw else ""))
         nodes.append(f'[node name="{name}Stand" type="Marker3D" parent="Seats"]\nposition = {v3(stand)}\n'
                      + (f"rotation_degrees = Vector3(0, {stand_yaw}, 0)\n" if stand_yaw else ""))
+        # Render layer 12: a prompt, not a sign, so never in mirrors (D-049).
         nodes.append(f'[node name="{name}Prompt" type="Label3D" parent="Seats"]\nposition = {v3(prompt)}\n'
-                     'pixel_size = 0.0015\nbillboard = 1\nmodulate = Color(0.02, 0.85, 0.91, 1)\n'
+                     'layers = 2048\npixel_size = 0.0015\nbillboard = 1\nmodulate = Color(0.02, 0.85, 0.91, 1)\n'
                      'outline_modulate = Color(0, 0, 0, 0.6)\nfont_size = 48\n'
                      'text = "X  ·  sit"\n')
 
