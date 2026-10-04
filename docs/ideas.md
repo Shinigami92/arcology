@@ -60,18 +60,64 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [M1] Simple window view.
 - [M2] Window view in layers: near facades as real, realistic geometry (simplified only where distance hides it), mid-distance as impostors/cards, far city as Blender-rendered panoramas. Near ring done (D-045): ten Blender towers; the far city repeats them (D-046). Next: more tower variety (types, heights, wider footprints for the far ring), then the panorama.
 - [M2] City life on the towers: blink the `<tower>_blink` meshes (warning and pad lights), animate the spires' `_ad<n>` panels (unshaded, scanlines, flicker), scale the city materials' emission with the day/night cycle.
-- [later] Upgrade a layer to real geometry when its zone is built.
+- [later] Upgrade a layer to real geometry when its zone is built (roadmap, phase 2).
 - [later] Holographic ads, more neon signage.
-- [M2] Flying traffic polish (D-047 is done): whoosh/hum of near vehicles through the open vent, the patrol car's light bar blinking (lamp boxes above local y 0.63: x < 0 red, x > 0 blue), occasional lane changes or vehicles docking at the KAZE landing pad, more vehicle types.
+- [M2] Flying traffic polish (D-047 is done): whoosh/hum of near vehicles through the open vent, the patrol car's light bar blinking (lamp boxes above local y 0.63: x < 0 red, x > 0 blue), occasional lane changes, more vehicle types. Docking at pads and buildings: see the roadmap, phase 3.
 - [later] Elysium-style ring visible in the sky.
 
 ## Zones
 
 - [M1] Apartment: living room with a large window.
-- [M3] Hallway and elevator with seamless zone loading.
-- [M3] Persistence: object state across zones, save/load.
-- [later] Streets, markets, eventually walking outside.
 - No loading screens, ever. Doors start background loading on approach; if not ready, a diegetic delay (e.g. an "ID scan") covers it. Elevator rides last as long as loading needs.
+
+## Roadmap: from the apartment to a walkable city
+
+The user's long-term direction (2026-10-04). Too big for one session: each phase is built part by part, each part playable and measured before the next. Order matters: rendering visibility and streaming come first, because every later phase adds far more than the GPU can draw at once.
+
+### Phase 0: draw only what can be seen (next)
+
+- [M3] Occlusion culling for the apartment: occluders for every wall, floor and ceiling, with the windows as holes, so from the hallway or bathroom the city and the traffic aren't drawn at all. Prefer text: the apartment generator knows every wall and opening and can emit `OccluderInstance3D` boxes/polygons itself instead of a baked binary. Measure the hallway markers of the perf flythrough before/after.
+- [M3] Visibility tiers for everything outside: near ring, far city and traffic per window cluster; the city layers switch off when no window is in view (cheap check per frame), and the per-node `visibility_range` fades replace hard cuts later.
+- [M3] Zone streaming (`core/zones/`): zones load in the background (`ResourceLoader.load_threaded_request`) when the player nears a connection (door, elevator, station), unload when two connections away; a zone graph says what connects to what. Each zone has tiers: full interior, exterior shell only, impostor. Budget per tier in `tools/perf/budgets.json`.
+- [M3] Perf flythrough per zone and per transition (the hitch of loading a zone counts), in XR before a phase is done.
+
+### Phase 1: our own building
+
+- [M3] The arcology we live in as a real building: its exterior shell (seen later from outside and from the transit), its floor plan, and the stack of floors as modular, generated parts (one floor in full, the others as shells).
+- [M3] Outer hallway behind the entrance door: neighbors' doors, lighting, signage, a window onto the city at the end.
+- [M3] Elevator: call button, doors, a cabin that rides 180 m down; the ride is the streaming delay. Floor buttons for later floors.
+- [M3] Lobby at street level (y = -180): concierge desk, mailboxes, security gates, the exit doors.
+- [M3] Persistence: object state across zones, save/load.
+
+### Phase 2: outside
+
+- [M4] The street level around our building, walkable: plazas, walkways, shop fronts, wet streets, street-level traffic and pedestrians later. The near ring's towers get their street-level podiums as real geometry when the street is built (until then they end in the fog).
+- [M4] Building interiors. All buildings should feel inhabited and be walkable over time: first every window shows a fake interior (interior-mapping shader on the facade atlases: rooms with depth and parallax, almost free); then buildings become enterable one at a time (lobby, shops, a bar, a ramen place, apartments), built from modular kits and generators, streamed in on approach.
+- [later] Markets, a club, rooftops.
+
+### Phase 3: transit (Star Citizen style)
+
+- [M5] Stations: sky-bus stops and taxi pads at buildings, with signs, timetables and a call button; wait at the station, a vehicle docks, get in, sit (seated-first fits this perfectly), ride along the traffic lanes to another station, get out. The ride streams the destination like the elevator does.
+- [M5] Vehicles docking at landing pads and buildings (the KAZE roof pad first), also as ambient traffic: vehicles leave lanes, land, wait, take off.
+- [later] Flying a vehicle yourself.
+
+### Across all phases: a world that makes sense, and wayfinding
+
+The user (2026-10-04): walking the world, everything should make sense; signs, holograms and maps guide the way to shops, transit and buildings, outside and inside.
+
+- [M3] One world directory as the single source of truth (a text file, e.g. `world/directory.json`): districts, streets with names, buildings with names and addresses, their floors and what's on each (apartments with unit numbers, shops, the lobby), stations and their lines. Signs, maps, elevator panels, door plates, mailboxes, timetables and the window HUD are all generated from it, so they never contradict each other, and adding a shop puts it on every map and sign at once.
+- [M3] Inside buildings: a floor directory and "you are here" map in the lobby and at each elevator, floor numbers at the elevator doors, unit numbers on doors (ours already has a unit plate), arrows to the elevators, stairs and exits, emergency exit signs. The elevator panel lists what's on each floor.
+- [M4] Outside: street name signs at corners, building names and addresses at the entrances, directional signposts and holographic wayfinding pillars ("Transit ▸ 120 m", "Market ▸"), shop signs that match their shops, station signs visible from afar, a district map at plazas.
+- [M5] Transit: line maps and timetables at stations, the destination on the vehicle's sign, arrival announcements, a route map inside the cabin.
+- [later] An optional personal guide: a route to a chosen place shown as a holographic line or arrows (a wrist device or the window HUD), off by default so the signs stay the main way to find things.
+- Readability rules (style guide): text large enough to read where the player stands, a consistent sign family per kind (street, building, transit, shop), bilingual (Latin + invented kanji), lit at night, never so dense it becomes visual noise.
+
+### Agents for the roadmap
+
+New subagents when a phase starts (the user agreed to add or update agents whenever it helps them focus):
+- `environment-artist` (Blender): modular building kits, interiors, facade atlases with fake-interior maps, elevator cabins, lobbies; props stay with `blender-artist`.
+- `world-builder` (Godot): zone generators, occluders, streaming, zone graph and connections, transitions; `godot-dev` keeps player, interaction and systems.
+- Maybe `systems-dev` (Godot) once traffic, transit and world state grow: schedules, stations, vehicle docking.
 
 ## Performance and tooling
 
@@ -86,6 +132,8 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - Grappling hook (least satisfying in the XR Tools demo; not a fit).
 
 ## Done
+
+- City view (2026-10-04): ten Blender towers in the near ring, brutalist megablocks and corporate spires (D-045); the far city repeats them instead of the box placeholders (D-046); height fog toward the street; flying traffic with five vehicle types in lanes at many altitudes, moved on the GPU (D-047). Skyline shimmer from ~5.0 % down to 2.1 %.
 
 - Player avatar stages 1–3 (2026-10-03/04): the user's Shadowrun character Silena Vesper as the player's body (D-037), built on an MPFB2 base: gloved hands with per-finger curl on the control each finger rests on (D-038, D-039), coat sleeves with arm IK (D-040), the full body on one skeleton with head/spine/arm/leg IK (D-041), procedural stepping and seated poses (D-042, D-043; "probably the best VR leg steps I ever experienced"), coat and belt items on spring bones (D-044). Interaction tests now run by group (`--only=avatar`).
 
