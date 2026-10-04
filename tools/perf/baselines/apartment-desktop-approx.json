@@ -6,57 +6,155 @@
     "gpu_ms_p95": 8.0,
     "primitives_max": 1500000.0
   },
-  "cpu_ms_p95": 1.88399994373322,
-  "date": "2026-10-01T21:50:41",
-  "draw_calls_max": 325,
+  "cpu_ms_p95": 2.53999996185303,
+  "date": "2026-10-04T20:42:08",
+  "draw_calls_max": 370,
   "failures": [],
-  "frame_ms_avg": 5.44221001253813,
-  "frame_ms_max": 62.673999786377,
-  "frame_ms_p95": 6.48699998855591,
-  "frame_ms_p99": 6.92500019073486,
-  "frames": 3676,
-  "frames_dropped": 3,
+  "frame_ms_avg": 5.81867665154673,
+  "frame_ms_max": 54.0449981689453,
+  "frame_ms_p95": 7.01599979400635,
+  "frame_ms_p99": 7.35799980163574,
+  "frames": 3439,
+  "frames_dropped": 4,
   "frames_dropped_at": [
     {
-      "cpu_ms": 1.3,
-      "gpu_ms": 4.5,
-      "marker": "P4",
-      "ms": 59.2,
+      "cpu_ms": 2.3,
+      "gpu_ms": 5.3,
+      "marker": "P3",
+      "ms": 54.0,
       "pipeline_compiles": 0,
-      "t": 7.93
-    },
-    {
-      "cpu_ms": 1.3,
-      "gpu_ms": 4.9,
-      "marker": "P4",
-      "ms": 62.7,
-      "pipeline_compiles": 0,
-      "t": 8.08
+      "t": 5.64
     },
     {
       "cpu_ms": 1.9,
-      "gpu_ms": 4.8,
-      "marker": "P11",
-      "ms": 20.8,
+      "gpu_ms": 4.7,
+      "marker": "P4",
+      "ms": 22.2,
       "pipeline_compiles": 0,
-      "t": 22.95
+      "t": 8.33
+    },
+    {
+      "cpu_ms": 2.1,
+      "gpu_ms": 4.8,
+      "marker": "P5",
+      "ms": 45.3,
+      "pipeline_compiles": 0,
+      "t": 10.66
+    },
+    {
+      "cpu_ms": 1.9,
+      "gpu_ms": 5.6,
+      "marker": "P7",
+      "ms": 17.8,
+      "pipeline_compiles": 0,
+      "t": 15.64
     }
   ],
-  "frames_dropped_pct": 0.0816104461371056,
-  "frames_over_budget_pct": 0.108813928182807,
+  "frames_dropped_pct": 0.116312881651643,
+  "frames_over_budget_pct": 0.145391102064554,
   "gpu": "NVIDIA GeForce RTX 4080 SUPER",
-  "gpu_ms_avg": 4.72051414584698,
-  "gpu_ms_p95": 5.15299987792969,
+  "gpu_ms_avg": 5.12961122351145,
+  "gpu_ms_p95": 5.75299978256226,
   "hidden": [],
   "mode": "desktop-approx",
-  "objects_max": 361,
+  "objects_max": 411,
   "pass": true,
-  "physics_ms_p95": 1.21300005912781,
-  "pipeline_compiles": 67,
+  "per_marker": [
+    {
+      "draw_calls_max": 241,
+      "frames": 21,
+      "gpu_ms_avg": 5.78,
+      "marker": "P1",
+      "objects_max": 249,
+      "primitives_max": 569559
+    },
+    {
+      "draw_calls_max": 303,
+      "frames": 354,
+      "gpu_ms_avg": 5.21,
+      "marker": "P2",
+      "objects_max": 314,
+      "primitives_max": 559326
+    },
+    {
+      "draw_calls_max": 276,
+      "frames": 347,
+      "gpu_ms_avg": 5.22,
+      "marker": "P3",
+      "objects_max": 284,
+      "primitives_max": 534615
+    },
+    {
+      "draw_calls_max": 236,
+      "frames": 400,
+      "gpu_ms_avg": 4.55,
+      "marker": "P4",
+      "objects_max": 262,
+      "primitives_max": 370765
+    },
+    {
+      "draw_calls_max": 370,
+      "frames": 356,
+      "gpu_ms_avg": 5.09,
+      "marker": "P5",
+      "objects_max": 411,
+      "primitives_max": 589303
+    },
+    {
+      "draw_calls_max": 214,
+      "frames": 381,
+      "gpu_ms_avg": 4.83,
+      "marker": "P6",
+      "objects_max": 221,
+      "primitives_max": 402482
+    },
+    {
+      "draw_calls_max": 216,
+      "frames": 370,
+      "gpu_ms_avg": 4.96,
+      "marker": "P7",
+      "objects_max": 222,
+      "primitives_max": 402356
+    },
+    {
+      "draw_calls_max": 293,
+      "frames": 366,
+      "gpu_ms_avg": 5.06,
+      "marker": "P8",
+      "objects_max": 311,
+      "primitives_max": 609151
+    },
+    {
+      "draw_calls_max": 332,
+      "frames": 342,
+      "gpu_ms_avg": 5.5,
+      "marker": "P9",
+      "objects_max": 343,
+      "primitives_max": 612855
+    },
+    {
+      "draw_calls_max": 290,
+      "frames": 334,
+      "gpu_ms_avg": 5.62,
+      "marker": "P10",
+      "objects_max": 304,
+      "primitives_max": 641705
+    },
+    {
+      "draw_calls_max": 183,
+      "frames": 168,
+      "gpu_ms_avg": 5.61,
+      "marker": "P11",
+      "objects_max": 189,
+      "primitives_max": 300084
+    }
+  ],
+  "physics_ms_p95": 1.11500000953674,
+  "pipeline_compiles": 107,
   "pipeline_compiles_at": [
     {
-      "ms": 6.4,
-      "n": 61,
+      "ms": 7.8,
+      "n": 95,
       "t": 3.0
     },
     {
@@ -65,23 +163,38 @@
       "t": 3.26
     },
     {
-      "ms": 5.1,
+      "ms": 7.3,
       "n": 2,
-      "t": 3.42
+      "t": 3.43
     },
     {
-      "ms": 5.9,
-      "n": 2,
-      "t": 9.2
+      "ms": 5.2,
+      "n": 4,
+      "t": 3.68
     },
     {
-      "ms": 4.9,
+      "ms": 5.8,
       "n": 1,
-      "t": 9.58
+      "t": 8.94
+    },
+    {
+      "ms": 6.4,
+      "n": 1,
+      "t": 12.07
+    },
+    {
+      "ms": 6.7,
+      "n": 1,
+      "t": 12.16
+    },
+    {
+      "ms": 6.1,
+      "n": 2,
+      "t": 17.9
     }
   ],
-  "primitives_max": 227134,
-  "process_ms_p95": 0.153999999165535,
-  "render_cpu_ms_p95": 0.691999971866608,
+  "primitives_max": 641705,
+  "process_ms_p95": 0.150999993085861,
+  "render_cpu_ms_p95": 1.42700004577637,
   "zone": "apartment"
 }

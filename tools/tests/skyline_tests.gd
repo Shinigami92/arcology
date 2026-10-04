@@ -8,10 +8,19 @@ extends Node
 ## Prints "SHIMMER <variant>: <percent>" and fails if the default view is
 ## above [constant MAX_SHIMMER_PCT] (docs/decisions.md D-020). Traffic is frozen
 ## while measuring (moving vehicles aren't shimmer). Also checks that no traffic
-## lane runs through a near tower (D-047).
+## lane runs through a near tower (D-047), and that the city is hidden while no
+## window is in view and drawn again through a doorway (OutsideView, D-048).
 
 const MAX_SHIMMER_PCT := 7.0
 const TRIALS := 4
+## Camera views (position, yaw in degrees; 0 = -Z) and whether the city should be hidden.
+const OUTSIDE_VIEWS: Array[Array] = [
+	[Vector3(0.5, 1.7, 5.0), 0.0, true],      # bathroom, facing its north wall
+	[Vector3(-1.0, 1.7, 2.9), 0.0, true],     # hallway, facing its north wall
+	[Vector3(0.55, 1.7, 2.9), 180.0, true],   # hallway, facing the bathroom door
+	[Vector3(2.05, 1.7, 3.3), 10.0, false],   # hallway, through the living room door to the window
+	[Vector3(0.0, 1.7, -2.0), 0.0, false],    # living room, facing the window
+]
 
 var _main: Node3D
 
@@ -26,6 +35,7 @@ func _ready() -> void:
 	var traffic: FlyingTraffic = _main.get_node("Skyline/Traffic")
 	var blocked := traffic.blocked_lanes(_main.get_node("Skyline/NearTowers"))
 	print("TEST %s traffic_lanes_clear: %s" % ["PASS" if blocked.is_empty() else "FAIL", ", ".join(blocked) if blocked else "no lane hits a near tower"])
+	var outside_ok := await _check_outside_view()
 	traffic.set_frozen(true)
 
 	var panes := _main.get_node("Zones/Apartment/Windows/LivingWindow").find_children("Glass*", "MeshInstance3D", true, false)
@@ -52,7 +62,27 @@ func _ready() -> void:
 
 	var ok := default_pct <= MAX_SHIMMER_PCT
 	print("TEST %s skyline_shimmer: %.2f %% (max %.1f %%)" % ["PASS" if ok else "FAIL", default_pct, MAX_SHIMMER_PCT])
-	get_tree().quit((0 if ok else 1) + (0 if blocked.is_empty() else 1))
+	get_tree().quit((0 if ok else 1) + (0 if blocked.is_empty() else 1) + (0 if outside_ok else 1))
+
+
+func _check_outside_view() -> bool:
+	var camera: Camera3D = _main.get_node("Player/XRCamera3D")
+	var view: OutsideView = _main.get_node("Skyline/OutsideView")
+	var wrong: Array[String] = []
+	for v: Array in OUTSIDE_VIEWS:
+		camera.transform = Transform3D(Basis(Vector3.UP, deg_to_rad(v[1])), v[0])
+		# Notifiers report a frame after drawing, and the occluders build a few frames after
+		# start; showing the city again must take at most two frames (pop-in).
+		var limit := 30 if v[2] else 2
+		var frames := 0
+		while view.is_outside_hidden() != v[2] and frames < limit:
+			await RenderingServer.frame_post_draw
+			frames += 1
+		if view.is_outside_hidden() != v[2]:
+			wrong.append("%s yaw %d: %s" % [v[0], v[1], "hidden" if view.is_outside_hidden() else "drawn"])
+	var ok := wrong.is_empty()
+	print("TEST %s outside_view: %s" % ["PASS" if ok else "FAIL", ", ".join(wrong) if wrong else "city hidden without a window in view"])
+	return ok
 
 
 func _shimmer() -> float:

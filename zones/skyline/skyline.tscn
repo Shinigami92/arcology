@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://zones/skyline/far_towers.gd" id="1_far"]
 [ext_resource type="PackedScene" path="res://zones/skyline/near_towers.tscn" id="3_near"]
 [ext_resource type="Script" path="res://zones/skyline/flying_traffic.gd" id="4_traffic"]
+[ext_resource type="Script" path="res://core/zones/outside_view.gd" id="5_outside"]
 [ext_resource type="PackedScene" path="res://assets/props/traffic/aircar_sedan/aircar_sedan.glb" id="v_aircar_sedan"]
 [ext_resource type="PackedScene" path="res://assets/props/traffic/aircar_taxi/aircar_taxi.glb" id="v_aircar_taxi"]
 [ext_resource type="PackedScene" path="res://assets/props/traffic/hover_van/hover_van.glb" id="v_hover_van"]
@@ -96,3 +97,8 @@ position = Vector3(0, -180, 0)
 cast_shadow = 0
 mesh = SubResource("PlaneMesh_street")
 surface_material_override/0 = SubResource("StandardMaterial3D_street")
+
+[node name="OutsideView" type="Node" parent="." node_paths=PackedStringArray("targets")]
+script = ExtResource("5_outside")
+targets = [NodePath("../NearTowers"), NodePath("../FarTowers"), NodePath("../Traffic"), NodePath("../StreetGlow")]
+metadata/_doc = "Hides the city while no window is on screen (window notifiers in the outside_view group, D-048)."

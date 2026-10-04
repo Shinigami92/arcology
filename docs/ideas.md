@@ -76,8 +76,8 @@ The user's long-term direction (2026-10-04). Too big for one session: each phase
 
 ### Phase 0: draw only what can be seen (next)
 
-- [M3] Occlusion culling for the apartment: occluders for every wall, floor and ceiling, with the windows as holes, so from the hallway or bathroom the city and the traffic aren't drawn at all. Prefer text: the apartment generator knows every wall and opening and can emit `OccluderInstance3D` boxes/polygons itself instead of a baked binary. Measure the hallway markers of the perf flythrough before/after.
-- [M3] Visibility tiers for everything outside: near ring, far city and traffic per window cluster; the city layers switch off when no window is in view (cheap check per frame), and the per-node `visibility_range` fades replace hard cuts later.
+- [M3] Occlusion culling for the apartment: done on desktop (D-048), headset check pending. The generator writes a box occluder per wall, floor and ceiling; the city hides while no window is on screen (`OutsideView`).
+- [M3] Visibility tiers for everything outside: near ring, far city and traffic per window cluster, and per-node `visibility_range` fades instead of hard cuts. The city layers already switch off when no window is in view (D-048).
 - [M3] Zone streaming (`core/zones/`): zones load in the background (`ResourceLoader.load_threaded_request`) when the player nears a connection (door, elevator, station), unload when two connections away; a zone graph says what connects to what. Each zone has tiers: full interior, exterior shell only, impostor. Budget per tier in `tools/perf/budgets.json`.
 - [M3] Perf flythrough per zone and per transition (the hitch of loading a zone counts), in XR before a phase is done.
 
@@ -124,7 +124,7 @@ New subagents when a phase starts (the user agreed to add or update agents whene
 - [M1] Scripted camera flythrough per zone that logs frame times and fails on budget regressions.
 - [later] Shader precompile helper, if a perf report ever shows pipeline compiles on dropped frames. The M1 hitches (8 frames up to 58 ms) turned out to come from the machine, not compiles (D-025); the XR Tools demo also hitched when first picking up the scoped rifle.
 - [later] Budget SubViewport cameras (scopes, mirrors, security monitors) explicitly.
-- [M2] Refresh the perf baselines with the avatar: the desktop baseline (`tools/perf/baselines/apartment-desktop-approx.json`) and the zone table in CLAUDE.md predate it (last desktop runs: GPU p95 ~5.4 ms, 393 draw calls at peak); then an XR perf run in the headset (the user).
+- [M2] Refresh the XR perf baseline with the avatar and occlusion culling: an XR perf run in the headset (the user), then the zone table in CLAUDE.md. The desktop baseline is current (2026-10-04, D-048: GPU p95 5.75 ms, 370 draw calls at peak).
 - [later] Faster interaction tests: with `--fixed-fps 90 --disable-vsync` the full suite takes ~17 s instead of ~87 s, but `HingeSwing`/`SliderSwing` measure release speed with the real clock (`Time.get_ticks_usec`); move them and the tests' throws onto engine time first. Waiting until things stop moving instead of fixed frame counts would save another ~13 s.
 
 ## Rejected or low priority

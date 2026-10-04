@@ -28,6 +28,11 @@ extends Node3D
 @export var keep_out := Rect2(-60.0, -25.0, 120.0, 200.0)
 ## Cells with a center behind this z aren't built (never visible from inside).
 @export_custom(PROPERTY_HINT_NONE, "suffix:m") var max_z := 0.0
+## The apartment's window plane (world z, the north wall's outer face): from
+## inside, nothing behind it can be seen, so the MultiMeshes' bounds end there.
+## The far ring wraps around the apartment: its bounds would contain the camera,
+## and occlusion culling could then never hide it behind the apartment's walls.
+@export_custom(PROPERTY_HINT_NONE, "suffix:m") var view_max_z := -3.2
 ## Cell center jitter, as a share of the cell.
 @export_range(0.0, 0.3) var jitter := 0.1
 ## Largest tower radius (half the footprint's diagonal) per cell size: above
@@ -121,9 +126,15 @@ func generate() -> void:
 			mm.transform_format = MultiMesh.TRANSFORM_3D
 			mm.mesh = parts[p][0]
 			mm.instance_count = towers.size()
+			var bounds := AABB()
 			for i in towers.size():
 				var tower_xform: Transform3D = towers[i]
 				mm.set_instance_transform(i, tower_xform * part_xform)
+				var box: AABB = tower_xform * part_xform * parts[p][0].get_aabb()
+				bounds = box if i == 0 else bounds.merge(box)
+			if bounds.end.z > view_max_z:
+				bounds.size.z = maxf(view_max_z - bounds.position.z, 0.0)
+			mm.custom_aabb = bounds
 			var mmi := MultiMeshInstance3D.new()
 			mmi.name = "Type%dPart%d" % [t, p]
 			mmi.multimesh = mm

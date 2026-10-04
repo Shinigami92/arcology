@@ -92,6 +92,7 @@ func _ready() -> void:
 		sub.size = DESKTOP_SIZE
 		sub.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 		sub.msaa_3d = get_viewport().msaa_3d
+		sub.use_occlusion_culling = get_viewport().use_occlusion_culling
 		sub.world_3d = get_viewport().world_3d
 		var cam := Camera3D.new()
 		cam.fov = 100.0
@@ -227,6 +228,9 @@ func _finish() -> void:
 		"draw_calls_max": _max_i(_draw_calls),
 		"primitives_max": _max_i(_primitives),
 		"objects_max": _max_i(_objects),
+		# What each stretch of the path costs (frames grouped by nearest marker):
+		# shows what culling saves where, e.g. the city from the hallway.
+		"per_marker": _per_marker(),
 	}
 
 	var failures: Array[String] = []
@@ -253,6 +257,32 @@ func _finish() -> void:
 	print("PERF: ", JSON.stringify(stats))
 	print("PERF: %s (%s) report=%s" % ["PASS" if failures.is_empty() else "FAIL", ", ".join(failures), out_path])
 	get_tree().quit(0 if failures.is_empty() else 1)
+
+
+func _per_marker() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for m in _markers.size():
+		var gpu: PackedFloat32Array = []
+		var draws: PackedInt32Array = []
+		var prims: PackedInt32Array = []
+		var objects: PackedInt32Array = []
+		for i in _frame_marker.size():
+			if _frame_marker[i] == m:
+				gpu.append(_gpu_ms[i])
+				draws.append(_draw_calls[i])
+				prims.append(_primitives[i])
+				objects.append(_objects[i])
+		if gpu.is_empty():
+			continue
+		out.append({
+			"marker": _markers[m].name,
+			"frames": gpu.size(),
+			"gpu_ms_avg": snappedf(_avg(gpu), 0.01),
+			"draw_calls_max": _max_i(draws),
+			"primitives_max": _max_i(prims),
+			"objects_max": _max_i(objects),
+		})
+	return out
 
 
 static func _avg(values: PackedFloat32Array) -> float:

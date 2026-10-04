@@ -53,6 +53,11 @@ const LIGHTS_SHADER := preload("res://assets/shaders/traffic_lights.gdshader")
 @export var emission_energy := 4.0
 ## Its fog settings are mirrored into the light glows (unshaded, additive).
 @export var world_environment: WorldEnvironment
+## The apartment's window plane (world z, the north wall's outer face): from
+## inside, nothing behind it can be seen, so the MultiMeshes' bounds end there.
+## Bounds around the apartment would contain the camera, and occlusion culling
+## could then never hide the traffic behind the apartment's walls.
+@export_custom(PROPERTY_HINT_NONE, "suffix:m") var view_max_z := -3.2
 @export_tool_button("Regenerate") var regenerate_action := generate
 
 
@@ -146,6 +151,8 @@ func generate() -> void:
 						bodies[t].append([frame, custom])
 
 	bounds = bounds.grow(10.0)
+	if bounds.end.z > view_max_z:
+		bounds.size.z = view_max_z - bounds.position.z
 	var body_material := ShaderMaterial.new()
 	body_material.shader = VEHICLE_SHADER
 	for key: String in ["albedo", "orm", "normal", "emission"]:
