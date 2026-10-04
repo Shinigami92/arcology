@@ -10,7 +10,7 @@ Godot 4.7.2 stable, Forward+ renderer, D3D12 driver on Windows. The 4.7.2 binary
 
 ## D-002: Godot MCP: godot-ai (2026-09-27)
 
-[godot-ai](https://github.com/hi-godot/godot-ai), pinned in `.mcp.json` (`godot-ai==4.2.3`), editor plugin in `addons/godot_ai/`. Chosen in Milestone 0 over GDAI MCP and IvanMurzak's Godot-MCP: open source, captures the editor viewport, a scene camera and the running game's framebuffer, reads game/editor logs, and evaluates GDScript in the running game (used by the perf test). The `_mcp_game_helper` autoload must stay enabled for game capture and eval.
+[godot-ai](https://github.com/hi-godot/godot-ai), pinned in `.mcp.json` (`godot-ai==4.3.0`), editor plugin in `addons/godot_ai/`. Chosen in Milestone 0 over GDAI MCP and IvanMurzak's Godot-MCP: open source, captures the editor viewport, a scene camera and the running game's framebuffer, reads game/editor logs, and evaluates GDScript in the running game (used by the perf test). The `_mcp_game_helper` autoload must stay enabled for game capture and eval.
 
 ## D-003: Blender MCP: Blender Lab MCP server (2026-09-27)
 
