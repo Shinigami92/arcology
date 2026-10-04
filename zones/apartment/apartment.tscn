@@ -985,7 +985,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 1, 0.15)
 shape = SubResource("BoxShape3D_seat0")
 
 [node name="SofaSeatSit" type="Marker3D" parent="Seats" unique_id=1984326597]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 1.15, 0.85)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 1.27, 0.85)
 
 [node name="SofaSeatStand" type="Marker3D" parent="Seats" unique_id=1077950362]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 0, 0.1)
@@ -1013,7 +1013,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.3, 1, -2.25)
 shape = SubResource("BoxShape3D_seat1")
 
 [node name="BedSeatSit" type="Marker3D" parent="Seats" unique_id=153353611]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.3, 1.2, -1.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.3, 1.33, -1.5)
 
 [node name="BedSeatStand" type="Marker3D" parent="Seats" unique_id=890047793]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.3, 0, -2.3)
@@ -1041,7 +1041,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.55, 1, 5.1)
 shape = SubResource("BoxShape3D_seat2")
 
 [node name="ToiletSeatSit" type="Marker3D" parent="Seats" unique_id=1265130117]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 2.12, 1.12, 5.1)
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 2.12, 1.25, 5.1)
 
 [node name="ToiletSeatStand" type="Marker3D" parent="Seats" unique_id=1341296815]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 1.45, 0, 5.1)

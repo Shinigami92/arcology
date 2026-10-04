@@ -41,7 +41,7 @@ blender/                  .blend sources (LFS) + their build scripts, exported t
   characters/<name>/      one character's stage scripts (character-artist, D-037)
   surfaces/               tileable surface texture generator (vinyl, carpet, concrete, plaster) -> assets/materials/surfaces/
 core/
-  player/                 ArcologyPlayer rig (player.tscn), avatar/ (the player's body: AvatarBody, BodyIK (head, spine, legs, arms from headset and hand targets), LimbIK (two-bone, roll-safe), generated silena_vesper_body.tscn, D-041), hands/ (AvatarHand: XR Tools hand behavior, the body's hand target and finger curls, generated silena_vesper_hand_*.tscn; left/right_hand.tscn = the old XR Tools hands), StickSprint, GrabRay, player_physics.tres (jump height), Fingertip press areas (D-031)
+  player/                 ArcologyPlayer rig (player.tscn), avatar/ (the player's body: AvatarBody, BodyIK (head, spine, legs, arms from headset and hand targets; hip drop while stepping; seated pose), LimbIK (two-bone, roll-safe), FootSteps (procedural stepping, D-042), generated silena_vesper_body.tscn, D-041), hands/ (AvatarHand: XR Tools hand behavior, the body's hand target and finger curls, generated silena_vesper_hand_*.tscn; left/right_hand.tscn = the old XR Tools hands), StickSprint, GrabRay, player_physics.tres (jump height), Fingertip press areas (D-031)
   interaction/            ImpactSound, TrashReceiver, HingeStopSound, HingeBodyBlocker, HingeSwing, HingeLight, SliderSwing, KinematicFollower, GrabPassThrough, Seat, GrabHighlight, LightSwitch, EmissiveMaterials, OpenAlarm, HangingRail, RailHanger; windows: MotorizedShade, SmartGlass, WindowLight, WindowHud, HingeAmbience, NamedMaterialOverride
   debug/                  ABSwitch + ABPanel: blind A/B variants in one spot, flipped by a wall button (D-030); RainDebugButton (temporary "RAIN" button in the living room)
   world_state/            (M2) time of day, weather, overrides
@@ -229,7 +229,7 @@ Press targets are XR Tools area buttons (`interactable_area_button.gd`, `collisi
 
 ### Add a seat
 
-`Area3D` with `core/interaction/seat.gd`, `collision_layer = 0`, `collision_mask = 524288` (Player Body), a box shape covering where the player stands to sit, and three sibling nodes: a sit `Marker3D` (eye position, about seat height + 0.7 m, -Z = facing), a stand `Marker3D` (floor, -Z = facing) and a `Label3D` prompt. In the apartment, add it to `SEATS` in the generator.
+`Area3D` with `core/interaction/seat.gd`, `collision_layer = 0`, `collision_mask = 524288` (Player Body), a box shape covering where the player stands to sit, and three sibling nodes: a sit `Marker3D` (eye position: the avatar's seated eye height, seat surface + 0.83 m (`SEATED_EYE`, D-042), -Z = facing), a stand `Marker3D` (floor, -Z = facing) and a `Label3D` prompt. In the apartment, add it to `SEATS` in the generator.
 
 ### Change the apartment layout
 
@@ -245,7 +245,7 @@ Windows are specs, not scenes (D-033). Add an entry to a `tools/props/windows/*.
 
 ### Update the avatar
 
-The `character-artist` rebuilds `assets/characters/<name>/<name>_body.glb` (stage scripts in `blender/characters/<name>/`; meshes `Body`, `HeadMesh`, `Collar`; poses `Open` and `Grip`; humanoid bones plus OpenXR hand joints, `<Side>LowerArmTwist` and the coat chains). Wait for the imports, then run `"$GODOT4_EDITOR" --headless --path . --script res://tools/player/avatar.gd` (`-- --check` compares): it fits each hand target onto the XR Tools hand placement, prints how far wrist and knuckles land from it, and writes `core/player/avatar/<name>_body.tscn` and `core/player/hands/<name>_hand_<side>.tscn`. Landmarks the glb can't tell (`AVATAR_EYE`, `SOLE_HEIGHT`) and headset corrections (`TUNE`) live in the generator, never in the scenes. Then scan and run the `interaction` tests (`hand_rig_*`, `arm_ik_*`, `body_ik_*`).
+The `character-artist` rebuilds `assets/characters/<name>/<name>_body.glb` (stage scripts in `blender/characters/<name>/`; meshes `Body`, `HeadMesh`, `Collar`; poses `Open` and `Grip`; humanoid bones plus OpenXR hand joints, `<Side>LowerArmTwist` and the coat chains). Wait for the imports, then run `"$GODOT4_EDITOR" --headless --path . --script res://tools/player/avatar.gd` (`-- --check` compares): it fits each hand target onto the XR Tools hand placement, prints how far wrist and knuckles land from it, and writes `core/player/avatar/<name>_body.tscn` and `core/player/hands/<name>_hand_<side>.tscn`. Landmarks the glb can't tell (`AVATAR_EYE`, `SOLE_HEIGHT`) and headset corrections (`TUNE`) live in the generator, never in the scenes. Then scan and run the `interaction` tests (`hand_rig_*`, `arm_ik_*`, `body_ik_*`, `avatar_*`).
 
 ### Add or regenerate sounds
 

@@ -11,8 +11,10 @@ extends SkeletonModifier3D
 ##    lowers them, never higher than standing), moved so the torso keeps its
 ##    length. The torso's swing from rest to hips-to-neck is spread over Hips,
 ##    Spine, Chest and UpperChest.
-## 4. Legs: the feet at their rest place under the hips on the floor (the
-##    PlayerBody's height), knees towards the body's front (stepping: D-041 3b).
+## 4. Legs: the feet step after the body (FootSteps, D-042) around their rest
+##    place under the hips on the floor (the PlayerBody's height), knees
+##    towards the body's front; the torso dips while a leg needs it to reach
+##    (max_hip_drop); seated, the feet rest forward of the seat.
 ## 5. Arms: shoulders ride the chest, the hands go to the AvatarHand targets
 ##    (LimbIK, with forearm twist and a little stretch when out of reach).
 ##
@@ -36,11 +38,19 @@ extends SkeletonModifier3D
 @export var elbow_hint := Vector3(0.35, -1.0, 0.3)
 ## Where the knees point, in the body frame, right leg; mirrored for the left.
 @export var knee_hint := Vector3(0.1, 0.0, -1.0)
+## Most the torso lowers (m) so the legs reach their stepping feet.
+@export var max_hip_drop := 0.15
+## How far forward of the hips the feet rest while seated (m).
+@export var seated_feet_forward := 0.42
 ## Share of the torso's swing taken by Hips, Spine, Chest and UpperChest (sums to 1).
 @export var spine_shares := PackedFloat32Array([0.2, 0.25, 0.25, 0.3])
 
 ## Set by AvatarBody.
 var camera: Node3D
+## Sitting on a Seat (set by AvatarBody from the player's seated_changed).
+var seated := false
+## The feet's stepping, in world space.
+var steps := FootSteps.new()
 ## Stands on the floor (XR Tools' PlayerBody).
 var ground: Node3D
 var hand_targets := {}
@@ -59,6 +69,9 @@ var _arms := {}
 var _legs := {}
 var _feet_rest := {}
 var _body_yaw := NAN
+var _last_hips := Vector3.INF
+var _velocity := Vector3.ZERO
+var _hip_drop := 0.0
 
 
 func _ready() -> void:
@@ -89,7 +102,7 @@ func _ready() -> void:
 			_feet_rest[side] = skeleton.get_bone_global_rest(leg.end)
 
 
-func _process_modification_with_delta(_delta: float) -> void:
+func _process_modification_with_delta(delta: float) -> void:
 	var skeleton := get_skeleton()
 	if not skeleton or not camera or not is_instance_valid(camera):
 		return
@@ -146,26 +159,62 @@ func _process_modification_with_delta(_delta: float) -> void:
 			parent = Transform3D(bases[i], position)
 			torso_now.append(parent)
 		hips += neck_target - parent * (upper_chest_rest.affine_inverse() * _neck_rest.origin)
+	hips = torso_now[0].origin
+
+	# Legs: each foot's home is its rest place under the hips on the floor (or
+	# forward of a seat); FootSteps moves the planted feet after their homes.
+	var stand := Transform3D(rest_to_body, Vector3(hips.x, floor_y, hips.z) - rest_to_body * Vector3(hips_rest.origin.x, 0.0, hips_rest.origin.z))
+	if seated:
+		stand = stand.translated(body * Vector3.FORWARD * seated_feet_forward)
+	var to_world := skeleton.global_transform
+	var hips_world := to_world * hips
+	if _last_hips.is_finite() and delta > 0.0:
+		_velocity = _velocity.lerp((hips_world - _last_hips) / delta, clampf(delta * 10.0, 0.0, 1.0))
+	_last_hips = hips_world
+	var sides: Array[String] = []
+	var homes: Array[Transform3D] = []
+	for side: String in _legs:
+		sides.append(side)
+		homes.append(to_world * stand * (_feet_rest[side] as Transform3D))
+	var on_ground: bool = ground.get(&"on_ground") if ground and is_instance_valid(ground) and &"on_ground" in ground else true
+	var feet := steps.update(delta, homes, _velocity, on_ground, seated)
+
+	# Hip drop: a straight leg barely reaches forward or back, so a stepping
+	# body lowers its torso (up to max_hip_drop) until each leg reaches its
+	# foot with a slightly bent knee. The head stays on the camera.
+	var drop := 0.0
+	if not seated:
+		for i in sides.size():
+			var leg: LimbIK = _legs[sides[i]]
+			var root := torso_now[0] * (hips_rest.affine_inverse() * skeleton.get_bone_global_rest(leg.upper).origin)
+			var foot := to_skeleton * feet[i].origin
+			var reach_flat := Vector2(root.x - foot.x, root.z - foot.z).length()
+			var length := (leg.upper_len + leg.lower_len) * 0.995
+			drop = maxf(drop, root.y - (foot.y + sqrt(maxf(length * length - reach_flat * reach_flat, 0.0))))
+	_hip_drop = lerpf(_hip_drop, clampf(drop, 0.0, max_hip_drop), clampf(delta * 15.0, 0.0, 1.0))
+	for i in torso_now.size():
+		torso_now[i].origin.y -= _hip_drop
 	for i in _torso.size():
 		skeleton.set_bone_global_pose(_torso[i], torso_now[i])
-	# Neck between chest and head; the head exactly where the camera says.
+	# Neck between chest and head; the head where the camera says (lowered with
+	# the hip drop: it renders as a shadow only).
 	var chest := torso_now[torso_now.size() - 1]
 	var neck_pos := chest * (upper_chest_rest.affine_inverse() * _neck_rest.origin)
 	var neck_basis := Basis(chest.basis.get_rotation_quaternion().slerp(head_basis.get_rotation_quaternion() * (_head_rest.basis.inverse() * _neck_rest.basis).get_rotation_quaternion(), 0.5))
 	skeleton.set_bone_global_pose(_neck, Transform3D(neck_basis, neck_pos))
-	skeleton.set_bone_global_pose(_head, head)
+	skeleton.set_bone_global_pose(_head, head.translated(Vector3.DOWN * _hip_drop))
 	hips = torso_now[0].origin
 
-	# Legs: feet at their rest place under the hips, on the floor.
 	var hips_pose := torso_now[0]
-	var stand := Transform3D(rest_to_body, Vector3(hips.x, floor_y, hips.z) - rest_to_body * Vector3(hips_rest.origin.x, 0.0, hips_rest.origin.z))
-	for side: String in _legs:
+	for i in sides.size():
+		var side := sides[i]
 		var leg: LimbIK = _legs[side]
-		var foot: Transform3D = stand * (_feet_rest[side] as Transform3D)
 		var root := hips_pose * (hips_rest.affine_inverse() * skeleton.get_bone_global_rest(leg.upper).origin)
 		var mirror := -1.0 if side == "Left" else 1.0
 		var hint := body * (knee_hint * Vector3(mirror, 1.0, 1.0))
-		leg.solve(skeleton, root, foot, hint, body * Vector3(0.0, 0.0, -1.0))
+		if seated:
+			hint += Vector3.UP * 0.5
+		leg.solve(skeleton, root, to_skeleton * feet[i], hint, body * Vector3(0.0, 0.0, -1.0))
 
 	# Arms: shoulders ride the chest and follow the arm a little (the clavicle
 	# takes a share of the arm's swing from its rest direction, so the coat
@@ -224,5 +273,8 @@ func _body_basis(head: Basis) -> Basis:
 ## Snaps the body to the head's current facing (after a teleport or recenter).
 func reset() -> void:
 	_body_yaw = NAN
+	_last_hips = Vector3.INF
+	_velocity = Vector3.ZERO
+	steps.reset()
 	for side: String in _arms:
 		(_arms[side] as LimbIK).reset_twist()

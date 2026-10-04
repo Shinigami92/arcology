@@ -658,6 +658,8 @@ func _test_hand_rig() -> void:
 				"index / middle tip travel: trigger %s, grip %s" % [moves[1].snappedf(0.001), moves[2].snappedf(0.001)])
 		await _test_arm_ik(side, skeleton)
 	await _test_body_ik(skeleton)
+	await _test_walk(skeleton)
+	await _test_sit_pose(skeleton)
 	for i in 2:
 		(_main.get_node("Player/%sHand" % ["Left", "Right"][i]) as Node3D).global_transform = saved[i]
 	await _frames(2)
@@ -717,7 +719,7 @@ func _test_body_ik(skeleton: Skeleton3D) -> void:
 	var saved := camera.position
 	for case: Array in [["standing", 0.0], ["crouching", -0.5]]:
 		camera.position = saved + Vector3(0.0, case[1], 0.0)
-		await _frames(2)
+		await _frames(90)
 		await skeleton.skeleton_updated
 		var to_world := skeleton.global_transform
 		var eye := to_world * skeleton.get_bone_global_pose(head) * eye_in_head
@@ -733,6 +735,96 @@ func _test_body_ik(skeleton: Skeleton3D) -> void:
 				"eyes %.3f m from the camera, feet %.3f / %.3f m off the floor, knee bent %.0f degrees" % [eye_off, foot_y[0], foot_y[1], bend])
 	camera.position = saved
 	await _frames(2)
+
+
+## Walking and running step the feet: a planted foot never slides while
+## walking (at a sprint the legs reach their limit and may slip a little), the
+## feet keep up with the body, lift on an arc, and settle after stopping (D-042).
+func _test_walk(skeleton: Skeleton3D) -> void:
+	var ground := _main.get_node("Player/PlayerBody") as XRToolsPlayerBody
+	var start := ground.global_transform
+	var forward := -start.basis.z
+	forward.y = 0.0
+	forward = forward.normalized()
+	var feet: Array[int] = [skeleton.find_bone("LeftFoot"), skeleton.find_bone("RightFoot")]
+	var rest_y := skeleton.get_bone_global_rest(feet[0]).origin.y - (skeleton.get_node("BodyIK") as BodyIK).sole_height
+	var ik := skeleton.get_node("BodyIK") as BodyIK
+	# Eyes at the avatar's standing height (the headset's calibrated 1.8 m):
+	# straight legs, so steps need the hip drop.
+	var camera := get_viewport().get_camera_3d()
+	var saved_camera := camera.position
+	camera.position.y = 1.8
+	await _frames(60)  # let the body land after the crouch test
+	for case: Array in [["walk", 2.0], ["sprint", 4.0]]:
+		var per_frame: float = case[1] / 90.0
+		var frames := int(2.4 / per_frame)
+		var floor_y := ground.global_position.y
+		var last: Array[Vector3] = []
+		var first: Array[Vector3] = []
+		var sliding := 0
+		var lift := 0.0
+		var steps := [0, 0]
+		var lifted := [false, false]
+		var planted := [true, true]
+		var worst_slip := 0.0
+		for frame in frames + 90:
+			if frame < frames:
+				var t := ground.global_transform
+				t.origin += forward * per_frame
+				ground.teleport(t)
+			await get_tree().physics_frame
+			await skeleton.skeleton_updated
+			var now: Array[Vector3] = []
+			for foot in feet:
+				now.append(skeleton.global_transform * skeleton.get_bone_global_pose(foot).origin)
+			if first.is_empty():
+				first = now
+			if last:
+				for i in 2:
+					var height := now[i].y - floor_y - rest_y
+					lift = maxf(lift, height)
+					var up := height > 0.01
+					if up and not lifted[i]:
+						steps[i] += 1
+					lifted[i] = up
+					var flat := Vector2(now[i].x - last[i].x, now[i].z - last[i].z).length()
+					if not ik.steps.stepping(i) and planted[i] and flat > 0.002:
+						sliding += 1
+						worst_slip = maxf(worst_slip, flat)
+					planted[i] = not ik.steps.stepping(i)
+			last = now
+		var advanced: Array[float] = []
+		for i in 2:
+			advanced.append((last[i] - first[i]).dot(forward))
+		var slip_ok := sliding == 0 if case[0] == "walk" else (sliding <= frames * 0.3 and worst_slip < 0.01)
+		_check("avatar_%s_steps" % case[0], steps[0] >= 2 and steps[1] >= 2 and slip_ok and lift > 0.03 and absf(advanced[0] - 2.4) < 0.15 and absf(advanced[1] - 2.4) < 0.15,
+				"%.1f m/s: steps %d / %d, frames a planted foot slid %d (worst %.1f mm), lift %.3f m, feet advanced %.2f / %.2f m (body 2.4 m, the window wall is 2.6 m ahead)" % [case[1], steps[0], steps[1], sliding, worst_slip * 1000.0, lift, advanced[0], advanced[1]])
+		ground.teleport(start)
+		await _frames(30)
+	camera.position = saved_camera
+	await _frames(30)
+
+
+## Seated on the sofa, the hips rest on the cushion and the feet stand forward
+## of it on the floor, knees bent (D-042).
+func _test_sit_pose(skeleton: Skeleton3D) -> void:
+	var player := _main.get_node("Player") as ArcologyPlayer
+	var seat := _main.get_node("Zones/Apartment/Seats/SofaSeat") as Seat
+	await player.sit(seat)
+	await _frames(20)
+	await skeleton.skeleton_updated
+	var w := skeleton.global_transform
+	var hips := w * skeleton.get_bone_global_pose(skeleton.find_bone("Hips")).origin
+	var foot := w * skeleton.get_bone_global_pose(skeleton.find_bone("LeftFoot")).origin
+	var thigh := skeleton.get_bone_global_pose(skeleton.find_bone("LeftUpperLeg")).basis.y
+	var shin := skeleton.get_bone_global_pose(skeleton.find_bone("LeftLowerLeg")).basis.y
+	var facing := -seat.sit_point.global_basis.z
+	var ahead := (foot - hips).dot(facing)
+	var bend := rad_to_deg(thigh.angle_to(shin))
+	await player.stand()
+	await _frames(20)
+	_check("avatar_sit_pose", absf(hips.y - 0.52) < 0.08 and ahead > 0.3 and bend > 60.0 and bend < 120.0 and foot.y < 0.15,
+			"hips at %.2f m (cushion 0.44), feet %.2f m ahead, knee bent %.0f degrees, foot at %.2f m" % [hips.y, ahead, bend, foot.y])
 
 
 ## Pressing the lamp's switch turns its light and glow off, pressing again on.

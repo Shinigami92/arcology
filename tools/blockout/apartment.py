@@ -233,11 +233,14 @@ INSTANCES = [
 AB_INSTANCES = []
 
 # Seats: name, area center, area size, sit eye point, sit yaw, stand point, stand yaw, prompt pos
+# Sit points are the avatar's seated eye height: seat surface + 0.83 m (hip joint
+# 8 cm above the surface, eyes 75 cm above the hips; Silena Vesper, D-042).
+SEATED_EYE = 0.83
 SEATS = [
-    ("SofaSeat", (-1.6, 1.0, 0.15), (2.2, 2.0, 1.2), (-1.6, 1.15, 0.85), 0, (-1.6, 0, 0.1), 0, (-1.6, 0.9, 0.9)),
-    ("BedSeat", (-5.3, 1.0, -2.25), (1.6, 2.0, 1.3), (-5.3, 1.2, -1.5), 0, (-5.3, 0, -2.3), 0, (-5.3, 0.85, -1.6)),
+    ("SofaSeat", (-1.6, 1.0, 0.15), (2.2, 2.0, 1.2), (-1.6, 0.44 + SEATED_EYE, 0.85), 0, (-1.6, 0, 0.1), 0, (-1.6, 0.9, 0.9)),
+    ("BedSeat", (-5.3, 1.0, -2.25), (1.6, 2.0, 1.3), (-5.3, 0.50 + SEATED_EYE, -1.5), 0, (-5.3, 0, -2.3), 0, (-5.3, 0.85, -1.6)),
     # Toilet (seat top 0.42 m, front at x 1.85): sit facing west, away from the wall; get up in front of it.
-    ("ToiletSeat", (1.55, 1.0, 5.1), (0.9, 2.0, 0.9), (2.12, 1.12, 5.1), 90, (1.45, 0, 5.1), 90, (2.05, 0.75, 5.1)),
+    ("ToiletSeat", (1.55, 1.0, 5.1), (0.9, 2.0, 0.9), (2.12, 0.42 + SEATED_EYE, 5.1), 90, (1.45, 0, 5.1), 90, (2.05, 0.75, 5.1)),
 ]
 
 LIGHTS = [

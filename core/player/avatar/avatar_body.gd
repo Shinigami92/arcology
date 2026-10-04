@@ -44,6 +44,8 @@ func _connect() -> void:
 		for node in origin.find_children("*", "CharacterBody3D", true, false):
 			if node is XRToolsPlayerBody:
 				_ik.ground = node as Node3D
+		if origin.has_signal(&"seated_changed"):
+			origin.connect(&"seated_changed", _on_seated_changed)
 	for hand in get_tree().get_nodes_in_group(&"avatar_hands"):
 		_ik.hand_targets[hand.get(&"side")] = hand.get(&"target")
 
@@ -54,6 +56,11 @@ func set_finger_curls(side: String, curls: Array[float]) -> void:
 		return
 	for i in FINGERS.size():
 		_tree.set("parameters/%s%s/blend_amount" % [side, FINGERS[i]], curls[i])
+
+
+func _on_seated_changed(seated: bool) -> void:
+	_ik.seated = seated
+	_ik.reset()
 
 
 ## Snaps the body's facing to the head (after a teleport or recenter).
