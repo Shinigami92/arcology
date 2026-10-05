@@ -15,8 +15,10 @@ extends Node3D
 ## rebuilt on load, never saved.
 
 const CORRIDORS: Array[Dictionary] = [
-	# Crosses the whole view 70 m in front of the windows, around eye level.
-	{"from": Vector2(-1500, -70), "to": Vector2(1500, -70), "levels": [-30.0, -8.0, 14.0, 40.0],
+	# Crosses the whole view 70 m in front of the windows, around eye level and
+	# deep below it: the deep lanes fade into the haze and show how far down
+	# the city goes.
+	{"from": Vector2(-1500, -70), "to": Vector2(1500, -70), "levels": [-130.0, -95.0, -60.0, -30.0, -8.0, 14.0, 40.0],
 		"speed": Vector2(28, 45), "spacing": 150.0, "meshes": true},
 	# Between the near ring's spires, higher up.
 	{"from": Vector2(-1500, -420), "to": Vector2(1500, -420), "levels": [70.0, 110.0, 150.0],
@@ -51,6 +53,8 @@ const LIGHTS_SHADER := preload("res://assets/shaders/traffic_lights.gdshader")
 @export var normal: Texture2D
 @export var emission: Texture2D
 @export var emission_energy := 4.0
+## Brightness of the light glows at night (DayNight scales it by day).
+@export var light_energy := 8.0
 ## Its fog settings are mirrored into the light glows (unshaded, additive).
 @export var world_environment: WorldEnvironment
 ## The apartment's window plane (world z, the north wall's outer face): from
@@ -59,6 +63,11 @@ const LIGHTS_SHADER := preload("res://assets/shaders/traffic_lights.gdshader")
 ## could then never hide the traffic behind the apartment's walls.
 @export_custom(PROPERTY_HINT_NONE, "suffix:m") var view_max_z := -3.2
 @export_tool_button("Regenerate") var regenerate_action := generate
+
+# The light glows' material and the share of light_energy shown now (DayNight
+# dims the glows by day).
+var _glow_material: ShaderMaterial
+var _light_scale := 1.0
 
 
 func _ready() -> void:
@@ -110,6 +119,13 @@ func set_frozen(frozen: bool) -> void:
 	for mmi: Node in get_children():
 		var material := (mmi as MultiMeshInstance3D).material_override as ShaderMaterial
 		material.set_shader_parameter(&"time_scale", 0.0 if frozen else 1.0)
+
+
+## Dims the light glows to [param share] of [member light_energy] (DayNight).
+func set_light_scale(share: float) -> void:
+	_light_scale = share
+	if _glow_material:
+		_glow_material.set_shader_parameter(&"energy", light_energy * share)
 
 
 func generate() -> void:
@@ -164,6 +180,8 @@ func generate() -> void:
 	body_material.set_shader_parameter(&"emission_energy", emission_energy)
 	var glow_material := ShaderMaterial.new()
 	glow_material.shader = LIGHTS_SHADER
+	glow_material.set_shader_parameter(&"energy", light_energy * _light_scale)
+	_glow_material = glow_material
 	if world_environment and world_environment.environment:
 		var env := world_environment.environment
 		glow_material.set_shader_parameter(&"fog_density", env.fog_density if env.fog_enabled else 0.0)

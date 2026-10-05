@@ -79,7 +79,7 @@ uniform float hud_height = 0.075;  // time digits (m); the second line is 0.8 of
 // Hours and minutes as digits (h1, h2, m1, m2), -1 = blank.
 uniform ivec4 hud_time = ivec4(1, 2, 0, 0);
 uniform int hud_temperature = 14;  // °C, -99..99
-uniform int hud_weather = 1;       // 0 clear night, 1 cloudy, 2 rain
+uniform int hud_weather = 1;       // 0 clear night, 1 cloudy, 2 rain, 3 sun
 
 varying vec2 v_local;
 varying float v_seed;
@@ -373,6 +373,15 @@ float sd_weather(vec2 p, int kind) {
 		float outer = length(p) - 0.38;
 		float inner = length(p - vec2(0.2, 0.14)) - 0.32;
 		return max(outer, -inner);
+	}
+	if (kind == 3) {
+		// Sun: a disc and eight short rays.
+		float d = length(p) - 0.2;
+		for (int i = 0; i < 8; i++) {
+			vec2 dir = vec2(cos(float(i) * 0.7854), sin(float(i) * 0.7854));
+			d = min(d, sd_segment(p, dir * 0.3, dir * 0.42) - 0.045);
+		}
+		return d;
 	}
 	if (kind == 2) {
 		float d = sd_cloud((p - vec2(0.0, 0.16)) / 0.8) * 0.8;

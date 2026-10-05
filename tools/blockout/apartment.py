@@ -45,6 +45,7 @@ WINDOWS = [
     ("apartment_kitchen", "KitchenWindow", 4.55, "KitchenCitySpill"),
 ]
 WINDOW_LIGHT_SCRIPT = "res://core/interaction/window_light.gd"
+INTERIOR_DAYLIGHT_SCRIPT = "res://core/world_state/interior_daylight.gd"
 
 MATS = {
     "vinyl": "vinyl_plank", "carpet": "carpet", "concrete": "polished_concrete",
@@ -81,7 +82,7 @@ SCENES = {
     "bed": "res://assets/props/bed/bed.tscn",
     "wardrobe": "res://assets/props/wardrobe/wardrobe.tscn",
     "nightstand": "res://assets/props/nightstand/nightstand.tscn",
-    "rain_debug": "res://core/debug/rain_debug_button.tscn",
+    "world_terminal": "res://assets/props/world_terminal/world_terminal.tscn",
     "shower": "res://assets/props/shower/shower.tscn",
     "vanity": "res://assets/props/vanity/vanity.tscn",
     "bath_mirror": "res://assets/props/bath_mirror/bath_mirror.tscn",
@@ -238,8 +239,9 @@ INSTANCES = [
     ("Toilet", "toilet", (2.6, 0, 5.1), (0, -90, 0)),
     # On the vanity top (0.86 m), east of the basin; the soap dispenser stands on the west side.
     ("CanSink", "can", (1.9, 0.922, 6.35), (0, 0, 0)),
-    # Temporary rain debug button (D-034), on the wall west of the living room window panel.
-    ("RainDebugButton", "rain_debug", (-2.74, 1.2, -3.0), (0, 0, 0)),
+    # Holographic world-state terminal (D-053) on the living room's west wall, between the
+    # window corner and the shelf, facing into the room.
+    ("WorldTerminal", "world_terminal", (-3.0, 1.35, -2.6), (0, 90, 0)),
 ]
 
 # Blind A/B pairs (core/debug/ab_switch.gd): name, scene A, scene B, position, rotation.
@@ -273,6 +275,12 @@ LIGHTS = [
     ("BathCeiling", "Omni", (0.5, 2.4, 5.2), None, (0.9, 0.95, 1), 0.9, 4.2, False, ""),
     ("VestibuleLight", "Omni", (7.4, 2.35, 2.9), None, (0.6, 0.85, 1), 0.4, 2.2, False, ""),
 ]
+
+# Smart dimming by day (InteriorDaylight, D-051): the lights of the rooms with windows,
+# and the probes that see daylight (re-captured when it changes).
+DAYLIGHT_DIMMED = ["LivingCeiling", "KitchenCeiling", "KitchenCounter", "BedroomCeiling"]
+DAYLIGHT_PROBES = ["LivingProbe", "KitchenProbe", "BedroomProbe", "HallwayProbe"]
+DAYLIGHT_FIXTURES = ["Living/LampDisc", "Kitchen/LampDisc", "Bedroom/LampDisc"]
 
 PROBES = [
     # name, center, size[, blend distance (default 1 m)]
@@ -417,6 +425,7 @@ def main():
     for spec, _, _, _ in WINDOWS:
         add_ext(spec, "PackedScene", "res://" + window_specs.paths(spec)["tscn"])
     add_ext("window_light", "Script", WINDOW_LIGHT_SCRIPT)
+    add_ext("interior_daylight", "Script", INTERIOR_DAYLIGHT_SCRIPT)
     if (ROOT / SKIRTING_GLB).exists():
         add_ext("skirting", "PackedScene", "res://" + SKIRTING_GLB)
     if AB_INSTANCES:
@@ -550,6 +559,12 @@ def main():
         blend_line = f"blend_distance = {blend[0]:g}\n" if blend else ""
         nodes.append(f'[node name="{name}" type="ReflectionProbe" parent="Lighting"]\nposition = {v3(center)}\n'
                      f"size = {v3(size)}\n{blend_line}box_projection = true\ninterior = true\nambient_mode = 0\n")
+    paths = lambda names: ", ".join(f'NodePath("../{n}")' for n in names)
+    nodes.append('[node name="Daylight" type="Node" parent="Lighting" node_paths=PackedStringArray("lights", "fixtures", "probes")]\n'
+                 f'script = ExtResource("{ids["interior_daylight"]}")\n'
+                 f"lights = [{paths(DAYLIGHT_DIMMED)}]\nfixtures = [{paths('../' + f for f in DAYLIGHT_FIXTURES)}]\n"
+                 f"probes = [{paths(DAYLIGHT_PROBES)}]\n"
+                 'metadata/_doc = "Dims the lights of the rooms with windows by day and re-captures the probes as the daylight changes (D-051)."\n')
 
     nodes.append('[node name="Entries" type="Node3D" parent="."]\n')
     for name, pos, yaw in ENTRIES:

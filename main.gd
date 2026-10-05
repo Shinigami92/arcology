@@ -13,9 +13,19 @@ extends Node3D
 ##   --shot-player=x,z,yaw  with --shots: stand the player there first (mirrors)
 ##   --rain=<0..1>        start with rain on the glass (wet at once; RainOnGlass)
 ##   --rain-delay=<s>     with --rain: start dry and let the rain set in after s seconds
+##   --time=<h|HH:MM|now> time of day (WorldState); tests, stills and perf runs
+##                        default to FIXED_TIME, stopped, so they don't depend on the clock
+##   --time-speed=<x>     game seconds per real second from --time on (0 stops the clock)
+##   --date=<MM-DD>       the date (the sun's path); automated runs default to FIXED_DATE
+##   --weather=<clear|cloudy>  sun out or overcast (WorldState)
 
 const PERF_SCRIPT := "res://tools/perf/perf_flythrough.gd"
 const SHOTS_SCRIPT := "res://tools/shots/shots.gd"
+## Time of day for tests, stills and perf runs without --time: night.
+const FIXED_TIME := 22.0
+## Date and UTC offset for tests, stills and perf runs without --date.
+const FIXED_DATE: Array[int] = [10, 5]
+const FIXED_UTC_OFFSET := 2.0
 
 ## Entry marker path inside the zone to spawn at.
 @export var entry := NodePath("Zones/Apartment/Entries/Default")
@@ -31,12 +41,13 @@ func _ready() -> void:
 		push_warning("Entry marker not found: %s" % entry)
 
 	var args := _user_args()
+	_set_time(args)
 	if args.has("rain"):
-		var rain := $Weather/RainOnGlass as RainOnGlass
+		var world := $WorldState as WorldState
 		if args.has("rain-delay"):
-			get_tree().create_timer(float(args["rain-delay"])).timeout.connect(rain.set_rain.bind(float(args["rain"])))
+			get_tree().create_timer(float(args["rain-delay"])).timeout.connect(world.set_rain.bind(float(args["rain"])))
 		else:
-			rain.set_rain(float(args["rain"]), true)
+			world.set_rain(float(args["rain"]), true)
 	if args.has("perf"):
 		_start_perf(args)
 	elif args.has("test"):
@@ -59,6 +70,38 @@ func _ready() -> void:
 		if args.has("shot-no-player"):
 			_player.visible = false
 		add_child(shots)
+
+
+func _set_time(args: Dictionary) -> void:
+	var world := $WorldState as WorldState
+	var run_speed := float(args["time-speed"]) if args.has("time-speed") else -1.0
+	var automated := args.has("perf") or args.has("test") or args.has("shots")
+	if args.has("date"):
+		var date := WorldState.parse_date(args["date"])
+		if date.is_empty():
+			push_warning("--date: expected MM-DD, got '%s'" % args["date"])
+		else:
+			world.set_date(date[0], date[1])
+	elif automated:
+		world.set_date(FIXED_DATE[0], FIXED_DATE[1], FIXED_UTC_OFFSET)
+	if args.has("weather"):
+		var kind := WorldState.parse_weather(args["weather"])
+		if kind < 0:
+			push_warning("--weather: expected clear, cloudy or rain, got '%s'" % args["weather"])
+		else:
+			world.set_weather(kind as WorldState.Weather, true)
+	if args.has("time"):
+		var at := WorldState.parse_time(args["time"])
+		if at >= 0.0:
+			world.set_time(at, run_speed if run_speed >= 0.0 else (0.0 if automated else 1.0))
+		elif args["time"] == "now":
+			world.follow_clock()
+		else:
+			push_warning("--time: expected hours, HH:MM or now, got '%s'" % args["time"])
+	elif automated:
+		world.set_time(FIXED_TIME, maxf(run_speed, 0.0))
+	elif run_speed >= 0.0:
+		world.set_time(world.hours, run_speed)
 
 
 func _start_perf(args: Dictionary) -> void:

@@ -7,8 +7,11 @@ extends Node3D
 ## Deterministic (fixed seed) so the view from the window is the same every
 ## run. Tower types come from [member near_towers]: each child with a Model
 ## (its glb) and metadata/footprint is one type. Every cell gets a type that
-## fits it, turned roughly toward the apartment, and sunk into the street so
-## its roof lands at a random height: the street plane hides the rest. Cells
+## fits it, turned roughly toward the apartment, and sunk below the street so
+## its roof lands at a random height. Every tower, near and far, stands on a
+## dark root reaching [member root_bottom] (one MultiMesh of boxes): there is
+## no street plane, the city goes down into the haze and no tower's end is
+## ever in view (D-053). Cells
 ## behind [member max_z] (the apartment's window wall faces -Z, nothing behind
 ## it can be seen from inside), inside [member keep_out] (our own building) and
 ## around the near towers stay empty; under a traffic corridor roofs stay
@@ -45,6 +48,16 @@ extends Node3D
 @export var near_towers: Node3D
 ## Its corridors cap the roofs beneath them.
 @export var traffic: FlyingTraffic
+## Where the towers' roots end, far below anything the windows show.
+@export_custom(PROPERTY_HINT_NONE, "suffix:m") var root_bottom := -2000.0
+## A root's footprint as a share of its tower's (inside the silhouette).
+@export_range(0.3, 1.0) var root_scale := 0.8
+
+## The roots' facade: lit windows in world space, antialiased (D-020).
+const ROOT_SHADER := preload("res://assets/shaders/skyline_facade.gdshader")
+
+var _root_material: ShaderMaterial
+var _root_energy := 2.2
 @export_tool_button("Regenerate") var regenerate_action := generate
 
 
@@ -76,7 +89,7 @@ func generate() -> void:
 			var mesh: Mesh = part[0]
 			var xform: Transform3D = part[1]
 			height = maxf(height, (xform * mesh.get_aabb()).end.y)
-		types.append({"parts": parts, "radius": radius, "height": height})
+		types.append({"parts": parts, "radius": radius, "height": height, "footprint": footprint})
 	if types.is_empty():
 		return
 
@@ -115,6 +128,14 @@ func generate() -> void:
 			var base := Vector3(center.x, street_y - maxf(height - roof, 0.0), center.y)
 			placed[t].append(Transform3D(Basis(Vector3.UP, yaw), base))
 
+	var roots: Array[Transform3D] = []
+	for tower: Node3D in near_towers.get_children():
+		roots.append(_root(tower.transform, tower.get_meta(&"footprint", Vector2.ZERO)))
+	for t in types.size():
+		for tower_xform: Transform3D in placed[t]:
+			roots.append(_root(tower_xform, types[t]["footprint"]))
+	_add_roots(roots)
+
 	for t in types.size():
 		var towers: Array = placed[t]
 		if towers.is_empty():
@@ -140,6 +161,50 @@ func generate() -> void:
 			mmi.multimesh = mm
 			mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			add_child(mmi)
+
+
+## Dims the roots' lit windows to [param share] (DayNight, by day).
+func set_light_scale(share: float) -> void:
+	if _root_material:
+		_root_material.set_shader_parameter(&"window_energy", _root_energy * share)
+
+
+## A box from a tower's base down to [member root_bottom], inside its footprint.
+func _root(tower: Transform3D, footprint: Vector2) -> Transform3D:
+	var height := tower.origin.y - root_bottom
+	var size := Vector3(footprint.x * root_scale, height, footprint.y * root_scale)
+	var center := Vector3(tower.origin.x, tower.origin.y - height * 0.5, tower.origin.z)
+	return Transform3D(tower.basis.orthonormalized().scaled_local(size), center)
+
+
+func _add_roots(roots: Array[Transform3D]) -> void:
+	if roots.is_empty():
+		return
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_custom_data = true
+	mm.mesh = BoxMesh.new()
+	mm.instance_count = roots.size()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value + 1
+	var bounds := AABB()
+	for i in roots.size():
+		mm.set_instance_transform(i, roots[i])
+		mm.set_instance_custom_data(i, Color(rng.randf(), 0.0, 0.0, 0.0))
+		var box := roots[i] * AABB(Vector3(-0.5, -0.5, -0.5), Vector3.ONE)
+		bounds = box if i == 0 else bounds.merge(box)
+	if bounds.end.z > view_max_z:
+		bounds.size.z = maxf(view_max_z - bounds.position.z, 0.0)
+	mm.custom_aabb = bounds
+	_root_material = ShaderMaterial.new()
+	_root_material.shader = ROOT_SHADER
+	_root_energy = RenderingServer.shader_get_parameter_default(ROOT_SHADER.get_rid(), &"window_energy")
+	var mmi := MultiMeshInstance3D.new()
+	mmi.name = "Roots"
+	mmi.multimesh = mm
+	mmi.material_override = _root_material
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mmi)
 
 
 ## A random type at least [param roof] tall (else the tallest) that fits in

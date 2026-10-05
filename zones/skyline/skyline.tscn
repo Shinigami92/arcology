@@ -4,6 +4,12 @@
 [ext_resource type="PackedScene" path="res://zones/skyline/near_towers.tscn" id="3_near"]
 [ext_resource type="Script" path="res://zones/skyline/flying_traffic.gd" id="4_traffic"]
 [ext_resource type="Script" path="res://core/zones/outside_view.gd" id="5_outside"]
+[ext_resource type="Script" path="res://core/world_state/day_night.gd" id="6_day_night"]
+[ext_resource type="Material" path="res://assets/materials/city/city_brutal_windows.tres" id="m_brutal_windows"]
+[ext_resource type="Material" path="res://assets/materials/city/city_spire_glass.tres" id="m_spire_glass"]
+[ext_resource type="Material" path="res://assets/materials/city/city_brutal_neon.tres" id="m_brutal_neon"]
+[ext_resource type="Material" path="res://assets/materials/city/city_spire_ads.tres" id="m_spire_ads"]
+[ext_resource type="Material" path="res://assets/materials/city/city_spire_lights.tres" id="m_spire_lights"]
 [ext_resource type="PackedScene" path="res://assets/props/traffic/aircar_sedan/aircar_sedan.glb" id="v_aircar_sedan"]
 [ext_resource type="PackedScene" path="res://assets/props/traffic/aircar_taxi/aircar_taxi.glb" id="v_aircar_taxi"]
 [ext_resource type="PackedScene" path="res://assets/props/traffic/hover_van/hover_van.glb" id="v_hover_van"]
@@ -19,7 +25,7 @@ sky_top_color = Color(0.02, 0.028, 0.055, 1)
 sky_horizon_color = Color(0.16, 0.09, 0.16, 1)
 sky_curve = 0.12
 sky_energy_multiplier = 1.0
-ground_bottom_color = Color(0.05, 0.035, 0.03, 1)
+ground_bottom_color = Color(0.27, 0.17, 0.195, 1)
 ground_horizon_color = Color(0.16, 0.09, 0.16, 1)
 ground_curve = 0.05
 sun_angle_max = 0.0
@@ -52,27 +58,20 @@ fog_height = -30.0
 fog_height_density = 0.025
 fog_sky_affect = 0.0
 
-[sub_resource type="PlaneMesh" id="PlaneMesh_street"]
-size = Vector2(4000, 4000)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_street"]
-albedo_color = Color(0.02, 0.02, 0.025, 1)
-emission_enabled = true
-emission = Color(1, 0.6, 0.3, 1)
-emission_energy_multiplier = 0.06
-
 [node name="Skyline" type="Node3D"]
-metadata/_doc = "World backdrop outside every zone: sky, environment, moonlight, near towers (tools/props/city.py), the far city repeating them (FarTowers), flying traffic (Traffic). M2 world_state drives the environment; see docs/decisions.md D-008 for coordinates."
+metadata/_doc = "World backdrop outside every zone: sky, environment, sky light (sun by day, moon by night), near towers (tools/props/city.py), the far city repeating them (FarTowers), flying traffic (Traffic). The environment, sky and moon as authored are the night; DayNight changes them from the WorldState clock (D-051). Coordinates: D-008."
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_night")
 
-[node name="Moon" type="DirectionalLight3D" parent="."]
+[node name="SkyLight" type="DirectionalLight3D" parent="."]
 rotation_degrees = Vector3(-35, 150, 0)
 light_color = Color(0.6, 0.7, 1, 1)
 light_energy = 0.15
 shadow_enabled = false
-sky_mode = 1
+shadow_blur = 1.5
+directional_shadow_mode = 0
+directional_shadow_max_distance = 24.0
 
 [node name="NearTowers" parent="." instance=ExtResource("3_near")]
 
@@ -92,13 +91,18 @@ emission = ExtResource("t_emission")
 emission_energy = 6.0
 world_environment = NodePath("../WorldEnvironment")
 
-[node name="StreetGlow" type="MeshInstance3D" parent="."]
-position = Vector3(0, -180, 0)
-cast_shadow = 0
-mesh = SubResource("PlaneMesh_street")
-surface_material_override/0 = SubResource("StandardMaterial3D_street")
-
 [node name="OutsideView" type="Node" parent="." node_paths=PackedStringArray("targets")]
 script = ExtResource("5_outside")
-targets = [NodePath("../NearTowers"), NodePath("../FarTowers"), NodePath("../Traffic"), NodePath("../StreetGlow")]
+targets = [NodePath("../NearTowers"), NodePath("../FarTowers"), NodePath("../Traffic")]
 metadata/_doc = "Hides the city while no window is on screen (window notifiers in the outside_view group, D-048)."
+
+[node name="DayNight" type="Node" parent="." node_paths=PackedStringArray("world_environment", "sky_light", "outside", "traffic", "far_towers")]
+script = ExtResource("6_day_night")
+world_environment = NodePath("../WorldEnvironment")
+sky_light = NodePath("../SkyLight")
+outside = [NodePath("../NearTowers"), NodePath("../FarTowers"), NodePath("../Traffic")]
+lit_windows = Array[BaseMaterial3D]([ExtResource("m_brutal_windows"), ExtResource("m_spire_glass")])
+signs = Array[BaseMaterial3D]([ExtResource("m_brutal_neon"), ExtResource("m_spire_ads"), ExtResource("m_spire_lights")])
+traffic = NodePath("../Traffic")
+far_towers = NodePath("../FarTowers")
+metadata/_doc = "Lights sky, city and windows from the WorldState clock and weather (D-051); night = this scene as authored."

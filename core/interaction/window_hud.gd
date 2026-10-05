@@ -1,16 +1,16 @@
 class_name WindowHud
 extends Node
 ## Feeds the glass HUD readout (time HH:MM, temperature, weather glyph) that
-## window_glass.gdshader draws on panes with `hud_enabled`. Updates once per
-## second from a Timer; no per-frame work.
+## window_glass.gdshader draws on panes with `hud_enabled`. Updates when the
+## [WorldState] clock passes a minute or the weather changes (without one,
+## once per second from a Timer); no per-frame work.
 ##
 ## The state comes from [member source] when set (any object with
 ## `get_hud_state() -> Dictionary` returning hour, minute, temperature and
-## weather, e.g. the M2 WorldState later), else from the system clock with
-## the fixed placeholder [member temperature] and [member weather] (rain while
-## [RainOnGlass] has rain).
+## weather), else from the scene's [WorldState], else from the system clock
+## with the fixed placeholder [member temperature] and [member weather].
 
-enum Weather { CLEAR_NIGHT, CLOUDY, RAIN }
+enum Weather { CLEAR_NIGHT, CLOUDY, RAIN, SUN }
 
 @export var panes: Array[GeometryInstance3D] = []
 @export_custom(PROPERTY_HINT_NONE, "suffix:°C") var temperature := 14
@@ -30,11 +30,20 @@ func _ready() -> void:
 	if _materials.is_empty():
 		push_warning("WindowHud: no ShaderMaterial on its panes: %s" % get_path())
 		return
-	var timer := Timer.new()
-	timer.wait_time = 1.0
-	timer.autostart = true
-	timer.timeout.connect(refresh)
-	add_child(timer)
+	var world := WorldState.find(get_tree())
+	if world:
+		world.time_changed.connect(_on_time_changed)
+		world.weather_changed.connect(refresh)
+	else:
+		var timer := Timer.new()
+		timer.wait_time = 1.0
+		timer.autostart = true
+		timer.timeout.connect(refresh)
+		add_child(timer)
+	refresh()
+
+
+func _on_time_changed(_hours: float) -> void:
 	refresh()
 
 
@@ -60,10 +69,8 @@ func refresh() -> void:
 func _state() -> Dictionary:
 	if source and source.has_method("get_hud_state"):
 		return source.call("get_hud_state")
+	var world := WorldState.find(get_tree())
+	if world:
+		return world.get_hud_state()
 	var now := Time.get_time_dict_from_system()
-	var shown_weather := weather
-	# Placeholder until WorldState: the rain on the glass (RainOnGlass) shows as rain.
-	var rain := get_tree().get_first_node_in_group(RainOnGlass.GROUP) as RainOnGlass
-	if rain and rain.target > 0.0:
-		shown_weather = Weather.RAIN
-	return {"hour": now.hour, "minute": now.minute, "temperature": temperature, "weather": shown_weather}
+	return {"hour": now.hour, "minute": now.minute, "temperature": temperature, "weather": weather}

@@ -44,15 +44,15 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [later] Live reflections: a cheaper pass (skip small props via a render layer), a curved magnifier (today a planar zoom), rain and steam on the mirror and the shower screen (D-049).
 - [M2] Physical light switches and dimmers per room, and/or a smart-home hub panel (could be the same in-world terminal as the world-state control panel).
 - [M2] Windows (D-033): tilt vent in the bedroom, motorized shades and smart-glass tint per room via a wall panel, HUD readout on the living room glass. Done on placeholders; the artist's frame/sash/panel glbs drop in by rerunning `tools/props/window.py`.
-- [M2] Window HUD: drive it from WorldState (time, temperature, weather) once that exists; maybe more readouts (news ticker, messages).
+- [M2] Window HUD: more readouts (news ticker, messages). It shows the world's time, temperature and weather (D-051).
 
 ## World state and weather
 
-- [M2] Global world state: time of day, weather, automatic cycle at configurable speed, manual override.
-- [M2] Day/night cycle with live lighting in the apartment.
-- [M2] Weather: rain particles, wet surfaces, fog, lightning, sky crossfade, audio layers. Rain on the glass is done (D-034); the weather system drives it through `RainOnGlass.set_rain()` and replaces the living room's temporary RAIN button.
+- [M2] Weather: rain particles, wet surfaces, fog, lightning, sky crossfade, audio layers; weather that changes by itself. Rain on the glass is done (D-034) and goes through `WorldState.set_rain()` (D-051); the world terminal sets it by hand (D-053).
+- [M2] Day/night polish (D-051, D-052 are done): a dawn that differs from dusk, stars and a moon in the night sky, rain that dims the city's haze, weather that changes by itself (today it's set by hand), shadowed window spill on overcast days, smart-glass tint dimming the sun; tune the day in the headset.
 - [later] Rain on glass: wind-blown slanted runners, drops gathering on the sill and dripping, splashes on the stone sill outside the bedroom vent; better rain sounds than the synth placeholders.
-- [M2] World-state control panel in the apartment, e.g. a holographic wall terminal with physical buttons and sliders.
+- [M2] World terminal polish (D-053 is done): a smart-home page (room lights, shades, tint), weather presets (fog, storm) once the weather system has them, a news ticker.
+- [later] Sunlight leaks at a few wall edges (thin generated walls, shadow bias); likely gone once a building shell surrounds the apartment (roadmap phase 1).
 - [M2] Panorama variants: day, dusk, night, rain/fog, crossfaded by time and weather.
 - [M2] Replace the procedural window pattern with prefiltered (mipmapped) facades/impostors; the remaining flicker in the headset is probably aliasing plus stream compression (D-023).
 
@@ -132,6 +132,12 @@ New subagents when a phase starts (the user agreed to add or update agents whene
 - Grappling hook (least satisfying in the XR Tools demo; not a fit).
 
 ## Done
+
+- World terminal and a city without a floor (2026-10-05): a holographic wall terminal sets time, clock speed, weather, rain and date by touch (D-053); the street plane is gone, the towers reach down into the haze with lit windows fading in the depth, deep traffic lanes below the window.
+
+- Sun, seasons and weather (2026-10-05): the real sun for the date at 48° N, windows facing 240° (winter sunsets in front of them), sun patches with window-frame shadows moving across the floor, hazy-sun and overcast days, a less white day (D-052).
+
+- World state and day/night (2026-10-05): the world follows the PC's clock (or `--time`); an overcast, hazy day, dusk and dawn tint the sky and fog; the sun lights the city, the windows let daylight in, the city's lit windows and traffic lights dim by day, and the room lights dim like a smart home; the HUD shows the world's time, temperature and weather (D-051).
 
 - Live reflections (2026-10-04): the bathroom mirror, the magnifier (3× zoom), the shower screen and the window glass reflect the room and the avatar, per eye, while in view; the windows share one renderer (D-049).
 

@@ -56,6 +56,9 @@ const SIGHT_SLACK := 0.06
 ## or behind the surface (leaning in, one eye past a glass edge) would collapse
 ## the frustum.
 const MIN_EYE_DISTANCE := 0.01
+## Environment properties [method sync_environment] copies.
+const SYNCED_ENVIRONMENT: Array[StringName] = [&"ambient_light_color", &"ambient_light_energy",
+		&"ambient_light_sky_contribution", &"fog_light_color", &"fog_light_energy", &"fog_density"]
 
 ## The camera that renders when not in XR. Tools that render through their own
 ## SubViewport (perf flythrough, stills) set it; otherwise the viewport's camera.
@@ -66,6 +69,8 @@ static var simulate_stereo := false
 ## Planes rendering at the same time (two scene passes each), largest on screen first.
 static var max_active := 3
 static var _instances: Array[PlanarReflection] = []
+## One environment for every reflection camera (see _reflection_environment).
+static var _reflection_env: Environment
 static var _frame := -1
 static var _last_usec := 0
 
@@ -395,8 +400,11 @@ func _eye_positions() -> PackedVector3Array:
 ## surface's shader writes the reflection to EMISSION and the main pass tone maps
 ## (and glows) once.
 func _reflection_environment() -> Environment:
+	if _reflection_env:
+		return _reflection_env
 	var env := get_world_3d().environment
 	env = env.duplicate() if env else Environment.new()
+	_reflection_env = env
 	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	env.tonemap_exposure = 1.0
 	env.glow_enabled = false
@@ -406,3 +414,12 @@ func _reflection_environment() -> Environment:
 	env.ssil_enabled = false
 	env.sdfgi_enabled = false
 	return env
+
+
+## Copies what [DayNight] changes in the world's environment (ambient light,
+## fog) into the reflections' copy; the sky is shared and needs no copy.
+static func sync_environment(source: Environment) -> void:
+	if not _reflection_env or not source:
+		return
+	for property: StringName in SYNCED_ENVIRONMENT:
+		_reflection_env.set(property, source.get(property))
