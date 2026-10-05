@@ -11,13 +11,21 @@ extends Node
 ## every ABSwitch first. --shot-call=<zone path>:<method>:<number>[,...] calls
 ## a method first, e.g. Windows/LivingWindow/Shade:set_closure:0.6 or
 ## Windows/LivingWindow/SmartGlass:set_tint:0.9. --shot-player=x,z,yaw stands the
-## player there first (e.g. in front of a mirror, D-049). Writes
+## player there first (their eyes at x, 1.8 m, z) (e.g. in front of a mirror, D-049); a view written
+## eye,dx,dy,dz,yaw,pitch[,fov] is relative to the player's camera (offset in
+## its frame, angles added to its own): "eye,0,0,0,0,0,12" zooms in on what the
+## player sees, such as their face in a mirror (their own head hidden while the
+## camera is within 25 cm of the eyes), "eye,0,0,-0.5,180,0,30" looks back at
+## their face (D-050). Writes
 ## tools/shots/results/shot-<n>.png (gitignored) at [constant SIZE] and quits.
 
 const SIZE := Vector2i(1920, 1080)
 const OUT_DIR := "res://tools/shots/results"
 ## Frames to render before capturing (reflection probes and lights settle).
 const SETTLE_FRAMES := 30
+## The player's eye height with --shot-player (XR Tools' standard_height, what the
+## headset is calibrated to).
+const STANDING_EYE := 1.8
 
 var zone: Node3D
 var views: PackedStringArray = []
@@ -50,7 +58,20 @@ func _ready() -> void:
 		var body := player.get_node_or_null("PlayerBody")
 		if body and p.size() >= 2:
 			var yaw := deg_to_rad(p[2]) if p.size() > 2 else 0.0
-			body.call("teleport", Transform3D(Basis(Vector3.UP, yaw), Vector3(p[0], 0.0, p[1])))
+			var target := Vector3(p[0], 0.0, p[1])
+			body.call("teleport", Transform3D(Basis(Vector3.UP, yaw), target))
+			# The eyes at the spot, at the calibrated headset's standing height
+			# (the desktop camera sits off the body's center).
+			var cams := player.find_children("*", "XRCamera3D", true, false)
+			if cams:
+				var eyes := cams[0] as Node3D
+				eyes.position.y = STANDING_EYE
+				for f in 3:
+					await get_tree().physics_frame
+				var off := eyes.global_position - target
+				body.call("teleport", Transform3D(Basis(Vector3.UP, yaw), target - Vector3(off.x, 0.0, off.z)))
+				for f in 60:   # the body settles (eye height, body facing)
+					await get_tree().physics_frame
 		else:
 			push_warning("SHOTS: can't place the player at %s" % player_at)
 
@@ -77,10 +98,25 @@ func _ready() -> void:
 
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT_DIR))
 	for i in views.size():
-		var v := views[i].split_floats(",")
+		var relative := views[i].begins_with("eye,")
+		var v := views[i].trim_prefix("eye,").split_floats(",")
 		cam.position = Vector3(v[0], v[1], v[2])
 		cam.rotation_degrees = Vector3(v[4], v[3], 0)
 		cam.fov = v[5] if v.size() > 5 else 70.0
+		# From (near) the player's eyes, skip their own head as their camera does.
+		var inside := relative and cam.position.length() < 0.25
+		cam.cull_mask = PlanarReflection.ALL_LAYERS & ~PlanarReflection.LAYER_THIRD_PERSON if inside else PlanarReflection.ALL_LAYERS
+		if relative or (player_at and i == 0):
+			var cams := player.find_children("*", "XRCamera3D", true, false) if player else []
+			if cams:
+				print("SHOTS: player eyes at ", (cams[0] as Node3D).global_position)
+		if relative:
+			var eyes := player.find_children("*", "XRCamera3D", true, false) if player else []
+			if eyes:
+				var view := (eyes[0] as Node3D).global_transform
+				cam.global_transform = Transform3D(view.basis * cam.basis, view * cam.position)
+			else:
+				push_warning("SHOTS: no player camera for %s" % views[i])
 		for f in SETTLE_FRAMES:
 			await RenderingServer.frame_post_draw
 		var path := "%s/shot-%d.png" % [OUT_DIR, i]

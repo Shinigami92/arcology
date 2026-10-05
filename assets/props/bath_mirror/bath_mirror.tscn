@@ -16,7 +16,7 @@ shader = ExtResource("planar_mirror")
 size = Vector3(0.05, 0.05, 0.03)
 
 [node name="BathMirror" type="Node3D"]
-metadata/_doc = "Backlit bathroom mirror, frame 1.20 x 0.90 m, 35 mm off the wall, with a warm LED halo on the wall around it. Origin = bottom center of its back, on the wall plane; front +Z. Touch the round sensor near the bottom of the glass to switch the halo and the vanity light (on by default; the sensor ring stays dimly lit when off). The glass is a live mirror, one reflection per eye while it's in view (D-049)."
+metadata/_doc = "Backlit bathroom mirror, frame 1.20 x 0.90 m, 35 mm off the wall, with a warm LED halo on the wall around it. Origin = bottom center of its back, on the wall plane; front +Z. Touch the round sensor near the bottom of the glass to switch the halo, the vanity light and the face light (on by default; the sensor ring stays dimly lit when off). The glass is a live mirror, one reflection per eye while it's in view (D-049)."
 
 [node name="Model" parent="." instance=ExtResource("bath_mirror")]
 
@@ -47,6 +47,14 @@ light_color = Color(1, 0.77, 0.56, 1)
 light_energy = 0.6
 omni_range = 1.1
 
+[node name="FaceLight" type="OmniLight3D" parent="."]
+position = Vector3(0, 0.55, 0.12)
+light_color = Color(1, 0.86, 0.72, 1)
+light_energy = 0.45
+omni_range = 1.6
+light_specular = 0.0
+omni_attenuation = 0.6
+
 [node name="HaloButton" type="Area3D" parent="."]
 position = Vector3(0, 0.07, 0.0556)
 collision_layer = 0
@@ -69,7 +77,7 @@ volume_db = -16.0
 [node name="Halo" type="Node" parent="." node_paths=PackedStringArray("button", "lights", "emissive_root", "click")]
 script = ExtResource("light_switch")
 button = NodePath("../HaloButton")
-lights = [NodePath("../VanityLight")]
+lights = [NodePath("../VanityLight"), NodePath("../FaceLight")]
 emissive_root = NodePath("../Model")
 material_name = "mirror_led"
 click = NodePath("../TouchClick")

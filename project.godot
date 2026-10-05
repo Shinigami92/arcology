@@ -63,4 +63,5 @@ occlusion_culling/use_occlusion_culling=true
 [xr]
 
 openxr/enabled=true
+openxr/extensions/eye_gaze_interaction=true
 shaders/enabled=true

@@ -2,7 +2,9 @@
 (geometry, weights, procedural leather), the hand poses, the left coat sleeve (geometry,
 weights, procedural coat leather) (stages 1-2), then the body (stage 3, outfit.py: coat
 body and collar sewn to the sleeves, top, trousers, boots, belt and its items, head,
-visible skin, the coat's spring chains); saves the .blend.
+visible skin, the coat's spring chains), then the eyes (stage 4, eyes.py: lashes and brows
+fitted here while MPFB's helpers exist, the eyes, lids and shapes in outfit.py); saves the
+.blend.
 
   blender -b --factory-startup --python blender/characters/silena_vesper/build.py
 
@@ -23,6 +25,7 @@ from silena_vesper_common import (  # noqa: E402
     twist_factor,
 )
 import coat_leather  # noqa: E402
+import eyes  # noqa: E402
 import glove as glove_geo  # noqa: E402
 import leather  # noqa: E402
 import outfit  # noqa: E402
@@ -38,6 +41,7 @@ def build_body():
     body, arm = human.create_human(rig="game_engine", race=RACE, targets=TARGETS, **MACROS)
     m = human.measure(body, arm, "Left")
     human.set_skin(body, SKIN)
+    eyes.fit(body, arm, get_collection("Reference"))      # stage 4: proxies need MPFB's helpers
     human.remove_helpers(body)
     rig.rename_bones(arm, rig.GAME_ENGINE_TO_HUMANOID)
     for side in rig.SIDES:

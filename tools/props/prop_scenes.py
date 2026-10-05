@@ -260,6 +260,7 @@ class OmniLight:
     attenuation: float | None = None
     visible: bool = True
     name: str = "Light"
+    specular: float | None = None   # light_specular (0: no highlight on glossy surfaces)
 
 
 @dataclass
@@ -503,6 +504,8 @@ class Scene:
         props["light_color"] = color(*light.color)
         props["light_energy"] = light.energy
         props["omni_range"] = light.range
+        if light.specular is not None:
+            props["light_specular"] = light.specular
         if light.attenuation is not None:
             props["omni_attenuation"] = light.attenuation
         return self.node(light.name, "OmniLight3D", parent=parent, props=props, before=before)

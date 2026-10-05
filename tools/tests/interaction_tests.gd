@@ -65,6 +65,7 @@ func _registry() -> Array[Array]:
 		["avatar", "walk", _test_walk],
 		["avatar", "sit_pose", _test_sit_pose],
 		["avatar", "coat_springs", _test_coat_springs],
+		["avatar", "eyes", _test_avatar_eyes],
 		["switches", "lamp_switch", _test_lamp_switches],
 		["doors_fridge", "fridge_alarm", _test_fridge_alarm],
 		["wardrobe", "wardrobe_interior", _test_wardrobe_interior],
@@ -727,6 +728,89 @@ func _test_fingertips() -> void:
 		if tip and tip.collision_layer == 131072:
 			found.append(side)
 	_check("fingertip_areas", found == ["Left", "Right"], "fingertips on hands: %s" % [found])
+
+
+## The eyes (D-050): straight ahead they look where the head does, converging
+## in front of the face; a target far to the side turns them only to their
+## limit; facing the bathroom mirror they look at their own image (eye
+## contact, so the reflection looks back); the lids close on request.
+func _test_avatar_eyes() -> void:
+	var skeleton := _avatar_skeleton("avatar_eyes")
+	if skeleton == null:
+		return
+	var eyes := skeleton.get_node_or_null("Eyes") as AvatarEyes
+	var bones: Array[int] = [skeleton.find_bone("LeftEye"), skeleton.find_bone("RightEye")]
+	if eyes == null or bones.has(-1):
+		_check("avatar_eyes", false, "no Eyes modifier under the skeleton or no LeftEye/RightEye bones")
+		return
+	var body := _main.get_node("Player/PlayerBody") as XRToolsPlayerBody
+	var camera := get_viewport().get_camera_3d()
+	var saved_camera := camera.position
+	camera.position.y = 1.8
+	# Back to the living room window: no reflection in view.
+	body.teleport(Transform3D(Basis(Vector3.UP, PI), HOME.origin))
+	await _frames(30)
+	await skeleton.skeleton_updated
+	var forward := -camera.global_basis.z
+	var aim := _eye_aim_error(skeleton, bones, eyes.gaze_target)
+	var ahead := camera.global_position + forward * eyes.focus_distance
+	_check("avatar_eyes_ahead", eyes.gaze_source == &"ahead" and aim < 1.0 and eyes.gaze_target.distance_to(ahead) < 0.01,
+			"source %s, eyes %.2f degrees off their target, target %.3f m from %.1f m ahead" % [eyes.gaze_source, aim, eyes.gaze_target.distance_to(ahead), eyes.focus_distance])
+
+	eyes.look_target = camera.global_position + camera.global_basis.x * 1.0 + forward * 0.2
+	await _frames(10)
+	await skeleton.skeleton_updated
+	var turn: Array[float] = []
+	for i in bones.size():
+		turn.append(rad_to_deg(_eye_dir(skeleton, bones[i]).angle_to(forward)))
+	eyes.look_target = Vector3.INF
+	_check("avatar_eyes_limit", absf(turn[0] - eyes.max_yaw) < 2.0 and absf(turn[1] - eyes.max_yaw) < 2.0,
+			"a target 80 degrees to the side turns the eyes %.1f / %.1f degrees (limit %.0f)" % [turn[0], turn[1], eyes.max_yaw])
+
+	# Facing the bathroom mirror (as the skyline test's reflection view).
+	body.teleport(Transform3D(Basis(Vector3.UP, PI), Vector3(1.4, 0.0, 5.2)))
+	await _frames(40)
+	await skeleton.skeleton_updated
+	var mirror := _main.get_node("Zones/Apartment/Props/BathMirror/Reflection") as PlanarReflection
+	var plane := mirror.plane()
+	var eye := camera.global_position
+	var image := eye - plane.basis.z * (2.0 * (eye - plane.origin).dot(plane.basis.z))
+	aim = _eye_aim_error(skeleton, bones, image)
+	_check("avatar_eyes_mirror", eyes.gaze_source == &"contact" and eyes.gaze_target.distance_to(image) < 0.01 and aim < 1.0,
+			"source %s, target %.3f m from the face's image, eyes %.2f degrees off it" % [eyes.gaze_source, eyes.gaze_target.distance_to(image), aim])
+
+	var mesh := skeleton.find_child("HeadMesh", true, false) as MeshInstance3D
+	var shapes: Array[int] = [-1, -1]
+	if mesh:
+		shapes = [mesh.find_blend_shape_by_name(&"BlinkLeft"), mesh.find_blend_shape_by_name(&"BlinkRight")]
+	eyes.set_lids(1.0, 0.25)
+	await skeleton.skeleton_updated
+	var lids: Array[float] = [-1.0, -1.0]
+	for i in 2:
+		if shapes[i] >= 0:
+			lids[i] = mesh.get_blend_shape_value(shapes[i])
+	eyes.set_lids(0.0, 0.0)
+	await skeleton.skeleton_updated
+	var reopened := shapes[0] >= 0 and mesh.get_blend_shape_value(shapes[0]) == 0.0
+	_check("avatar_eyes_lids", is_equal_approx(lids[0], 1.0) and is_equal_approx(lids[1], 0.25) and reopened,
+			"BlinkLeft %.2f (want 1), BlinkRight %.2f (want 0.25), open again %s" % [lids[0], lids[1], reopened])
+	camera.position = saved_camera
+	await _frames(2)
+
+
+## An eye bone's gaze (world space): its rest gaze is the glb's forward, +Z.
+func _eye_dir(skeleton: Skeleton3D, bone: int) -> Vector3:
+	var local := skeleton.get_bone_global_rest(bone).basis.inverse() * Vector3.BACK
+	return (skeleton.global_basis * skeleton.get_bone_global_pose(bone).basis * local).normalized()
+
+
+## The larger angle (degrees) between an eye's gaze and the line to `target`.
+func _eye_aim_error(skeleton: Skeleton3D, bones: Array[int], target: Vector3) -> float:
+	var worst := 0.0
+	for bone in bones:
+		var origin := skeleton.global_transform * skeleton.get_bone_global_pose(bone).origin
+		worst = maxf(worst, rad_to_deg(_eye_dir(skeleton, bone).angle_to(target - origin)))
+	return worst
 
 
 ## The avatar skeleton, or null after failing check `name`.

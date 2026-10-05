@@ -2,20 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cor4mvxbpmd42"
-path.s3tc="res://.godot/imported/silena_vesper_body_silena_vesper_outfit_albedo.png-dc5d868b0f44f91eaed76d67108f2a80.s3tc.ctex"
+uid="uid://bs4geaacdqri1"
+path.s3tc="res://.godot/imported/silena_vesper_body_silena_vesper_eye_orm.png-ffd220b3e81956a4deab7cafbef94092.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "45d2fd2e7d690f8e117e7d0719ec9ec9"
+"md5": "8dc0015caf7ada07052e7a3839ce7ec6"
 }
 
 [deps]
 
-source_file="res://assets/characters/silena_vesper/silena_vesper_body_silena_vesper_outfit_albedo.png"
-dest_files=["res://.godot/imported/silena_vesper_body_silena_vesper_outfit_albedo.png-dc5d868b0f44f91eaed76d67108f2a80.s3tc.ctex"]
+source_file="res://assets/characters/silena_vesper/silena_vesper_body_silena_vesper_eye_orm.png"
+dest_files=["res://.godot/imported/silena_vesper_body_silena_vesper_eye_orm.png-ffd220b3e81956a4deab7cafbef94092.s3tc.ctex"]
 
 [params]
 
@@ -29,8 +29,8 @@ compress/normal_map=0
 compress/channel_pack=0
 mipmaps/generate=true
 mipmaps/limit=-1
-roughness/mode=0
-roughness/src_normal=""
+roughness/mode=8
+roughness/src_normal="res://assets/characters/silena_vesper/silena_vesper_body_silena_vesper_eye_normal.png"
 process/channel_remap/red=0
 process/channel_remap/green=1
 process/channel_remap/blue=2

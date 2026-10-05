@@ -2,20 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cor4mvxbpmd42"
-path.s3tc="res://.godot/imported/silena_vesper_body_silena_vesper_outfit_albedo.png-dc5d868b0f44f91eaed76d67108f2a80.s3tc.ctex"
+uid="uid://dbvadx48573mf"
+path.s3tc="res://.godot/imported/silena_vesper_body_silena_vesper_skin_albedo.png-eacbdb851ac215ae66f34194579f45d2.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "45d2fd2e7d690f8e117e7d0719ec9ec9"
+"md5": "2409f87de5031ffb3e858d475311e14d"
 }
 
 [deps]
 
-source_file="res://assets/characters/silena_vesper/silena_vesper_body_silena_vesper_outfit_albedo.png"
-dest_files=["res://.godot/imported/silena_vesper_body_silena_vesper_outfit_albedo.png-dc5d868b0f44f91eaed76d67108f2a80.s3tc.ctex"]
+source_file="res://assets/characters/silena_vesper/silena_vesper_body_silena_vesper_skin_albedo.png"
+dest_files=["res://.godot/imported/silena_vesper_body_silena_vesper_skin_albedo.png-eacbdb851ac215ae66f34194579f45d2.s3tc.ctex"]
 
 [params]
 

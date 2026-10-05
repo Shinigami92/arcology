@@ -7,7 +7,9 @@ and the visible skin, and the procedural source materials. Every part is bound t
 one `Armature` and tagged (scene.tag) for bake.py:
 
   coat, collar (coat body atlas); top, trousers, boot_left, belt, hangers, thigh_strap,
-  hair (outfit atlas); passkey_glow (plain emissive); head, skin_v (MPFB skin).
+  hair (outfit atlas); passkey_glow (plain emissive); head, skin_v (MPFB skin, the makeup
+  composited in bake.py); eyes (SilenaEye), lashes, brows (SilenaLashes) from eyes.py
+  (stage 4), which also adds the eye bones LeftEye / RightEye and the head's shapes.
 
 The hanging belt items get their own bones (belt.add_bones: BeltCuffs1, BeltCuffs2,
 BeltPasskey1, after the coat chains) for Godot's spring bones (stage 3c).
@@ -23,6 +25,7 @@ import belt
 import boots
 import clothes
 import coat
+import eyes
 import head
 import outfit_materials as mats
 from arcology_blender import garment, rig
@@ -164,8 +167,12 @@ def build():
     belt.weight_hangers(glow, arm)
 
     head.add_ears(human)
-    head_ob, skin_v = head.split_skin(human, coll)
-    hair = head.build_hair(head_ob, coll)
+    head_ob, skin_v, hair_src = head.split_skin(human, coll, eye_centers=list(eyes.centers(arm).values()))
+    hair = head.build_hair(hair_src, coll)
+    hd = hair_src.data
+    bpy.data.objects.remove(hair_src)
+    bpy.data.meshes.remove(hd)
+    eye_ob, lashes, brows = eyes.build(head_ob, arm, coll)    # stage 4: lids, eyeballs, eye bones, shapes
     for ob in (head_ob, skin_v):
         clean_groups(ob, arm)
         rig.limit_weights(ob, arm, 4)
@@ -190,7 +197,7 @@ def build():
 
     parts = {"coat": coat_ob, "collar": collar, "top": top, "trousers": trousers, "boot_left": boot,
              "belt": belt_ob, "hangers": hangers, "thigh_strap": strap, "hair": hair, "passkey_glow": glow,
-             "head": head_ob, "skin_v": skin_v}
+             "head": head_ob, "skin_v": skin_v, "eyes": eye_ob, "lashes": lashes, "brows": brows}
     for name, ob in parts.items():
         bind(ob, arm)
         tag(ob, name)

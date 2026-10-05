@@ -13,7 +13,8 @@ exported meshes.
    top re-weighted toward the skin's own weights over the last ARMHOLE_BLEND meters, so
    the shoulder and chest carry the armhole like the coat body sewn to it.
 5. `Body` = arms + coat + top + trousers + boots + belt, items, glow + visible skin;
-   `HeadMesh` = head + hair; `Collar` stays. The coat's armhole rims are merged with the
+   `HeadMesh` = head + hair + eyes + lashes + brows (shape keys merged by name: the head's
+   and lashes' BlinkLeft / BlinkRight / LookDownLids, the rest at their basis); `Collar` stays. The coat's armhole rims are merged with the
    sleeves' (same points, the sleeve's weights). Build-time data removed.
 """
 
@@ -216,7 +217,8 @@ def body_arm(src, name, skin, arm):
 
 
 PART_IDS = {"arm": 1, "coat": 2, "top": 3, "trousers": 4, "belt": 5, "hangers": 6, "passkey_glow": 7,
-            "thigh_strap": 8, "skin_v": 9, "boot": 10, "head": 11, "hair": 12}
+            "thigh_strap": 8, "skin_v": 9, "boot": 10, "head": 11, "hair": 12, "eyes": 13, "lashes": 14,
+            "brows": 15}
 
 
 def mark_part(ob, pid):
@@ -285,7 +287,8 @@ def build_meshes(arm):
         geo.remove_attribute(bpy.data.objects[name], "dome")
     parts = [one(p) for p in ("coat", "top", "trousers", "belt", "hangers", "passkey_glow", "thigh_strap",
                               "skin_v")] + [boot_l, boot_r]
-    for ob in parts + [one("collar"), one("head"), one("hair")]:
+    face_parts = [one(p) for p in ("eyes", "lashes", "brows")]
+    for ob in parts + [one("collar"), one("head"), one("hair")] + face_parts:
         strip(ob)
     for ob in arms:
         mark_part(ob, PART_IDS["arm"])
@@ -294,10 +297,12 @@ def build_meshes(arm):
         mark_part(ob, PART_IDS["boot"] if p.startswith("boot") else PART_IDS[p])
     mark_part(one("head"), PART_IDS["head"])
     mark_part(one("hair"), PART_IDS["hair"])
+    for ob in face_parts:
+        mark_part(ob, PART_IDS[ob["arcology_part"]])
     body = join(arms + parts, "Body")
     tag(body, "body_mesh")
     welded = weld_armholes(body)
-    head = join([one("head"), one("hair")], "HeadMesh")
+    head = join([one("head"), one("hair")] + face_parts, "HeadMesh")
     tag(head, "head_mesh")
     collar = one("collar")
     collar.name = collar.data.name = "Collar"

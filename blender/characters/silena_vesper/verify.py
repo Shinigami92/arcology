@@ -22,8 +22,17 @@ Body on shared points with identical weights), and every body test pose
 (test_poses.BODY_TESTS): triangles of one garment crossing another's (legs through
 the skirt, arms through the coat, the top through the coat, items through the coat).
 Prints the landmarks in Godot coordinates (bone heads, eyes, the boots' floor contacts).
+
+Eyes (stage 4, `check_eyes`): LeftEye / RightEye (children of Head, at the eyeballs' centers,
++Y forward, the same axes on both; printed in Godot coordinates with the eyes' midpoint
+against MPFB's), the eyeballs rigid on them, lashes and brows on Head, the shapes
+(BlinkLeft / BlinkRight only on their side, LookDownLids), rays from mirror distance (front,
+left, right, above, below) at the eyeballs for every gaze of +-30 deg yaw x +-25 deg pitch: none
+may see a back face or the socket's lining; blinked (1.0) at three gazes no eyeball may show;
+no outward skin inside an eyeball's sphere; the eye and lash materials' textures.
 """
 
+import math
 import os
 import sys
 
@@ -38,10 +47,11 @@ from mathutils.bvhtree import BVHTree  # noqa: E402
 from silena_vesper_common import (  # noqa: E402
     BLEND, BODY_GLB, BODY_TRI_BUDGET, COAT_BODY_MAT, COAT_CHAINS, COAT_MAT, COLLAR_TRI_BUDGET, GLB, GLOVE_MAT,
     GLOW_MAT, GRIP_DIAMETER, HAND_LENGTH_RANGE, HEAD_TRI_BUDGET, HEIGHT_TARGET, MAX_BONES, OUTFIT_MAT, POSES,
-    SKIN_MAT, SOLE_Z, TEX_SIZE, arm_mesh, armature, chain_names,
+    SKIN_MAT, SOLE_Z, TEX_SIZE, arm_mesh, armature, chain_names, EYE_MAT, LASH_MAT,
 )
 from outfit_bake import PART_IDS  # noqa: E402
 import belt as belt_geo  # noqa: E402
+import eyes as eyes_geo  # noqa: E402
 import test_poses  # noqa: E402
 from arcology_blender import rig  # noqa: E402
 from arcology_blender.checks import fmt, godot, import_report  # noqa: E402
@@ -286,6 +296,7 @@ def expected_bones():
     for chain in COAT_CHAINS:
         names.update(chain_names(chain))
     names.update(belt_bones())
+    names.update(eyes_geo.BONES.values())
     return names
 
 
@@ -427,8 +438,8 @@ def check_body(arm):
     for i, m in enumerate(body.data.materials):
         if m.name in (COAT_BODY_MAT, OUTFIT_MAT, GLOVE_MAT, COAT_MAT):
             print(f"  Body texel density {m.name}: {texel_density(body, i):.0f} px/m")
-    want = {GLOVE_MAT, COAT_MAT, COAT_BODY_MAT, OUTFIT_MAT, GLOW_MAT, SKIN_MAT}
-    check(mats == want and len(mats) <= 6, f"materials {sorted(mats)} (6 at most)")
+    want = {GLOVE_MAT, COAT_MAT, COAT_BODY_MAT, OUTFIT_MAT, GLOW_MAT, SKIN_MAT, EYE_MAT, LASH_MAT}
+    check(mats == want and len(mats) <= 8, f"materials {sorted(mats)} (8 at most)")
     for name in sorted(mats):
         m = bpy.data.materials[name]
         imgs = sorted({(n.image.name, n.image.size[0], n.image.size[1]) for n in m.node_tree.nodes
@@ -563,6 +574,194 @@ def check_body(arm):
         print(f"  {side} boot floor contact: heel {fmt(gd(heel), 4)} toe {fmt(gd(toe), 4)}")
 
 
+# --- eyes (stage 4) -----------------------------------------------------------------------------
+EYE_VIEWS = {          # camera offsets from the eyes' midpoint (m): mirror distance, front and around
+    "front": (0.0, -0.60, 0.0), "left": (0.30, -0.52, 0.0), "right": (-0.30, -0.52, 0.0),
+    "above": (0.0, -0.56, 0.20), "below": (0.0, -0.56, -0.20),
+}
+GAZES = [(yaw, pitch) for yaw in (-30.0, 0.0, 30.0) for pitch in (-25.0, 0.0, 25.0)]
+
+
+def set_gaze(arm, yaw, pitch):
+    for b in eyes_geo.BONES.values():
+        pb = arm.pose.bones[b]
+        pb.rotation_mode = "QUATERNION"
+        pb.rotation_quaternion = (1.0, 0.0, 0.0, 0.0)
+    bpy.context.view_layer.update()
+    for b in eyes_geo.BONES.values():
+        if yaw:
+            rig.rotate_about(arm, b, (0.0, 0.0, 1.0), yaw)
+        if pitch:
+            rig.rotate_about(arm, b, (1.0, 0.0, 0.0), -pitch)
+    bpy.context.view_layer.update()
+
+
+def set_shapes(head, **values):
+    for kb in head.data.shape_keys.key_blocks[1:]:
+        kb.value = values.get(kb.name, 0.0)
+    bpy.context.view_layer.update()
+
+
+def eye_rays(head, parts, mid):
+    """Cast rays from each EYE_VIEWS camera at the eyeballs' front vertices (posed). Returns
+    {view: (eyeball hits, skin front-face hits, back-face hits, socket hits, rays)}: a ray
+    that meets a back face sees through the mesh (Godot culls it), one that meets the
+    socket's lining (skin inside the eyeball's sphere) sees a dark gap."""
+    co = posed(head)
+    head.data.calc_loop_triangles()
+    tris = [tuple(t.vertices) for t in head.data.loop_triangles]
+    tpart = [parts[t.polygon_index] for t in head.data.loop_triangles]
+    bvh = BVHTree.FromPolygons([Vector(p) for p in co], tris, all_triangles=True)
+    centers = {s: np.array(c) for s, c in eyes_geo.centers(bpy.data.objects["Armature"]).items()}
+    eye_v = sorted({i for t, p in zip(tris, tpart) if p == "eyes" for i in t})
+    out = {}
+    for view, off in EYE_VIEWS.items():
+        cam = np.array(mid) + np.array(off)
+        counts = [0, 0, 0, 0, 0]
+        for i in eye_v:
+            p = co[i]
+            c = centers["Left" if p[0] > 0.0 else "Right"]
+            if (p - c) @ (cam - c) <= 0.0:          # the eyeball's far side
+                continue
+            d = p - cam
+            dist = np.linalg.norm(d)
+            loc, nrm, ti, _ = bvh.ray_cast(Vector(cam), Vector(d / dist), dist + 0.001)
+            if loc is None:
+                continue
+            counts[4] += 1
+            part = tpart[ti]
+            if part == "eyes":
+                counts[0] += 1
+            elif part in ("lashes", "brows"):
+                continue
+            elif nrm.dot(Vector(d)) > 0.0:
+                counts[2] += 1
+            elif np.linalg.norm(np.array(loc) - centers["Left" if loc.x > 0.0 else "Right"]) \
+                    < eyes_geo.EYE_RADIUS - 0.0002:
+                counts[3] += 1
+            else:
+                counts[1] += 1
+        out[view] = tuple(counts)
+    return out
+
+
+def check_eyes(arm):
+    """Stage 4: eye bones, eye/lash/brow weights, the head's shapes, eyes turning without
+    poking through the lids or showing the socket, blinks closing fully."""
+    from arcology_blender.checks import godot as gd
+
+    print("EYES")
+    head = bpy.data.objects["HeadMesh"]
+    parts = face_parts(head)
+    bones = arm.data.bones
+    centers = eyes_geo.centers(arm)
+    frames_g = {}
+    for side, name in eyes_geo.BONES.items():
+        b = bones.get(name)
+        ok = b is not None and b.parent is not None and b.parent.name == "Head" and b.use_deform
+        check(ok, f"{name}: deforming child of Head")
+        if not ok:
+            return
+        m = arm.matrix_world @ b.matrix_local
+        x, y, z = (m.to_3x3().col[i] for i in range(3))
+        at = (m.translation - centers[side]).length
+        fwd = math.degrees(y.angle(Vector((0.0, -1.0, 0.0))))
+        check(at < 1e-5 and fwd < 0.05 and x.dot(Vector((1.0, 0.0, 0.0))) > 0.9999,
+              f"{name}: head at the eyeball's center ({at * 1000:.3f} mm), +Y straight forward ({fwd:.3f} deg), "
+              f"+X toward her left")
+        frames_g[name] = (gd(m.translation), gd(x), gd(y), gd(z))
+    print("  eye bones (Godot coordinates of the glb: y up, the body faces +z; X/Y/Z = rest basis):")
+    for name, (t, x, y, z) in frames_g.items():
+        print(f"    {name:9s} head {fmt(t, 4)} X={fmt(x)} Y={fmt(y)} Z={fmt(z)} length {bones[name].length:.4f}")
+    mid = (centers["Left"] + centers["Right"]) * 0.5
+    eye = Vector(arm["eye"])
+    print(f"  eyeballs' midpoint {fmt(gd(mid), 4)}; MPFB eye helpers' midpoint (AVATAR_EYE) {fmt(gd(eye), 4)}; "
+          f"difference {fmt(gd(mid - eye), 4)} ({(mid - eye).length * 1000:.2f} mm)")
+    # weights by part
+    ws = weights(head, arm)
+    pv = {}
+    for p in head.data.polygons:
+        for i in p.vertices:
+            pv.setdefault(parts[p.index], set()).add(i)
+    bad_eye = [i for i in pv.get("eyes", ()) if ws[i] != {eyes_geo.BONES["Left" if head.data.vertices[i].co.x > 0.0
+                                                                       else "Right"]: 1.0}]
+    check(not bad_eye and pv.get("eyes"), f"eyeballs rigid on their eye bone ({len(pv.get('eyes', ()))} vertices, "
+                                          f"wrong {len(bad_eye)})")
+    for part in ("lashes", "brows"):
+        bad = [i for i in pv.get(part, ()) if ws[i] != {"Head": 1.0}]
+        check(not bad and pv.get(part), f"{part} rigid on Head ({len(pv.get(part, ()))} vertices, wrong {len(bad)})")
+    others = [i for p, vs in pv.items() if p != "eyes" for i in vs if set(ws[i]) & set(eyes_geo.BONES.values())]
+    check(not others, f"nothing else on the eye bones ({len(others)})")
+    # shapes
+    keys = head.data.shape_keys
+    names = [k.name for k in keys.key_blocks[1:]] if keys else []
+    check(names == list(eyes_geo.SHAPES), f"HeadMesh shape keys {names}")
+    basis = np.array([tuple(v.co) for v in keys.key_blocks[0].data])
+    for kb in keys.key_blocks[1:]:
+        d = np.linalg.norm(np.array([tuple(v.co) for v in kb.data]) - basis, axis=1)
+        moved = d > 1e-6
+        xs = basis[moved, 0]
+        side = {"BlinkLeft": xs.min() > 0.0, "BlinkRight": xs.max() < 0.0}.get(kb.name, True)
+        moved_parts = sorted({parts[p.index] for p in head.data.polygons if any(moved[i] for i in p.vertices)})
+        check(side and set(moved_parts) <= {"head", "lashes"},
+              f"{kb.name}: {moved.sum()} vertices move (max {d.max() * 1000:.2f} mm), parts {moved_parts}, own side only")
+    # the opening at rest (skin faces only)
+    skin_faces = [p.index for p in head.data.polygons if parts[p.index] == "head"]
+    for side, (f, op) in eyes_geo.frames(head, arm, skin_faces).items():
+        top, bottom = eyes_geo.coverage(f, op)
+        print(f"  {side} eye at rest: the upper lid covers the iris top by {top * 1000:.2f} mm, the lower lid the "
+              f"bottom by {bottom * 1000:.2f} mm (seen from the front)")
+    # gazes and blinks
+    print("  rays at the eyeballs from mirror distance (eyeball, skin, back faces, socket lining, rays):")
+    worst_back = worst_socket = 0
+    for yaw, pitch in GAZES:
+        set_gaze(arm, yaw, pitch)
+        r = eye_rays(head, parts, mid)
+        worst_back = max(worst_back, max(v[2] for v in r.values()))
+        worst_socket = max(worst_socket, max(v[3] for v in r.values()))
+        print(f"    gaze yaw {yaw:+5.0f} pitch {pitch:+5.0f}: " + ", ".join(f"{k} {v[:4]}" for k, v in r.items()))
+    check(worst_back == 0, f"no ray sees a back face around the eyes at any gaze (worst {worst_back})")
+    check(worst_socket == 0, f"no ray sees the socket's lining at any gaze (worst {worst_socket})")
+    for yaw, pitch in ((0.0, 0.0), (30.0, 0.0), (0.0, -25.0)):
+        set_gaze(arm, yaw, pitch)
+        set_shapes(head, BlinkLeft=1.0, BlinkRight=1.0)
+        r = eye_rays(head, parts, mid)
+        seen = max(v[0] for v in r.values())
+        check(seen == 0 and max(v[2] for v in r.values()) == 0,
+              f"blinked (BlinkLeft + BlinkRight = 1) at gaze {yaw:+.0f}/{pitch:+.0f}: eyeball vertices seen {seen}, "
+              f"back faces {max(v[2] for v in r.values())}")
+        set_shapes(head, BlinkLeft=0.5, BlinkRight=0.5)
+        r = eye_rays(head, parts, mid)
+        check(max(v[2] for v in r.values()) == 0, f"half blink at gaze {yaw:+.0f}/{pitch:+.0f}: no back faces seen")
+    set_gaze(arm, 0.0, -25.0)
+    set_shapes(head, LookDownLids=1.0)
+    r = eye_rays(head, parts, mid)
+    check(max(v[2] for v in r.values()) == 0 and max(v[3] for v in r.values()) == 0,
+          f"looking down 25 deg with LookDownLids: {r['front'][:4]} (front)")
+    set_shapes(head)
+    set_gaze(arm, 0.0, 0.0)
+    # lids clear the eyeball: no outside-facing skin inside its sphere near the eyes
+    co = np.array([tuple(v.co) for v in head.data.vertices])
+    nr = np.array([tuple(v.normal) for v in head.data.vertices])
+    inside = 0
+    for c in centers.values():
+        d = co - np.array(c)
+        r = np.linalg.norm(d, axis=1)
+        out = np.einsum("ij,ij->i", nr, d) / np.maximum(r, 1e-9) > 0.2
+        skin = np.zeros(len(co), dtype=bool)
+        skin[sorted(pv["head"])] = True
+        inside += int((skin & out & (r < eyes_geo.EYE_RADIUS) & (d @ np.array((0.0, -1.0, 0.0)) > 0.0)).sum())
+    check(inside == 0, f"no outward skin of the lids inside the eyeballs' spheres ({inside})")
+    # materials and textures
+    for name, size in ((EYE_MAT, (eyes_geo.EYE_TEX, eyes_geo.EYE_TEX)), (LASH_MAT, eyes_geo.LASH_TEX)):
+        m = bpy.data.materials[name]
+        imgs = sorted({(n.image.name, tuple(n.image.size)) for n in m.node_tree.nodes if n.type == "TEX_IMAGE" and n.image})
+        check(all(s == size for _, s in imgs) and imgs, f"{name} textures {imgs}")
+    lm = bpy.data.materials[LASH_MAT]
+    rnd = [n for n in lm.node_tree.nodes if n.type == "MATH" and n.operation == "ROUND"]
+    check(bool(rnd) and not lm.use_backface_culling, f"{LASH_MAT}: alpha rounded (glTF MASK), two-sided")
+
+
 def main():
     bpy.ops.wm.open_mainfile(filepath=BLEND)
     arm = armature()
@@ -588,6 +787,7 @@ def main():
     set_pose(arm, None)
     frames(arm)
     check_body(arm)
+    check_eyes(arm)
     print("CONTRACT", "OK" if not FAILS else f"FAIL ({len(FAILS)})")
     for f in FAILS:
         print("  FAILED:", f)
@@ -601,6 +801,8 @@ def main():
         roots = [b.name for b in a.data.bones if b.parent is None]
         print(f"  ROOT {roots}")
         print(f"  ANIMATIONS {sorted(act.name for act in bpy.data.actions)}")
+        for ob in [o for o in bpy.data.objects if o.type == "MESH" and o.data.shape_keys]:
+            print(f"  SHAPES {ob.name}: {[k.name for k in ob.data.shape_keys.key_blocks]}")
 
 
 if __name__ == "__main__":

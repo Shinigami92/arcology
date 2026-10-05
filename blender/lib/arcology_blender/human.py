@@ -5,6 +5,8 @@ CC0). Stage scripts run with --factory-startup, which loads no extensions, so
 `mpfb()` enables it for the running process. The asset packs (system assets,
 skins, eyebrows, eyelashes) must be installed through MPFB's "Install asset
 pack" once per Blender version. Avoid CC-BY packs (Hair 02/03) or credit them.
+Proxies (eyelashes, eyebrows, clothes) are fitted with `fit_proxy` and become plain
+static meshes the build owns.
 """
 
 import os
@@ -96,6 +98,82 @@ def remove_helpers(body):
     body.data.update()
     for mod in [m for m in body.modifiers if m.type == "MASK"]:
         body.modifiers.remove(mod)
+
+
+def proxy_path(kind, name):
+    """Path of an installed MPFB proxy asset (.mhclo) by kind ("eyelashes", "eyebrows",
+    "eyes", "clothes", ...) and folder name (e.g. "eyelashes02")."""
+    svc = mpfb()
+    path = os.path.join(svc.LocationService.get_user_data(kind), name, name + ".mhclo")
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"MPFB {kind} proxy {name!r} not installed ({path})")
+    return path
+
+
+def fit_proxy(body, kind, name, object_name, collection=None):
+    """Fit an MPFB proxy (eyelashes, eyebrows, eyes, clothes) to the body's current shape
+    and return it as a plain static mesh in world coordinates: no parent, modifiers or
+    weights, MPFB's material removed (its texture's path is kept in `ob["texture"]`).
+    Call before `remove_helpers` (proxies are fitted to the helper geometry)."""
+    import bpy
+    import numpy as np
+
+    svc = mpfb()
+    path = proxy_path(kind, name)
+    ob = svc.HumanService.add_mhclo_asset(path, body, asset_type=kind, subdiv_levels=0,
+                                          material_type="GAMEENGINE", set_up_rigging=False)
+    bpy.context.view_layer.update()
+    texture = ""
+    mats = [m for m in ob.data.materials if m is not None]
+    for m in mats:
+        for n in m.node_tree.nodes if m.node_tree else []:
+            if n.type == "TEX_IMAGE" and n.image is not None and not texture:
+                texture = bpy.path.abspath(n.image.filepath)
+    mw = np.array(ob.matrix_world)
+    me = ob.data.copy()
+    me.name = object_name
+    co = np.empty(len(me.vertices) * 3)
+    me.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3) @ mw[:3, :3].T + mw[:3, 3]
+    me.vertices.foreach_set("co", co.ravel())
+    me.materials.clear()
+    me.update()
+    out = bpy.data.objects.new(object_name, me)
+    (collection or bpy.context.scene.collection).objects.link(out)
+    out["texture"] = texture
+    old = ob.data
+    bpy.data.objects.remove(ob)
+    bpy.data.meshes.remove(old)
+    for m in mats:
+        imgs = {n.image.name for n in m.node_tree.nodes if n.type == "TEX_IMAGE" and n.image} if m.node_tree else set()
+        bpy.data.materials.remove(m)
+        for name in imgs:
+            img = bpy.data.images.get(name)
+            if img is not None and img.users == 0:
+                bpy.data.images.remove(img)
+    return out
+
+
+def joint_center(body, joint):
+    """Center of one of MPFB's joint cubes (e.g. "joint-l-eye": the eyeball's rotation
+    center), world coordinates of the shaped body. Call before `remove_helpers`."""
+    import bpy
+    import numpy as np
+    from mathutils import Vector
+
+    vg = body.vertex_groups.get(joint)
+    if vg is None:
+        raise KeyError(f"no MPFB joint {joint!r}")
+    saved = [(m, m.show_viewport) for m in body.modifiers]
+    for m, _ in saved:
+        m.show_viewport = False
+    bpy.context.view_layer.update()
+    ev = body.evaluated_get(bpy.context.evaluated_depsgraph_get())
+    idx = [v.index for v in body.data.vertices if any(g.group == vg.index and g.weight > 0.0 for g in v.groups)]
+    co = np.array([tuple(ev.data.vertices[i].co) for i in idx])
+    for m, show in saved:
+        m.show_viewport = show
+    return body.matrix_world @ Vector(co.mean(axis=0))
 
 
 def target_path(name):

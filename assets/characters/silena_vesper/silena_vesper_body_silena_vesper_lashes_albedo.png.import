@@ -2,20 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://kasioxwbql7c"
-path.s3tc="res://.godot/imported/silena_vesper_body_young_lightskinned_female_diffuse.png-7cfb02565b83e3d680060fa49b284495.s3tc.ctex"
+uid="uid://b5js3drdugijl"
+path.s3tc="res://.godot/imported/silena_vesper_body_silena_vesper_lashes_albedo.png-dcdac7f763d44da313b800fe8409b009.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "5a8baaf7122c5c4041a282276ed90af4"
+"md5": "19892b0ad51f5c13173838c260788e49"
 }
 
 [deps]
 
-source_file="res://assets/characters/silena_vesper/silena_vesper_body_young_lightskinned_female_diffuse.png"
-dest_files=["res://.godot/imported/silena_vesper_body_young_lightskinned_female_diffuse.png-7cfb02565b83e3d680060fa49b284495.s3tc.ctex"]
+source_file="res://assets/characters/silena_vesper/silena_vesper_body_silena_vesper_lashes_albedo.png"
+dest_files=["res://.godot/imported/silena_vesper_body_silena_vesper_lashes_albedo.png-dcdac7f763d44da313b800fe8409b009.s3tc.ctex"]
 
 [params]
 

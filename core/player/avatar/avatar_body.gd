@@ -10,18 +10,22 @@ extends Node3D
 ## down. They still cast shadows.
 ##
 ## Scene (written by tools/player/avatar.gd): AvatarBody -> Model (the glb) with
-## BodyIK, the AvatarSprings (coat, belt items) and the Fingertip press areas on
-## the skeleton, and an AnimationTree blending "Open" to "Grip" per finger group
+## BodyIK, AvatarEyes (gaze and lids, D-050), the AvatarSprings (coat, belt
+## items) and the Fingertip press areas on the skeleton, and an AnimationTree blending "Open" to "Grip" per finger group
 ## and side (parameters <Side><Finger>/blend_amount).
 
 const FINGERS: Array[StringName] = [&"Index", &"Middle", &"Ring", &"Thumb"]
 
 ## Meshes (node names under the skeleton) hidden from the player's own camera.
 @export var third_person_meshes: PackedStringArray = ["HeadMesh", "Collar"]
+## The lashes' and brows' material among them, and its alpha cutoff.
+@export var lash_material := "SilenaLashes"
+@export var lash_alpha_threshold := 0.3
 
 var _tree: AnimationTree
 var _ik: BodyIK
 var _springs: AvatarSprings
+var _eyes: AvatarEyes
 
 
 func _ready() -> void:
@@ -31,10 +35,25 @@ func _ready() -> void:
 	_ik = found[0] as BodyIK if found else null
 	found = find_children("*", "AvatarSprings", true, false)
 	_springs = found[0] as AvatarSprings if found else null
+	found = find_children("*", "AvatarEyes", true, false)
+	_eyes = found[0] as AvatarEyes if found else null
 	for mesh_name in third_person_meshes:
 		for node in find_children(mesh_name, "MeshInstance3D", true, false):
 			(node as MeshInstance3D).layers = PlanarReflection.LAYER_THIRD_PERSON
+			_soften_cards(node as MeshInstance3D)
 	_connect.call_deferred()
+
+
+## Lashes and brows are alpha-scissor cards: thin strands lose their coverage
+## in the smaller mipmaps and break up into dots. Alpha to coverage (the mirror
+## renders with MSAA) keeps them as soft strands (D-050).
+func _soften_cards(mesh: MeshInstance3D) -> void:
+	for i in mesh.get_surface_override_material_count():
+		var mat := mesh.mesh.surface_get_material(i) as BaseMaterial3D
+		if mat and mat.resource_name == lash_material:
+			mat.alpha_antialiasing_mode = BaseMaterial3D.ALPHA_ANTIALIASING_ALPHA_TO_COVERAGE_AND_TO_ONE
+			mat.alpha_antialiasing_edge = 0.3
+			mat.alpha_scissor_threshold = lash_alpha_threshold
 
 
 ## Finds the headset, the origin and the hand targets (they may be ready after us).
@@ -45,6 +64,9 @@ func _connect() -> void:
 	if origin:
 		var cameras := origin.find_children("*", "XRCamera3D", true, false)
 		_ik.camera = cameras[0] as Node3D if cameras else null
+		if _eyes:
+			_eyes.camera = _ik.camera
+			_eyes.origin = origin
 		for cam: Camera3D in cameras:
 			cam.cull_mask &= ~PlanarReflection.LAYER_THIRD_PERSON
 		for node in origin.find_children("*", "CharacterBody3D", true, false):

@@ -2,6 +2,9 @@
 proportions, glove and sleeve contracts, paths and parts. Built on blender/lib
 (D-028); quick reference: blender/lib/README.md.
 
+Stage 4 (eyes.py, so far the eyes only) = eyeballs on LeftEye / RightEye, open lids, lashes,
+brows, blink shapes, smoky makeup.
+
 Stage 1 = the gloved hands (glove.py, leather.py, filigree.py, poses.py); stage 2
 = the coat sleeves over them (sleeve.py, coat_leather.py, embroidery.py): each
 arm is one glb, glove + sleeve from the shoulder to the fingertips on the
@@ -145,13 +148,15 @@ GRIP_DIAMETER = 0.038        # controller handle
 # --- Stage 3: the full body (outfit.py and its parts) ------------------------------------
 BODY_GLB = os.path.join(GLB_DIR, f"{NAME}_body.glb")
 BODY_TRI_BUDGET = 70000      # mesh "Body" (arms included)
-HEAD_TRI_BUDGET = 10000
+HEAD_TRI_BUDGET = 10000      # stage 4 (eyes, lashes, brows) fits
 COLLAR_TRI_BUDGET = 2000
 MAX_BONES = 104             # 99 (humanoid, OpenXR hand joints, twists, coat chains) + 3 belt-item
-                            # bones (stage 3c); nothing in the contract is unused (CLAUDE.md: 100)
+                            # bones (stage 3c) + LeftEye / RightEye (stage 4): the budget is full
 COAT_BODY_MAT = "SilenaCoatBody"   # coat body + collar (baked atlas)
 OUTFIT_MAT = "SilenaOutfit"        # top, belt and its items, trousers, boots, hair, eyes (baked atlas)
-SKIN_MAT = "SilenaSkin"            # MPFB's GAMEENGINE skin (renamed)
+SKIN_MAT = "SilenaSkin"            # MPFB's GAMEENGINE skin (renamed); eye makeup composited (eyes.py)
+EYE_MAT = "SilenaEye"              # eyeballs (opaque, eyes.py)
+LASH_MAT = "SilenaLashes"          # lashes + brows (alpha scissor, eyes.py)
 GLOW_MAT = "SilenaPasskeyGlow"     # the passkey's strip: plain emissive, Godot switches it
 
 # Coat skirt chains (spring bones in Godot): six chains of four bones from the waist to the

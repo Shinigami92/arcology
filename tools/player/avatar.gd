@@ -72,6 +72,7 @@ func _body_scene(glb: String, body: Node3D) -> String:
 		"[ext_resource type=\"PackedScene\" path=\"%s\" id=\"2_model\"]" % glb,
 		"[ext_resource type=\"Script\" path=\"res://core/player/avatar/body_ik.gd\" id=\"3_ik\"]",
 		"[ext_resource type=\"Script\" path=\"res://core/player/avatar/avatar_springs.gd\" id=\"4_springs\"]",
+		"[ext_resource type=\"Script\" path=\"res://core/player/avatar/avatar_eyes.gd\" id=\"5_eyes\"]",
 		"",
 	]
 	lines.append_array(_blend_tree())
@@ -89,6 +90,10 @@ func _body_scene(glb: String, body: Node3D) -> String:
 		"script = ExtResource(\"3_ik\")",
 		"eye_rest = %s" % _vec(AVATAR_EYE),
 		"sole_height = %s" % _num(SOLE_HEIGHT),
+		"",
+		"[node name=\"Eyes\" type=\"SkeletonModifier3D\" parent=\"Model/Armature/Skeleton3D\"]",
+		"script = ExtResource(\"5_eyes\")",
+		"metadata/_doc = \"Gaze (eye tracking, eye contact in mirrors, ahead) and lids (D-050), after BodyIK.\"",
 		"",
 		"[node name=\"Springs\" type=\"SpringBoneSimulator3D\" parent=\"Model/Armature/Skeleton3D\"]",
 		"script = ExtResource(\"4_springs\")",

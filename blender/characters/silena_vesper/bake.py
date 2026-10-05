@@ -29,6 +29,7 @@ from silena_vesper_common import (  # noqa: E402
     BLEND, COAT_MAT, GLOVE_MAT, NAME, TEX_SIZE, armature, glove, sleeve,
 )
 import coat_leather  # noqa: E402
+import eyes  # noqa: E402
 import glove as glove_geo  # noqa: E402
 import leather  # noqa: E402
 import outfit_bake  # noqa: E402
@@ -133,7 +134,7 @@ def mark_dome(s):
 
 
 STAGE3_PARTS = ("coat", "collar", "top", "trousers", "boot_left", "belt", "hangers", "thigh_strap", "hair",
-                "passkey_glow", "head", "skin_v")
+                "passkey_glow", "head", "skin_v", "eyes", "lashes", "brows")
 
 
 def main():
@@ -161,6 +162,8 @@ def main():
     for ob in body_parts:
         ob.hide_render = False
     outfit_bake.bake_atlases()
+    head = next(ob for ob in body_parts if ob.get("arcology_part") == "head")
+    eyes.bake_textures(head, arm, head.data.materials[0])     # stage 4: eye, lashes, makeup (numpy, no bake)
     bake.remove_source_materials()
     leather.remove_images()
     coat_leather.remove_images()

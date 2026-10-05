@@ -14,7 +14,9 @@ skin (`garment`) and export with `export_glb(..., rigged=True)`; example: `blend
 hand shell + lofted cuff, grip solved against a handle, mirrored right side sharing the bake; coat sleeves: a loft
 along the bent arm's centerline, a twist bone, test poses posed like the engine's IK; the body: skin shells draped
 over the skin, a long coat from meridian profiles and skirt rings sewn to the sleeves' armholes, spring-bone chains
-in the skirt, belt items resting on the body, the head/body skin split on shared points).
+in the skirt, belt items resting on the body, the head/body skin split on shared points; the eyes: eyeballs on
+eye bones, lids measured and turned for blink shapes, lashes following the lids, brow cards from drawn strands,
+makeup painted into the skin texture by position, `face`).
 
 ## Stage scripts
 
@@ -177,7 +179,7 @@ from the repo root (Blender 5.2: `"C:/Program Files/Blender Foundation/Blender 5
   `weight(ob, center, normal)` shrinks hidden faces' texels; `emission=strength` adds `<prefix>_emission`
 - `emissive_from_albedo(mat, albedo_image, tint, strength)` glow from the baked albedo (lamp shade) without a second bake
 - `Spread([(root, offset), ...], axis=0)` context manager: move parts apart while they bake into one atlas
-- `remove_source_materials()`, `report_images()`; lower level: `uv_unwrap`, `uv_unwrap_weighted`, `bake_atlas`, `final_material`, `EmitOverride`, `pixels`
+- `remove_source_materials()`, `report_images()`; lower level: `uv_unwrap`, `uv_unwrap_weighted`, `bake_atlas`, `final_material` (normal may be `None`), `EmitOverride`, `pixels`
 
 ### human (MPFB2 base humans, D-037; characters only)
 - `mpfb()` enable the MPFB extension in this process (works under `--factory-startup`), returns `.HumanService`, `.TargetService`, `.LocationService`
@@ -185,6 +187,30 @@ from the repo root (Blender 5.2: `"C:/Program Files/Blender Foundation/Blender 5
 - `target_path(name)` an MPFB target file; `measure(body, arm, side)` height, eye midpoint, hand length (wrist to middle fingertip), hand width (call before `remove_helpers`)
 - `set_skin(body, name, skin_type="GAMEENGINE")`, `skin_path(name)` installed skins by folder name (glTF-safe Principled material)
 - `remove_helpers(body)` delete MPFB's helper geometry and its mask modifier (after fitting proxies: eyes, clothes)
+- `fit_proxy(body, kind, name, object_name, collection)` an MPFB proxy (eyelashes, eyebrows, eyes, clothes) fitted
+  to the shaped body as a plain static world-space mesh (texture path in `ob["texture"]`); `proxy_path(kind, name)`;
+  `joint_center(body, joint)` center of an MPFB joint cube ("joint-l-eye": the eyeball's rotation center). Both before
+  `remove_helpers`
+
+### face (eyes, lids, lashes, makeup; characters, D-037)
+- lid frame: `EyeFrame(center, axis, forward, up)` (`coords(points)` -> s along the lid axis, phi degrees from
+  forward toward up, rho; `point`, `turn(points, degrees)` about the axis: a lid keeps its distance from the eyeball)
+- `measure_opening(bvh, frame)` -> `Opening`: the lid margins per `s` by rays from the axis (`up(s)`, `low(s)`,
+  `rho_up/low`, `corners`, `profile(s, power)` 0 at the corners, `margin_points`); works on MPFB's pocketed lids
+- `lid_weights(frame, opening, points, upper, lower, rho)` each point's share of the upper/lower lid's turn;
+  `blink_turns(opening, s, meet, overshoot, lower_overshoot, corner_power)` the turns that close the eye;
+  `margin_side` upper/lower lid; `push_clear(ob, center, radius, mask)` push outward skin off a sphere;
+  `set_shape_key(ob, name, co)`, `vertex_positions(ob)`
+- `eyeball(bm, center, forward, lateral, radius, iris_radius, cornea, segments, back_deg)` sphere open at the back,
+  polar UVs (`EyeUV`: one disc for both eyes, u toward the temple), optional geometric cornea (crosses the lids at
+  +-25 deg pitch: use 0 and the normal map); `eye_textures(size, layout, radius, iris_radius, style, cornea, seed)`
+  iris/sclera albedo, cornea dome normal map, ORM (numpy)
+- `draw_strands(shape, strands)` antialiased hair strands -> (alpha, shade): textures for alpha-scissor cards
+- painting an existing layout by position: `uv_positions(ob, size, faces, uv_layer, other_uv)` texel positions,
+  normals (and where another UV layer puts them), `sample_bilinear`, `dilate` grow over island edges,
+  `magnify_uv(ob, faces, scale, center)` faces into their own larger island, `uv_islands`, `uv_occupancy`
+- images: `image_from(name, array, colorspace)` packed image, `image_array`, `srgb(hex)` linear color,
+  `linear_to_srgb`, `srgb_to_linear`; `mesh_bmesh_islands(ob)` connected parts
 
 ### rig (armatures for characters, D-037)
 - `GAME_ENGINE_TO_HUMANOID` MPFB `game_engine` rig -> Godot `SkeletonProfileHumanoid` names; `SIDES`, `FINGERS`
@@ -221,8 +247,10 @@ from the repo root (Blender 5.2: `"C:/Program Files/Blender Foundation/Blender 5
 - `delete_faces(ob, faces)` faces by index and the vertices left over (hidden skin and garment layers)
 
 ### export
-- `export_glb(objs, path, rigged=False)` Y up, transforms applied, textures embedded, triangulated for tangents;
-  `rigged=True` adds skin (all bones) and one animation per NLA track (pass the armature in `objs`)
+- `export_glb(objs, path, rigged=False, morphs=False)` Y up, transforms applied, textures embedded, triangulated for
+  tangents; `rigged=True` adds skin (all bones) and one animation per NLA track (pass the armature in `objs`);
+  `morphs=True` exports shape keys as morph targets (`extras.targetNames`, Godot blend shapes; meshes triangulated on
+  temporary copies, modifiers other than Armature not allowed)
 - `export_glb_at_origin(root, objs, path)` moving part with its root at the glb origin
 
 ### studio
@@ -291,6 +319,11 @@ from the repo root (Blender 5.2: `"C:/Program Files/Blender Foundation/Blender 5
   material. Unlink it for an opaque skin (`silena_vesper/outfit.py`, `opaque_skin`).
 - **Cycles renders back faces, Godot culls them:** first-person stills from inside a body show the inside of the
   neck and open garments; emulate culling for those (`silena_vesper/render.py`, `BackfaceCulling`).
+- **Shape keys vanish when modifiers are applied:** the glTF exporter evaluates meshes with modifiers and the result
+  has no shape keys; `export_glb(..., morphs=True)` exports without applying (triangulated copies instead).
+- **Joining meshes with shape keys** merges keys by name; parts without a key take their basis (eyeballs, brows).
+- **AgX lifts dark albedos** (Blender's renders and Godot's `tonemap_mode = 4` alike): an iris or eyeshadow picked by
+  hex reads two stops lighter; judge dark materials in renders.
 - **Rest channels vanish:** the glTF exporter drops pose channels equal to the rest pose, so an "Open" pose
   exports almost empty. Godot blends missing tracks as rest, so blending between poses still works.
 

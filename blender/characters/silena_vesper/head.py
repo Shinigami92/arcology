@@ -31,7 +31,9 @@ from arcology_blender import curves, garment, human
 EAR_TARGETS = (("ear-shape-pointed", 1.0), ("ear-scale-vert-incr", 0.6), ("ear-rot-backward", 0.4))
 EAR_STRETCH = 0.018          # the tip goes this much further up and back
 HAIR_OFFSET = 0.008
-HEAD_RATIO = 0.70            # the head is a shadow until stage 4: decimated, the neck seam kept
+HEAD_RATIO = 0.70            # the stage-3 decimation: still the hair's source (the hair stays as it was)
+FACE_RATIO = 0.62            # stage 4: the head decimated harder away from the eyes ...
+EYE_KEEP = 0.030             # ... and not at all within this distance of an eyeball's center (lids, blink)
 HAIR_REGION = 7
 HAIR_ATTRS = ("region", "hs", "ha")
 
@@ -70,9 +72,12 @@ def stretch_ears(ob):
     me.update()
 
 
-def split_skin(body, collection):
-    """(Head, SkinV): the skin with ears, cut across the neck; SkinV keeps only what the
-    clothes leave visible."""
+def split_skin(body, collection, eye_centers=()):
+    """(Head, SkinV, HairSource): the skin with ears, cut across the neck; SkinV keeps only
+    what the clothes leave visible. The head keeps full resolution within EYE_KEEP of the
+    `eye_centers` (stage 4) and is decimated to FACE_RATIO elsewhere; HairSource is the
+    stage-3 head (HEAD_RATIO everywhere), which the hair is built from, so it stays the
+    same. The caller removes HairSource after the hair is built."""
     ob = garment.skin_copy(body, "HeadMesh", collection)
     for vg in [vg for vg in ob.vertex_groups if vg.name.endswith(".001")]:
         ob.vertex_groups.remove(vg)
@@ -99,7 +104,14 @@ def split_skin(body, collection):
 
     me = ob.data
     garment.delete_faces(ob, [p.index for p in me.polygons if not above(Vector(p.center))])
-    decimate(ob, HEAD_RATIO)
+    hair_src = ob.copy()
+    hair_src.data = ob.data.copy()
+    hair_src.name = hair_src.data.name = "HairSource"
+    collection.objects.link(hair_src)
+    decimate(hair_src, HEAD_RATIO)
+    eyes = [Vector(c) for c in eye_centers]
+    decimate(ob, FACE_RATIO if eyes else HEAD_RATIO,
+             keep=(lambda co: any((co - c).length < EYE_KEEP for c in eyes)) if eyes else None)
     me = low.data
     keep = []
     for p in me.polygons:
@@ -112,17 +124,18 @@ def split_skin(body, collection):
     keep = set(keep)
     garment.delete_faces(low, [p.index for p in me.polygons if p.index not in keep])
     _keep_island_with(low, Vector((0.0, -0.06, 1.45)))
-    return ob, low
+    return ob, low, hair_src
 
 
-def decimate(ob, ratio):
+def decimate(ob, ratio, keep=None):
     """Collapse-decimate a mesh, its open boundary (the neck seam) untouched: Decimate's
-    vertex group says how much a vertex may collapse, so the seam gets 0."""
+    vertex group says how much a vertex may collapse, so the seam gets 0 (and so does
+    every vertex for which `keep(co)` is true)."""
     import bmesh as _bm
 
     bm = _bm.new()
     bm.from_mesh(ob.data)
-    seam = {v.index for v in bm.verts if v.is_boundary}
+    seam = {v.index for v in bm.verts if v.is_boundary or (keep is not None and keep(v.co))}
     bm.free()
     vg = ob.vertex_groups.new(name="_decimate")
     vg.add([i for i in range(len(ob.data.vertices)) if i not in seam], 1.0, "REPLACE")

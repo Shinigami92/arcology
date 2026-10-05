@@ -11,10 +11,11 @@ coordinates (Godot places the hand at the controller and solves the elbow), with
 the hand poses as animations (`Open`, `Grip`).
 
 `silena_vesper_body.glb` holds the whole skeleton (`Armature`: humanoid bones, OpenXR
-hand joints, LowerArmTwist, the coat's spring chains, the belt items' bones) and three meshes in body
-coordinates: `Body` (arms, coat, clothes, belt and items, visible skin), `HeadMesh`
-(head, neck above the collar, ears, hair; shadow-only in first person) and `Collar`,
-with the same `Open` and `Grip` animations. No mesh may share a name with a bone: glTF
+hand joints, LowerArmTwist, the coat's spring chains, the belt items' bones, the eyes) and three
+meshes in body coordinates: `Body` (arms, coat, clothes, belt and items, visible skin), `HeadMesh`
+(head, neck above the collar, ears, hair, eyeballs, lashes, brows; render layer 11 in Godot:
+hidden from the player's camera, seen in mirrors; blend shapes BlinkLeft, BlinkRight,
+LookDownLids) and `Collar`, with the same `Open` and `Grip` animations. No mesh may share a name with a bone: glTF
 puts nodes in one namespace and Godot's importer renames the bone (`Head` -> `Head_2`).
 """
 
@@ -69,7 +70,7 @@ def export_body():
     for ob in meshes:
         rig.limit_weights(ob, arm, 4)
     bpy.context.view_layer.update()
-    export_glb([arm] + meshes, BODY_GLB, rigged=True)
+    export_glb([arm] + meshes, BODY_GLB, rigged=True, morphs=True)
 
 
 def main():

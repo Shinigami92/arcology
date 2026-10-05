@@ -124,6 +124,21 @@ func is_rendering() -> bool:
 	return _rendering
 
 
+## Surfaces showing their live reflection (last drawn frame).
+static func live_surfaces() -> Array[PlanarReflection]:
+	var out: Array[PlanarReflection] = []
+	for r in _instances:
+		if r._live:
+			out.append(r)
+	return out
+
+
+## The surface's plane as of the last drawn frame: origin at its center, +Z
+## toward the viewer (a two-sided surface turned to the side they're on).
+func plane() -> Transform3D:
+	return _plane
+
+
 ## The SubViewports drawing this frame (perf tools add up their render time).
 static func rendering_viewports() -> Array[SubViewport]:
 	var out: Array[SubViewport] = []

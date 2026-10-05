@@ -262,7 +262,8 @@ def _gltf_occlusion_group():
 
 
 def final_material(name, albedo, normal, orm):
-    """Principled material from baked images, laid out the way the glTF exporter expects."""
+    """Principled material from baked images, laid out the way the glTF exporter expects.
+    `normal=None` leaves the normal input unconnected (surfaces without relief: an eye)."""
     m = bpy.data.materials.get(name) or bpy.data.materials.new(name)
     m.use_nodes = True
     nt = m.node_tree
@@ -291,6 +292,8 @@ def final_material(name, albedo, normal, orm):
     grp.location = (300, -500)
     nt.links.new(sep.outputs["Red"], grp.inputs["Occlusion"])
 
+    if normal is None:
+        return m
     tn = nt.nodes.new("ShaderNodeTexImage")
     tn.image = normal
     tn.location = (-400, -300)
