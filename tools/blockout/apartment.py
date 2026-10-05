@@ -239,9 +239,9 @@ INSTANCES = [
     ("Toilet", "toilet", (2.6, 0, 5.1), (0, -90, 0)),
     # On the vanity top (0.86 m), east of the basin; the soap dispenser stands on the west side.
     ("CanSink", "can", (1.9, 0.922, 6.35), (0, 0, 0)),
-    # Holographic world-state terminal (D-053) on the living room's west wall, between the
-    # window corner and the shelf, facing into the room.
-    ("WorldTerminal", "world_terminal", (-3.0, 1.35, -2.6), (0, 90, 0)),
+    # Holographic world-state terminal (D-053, D-054), floating in front of the living room
+    # window's west bay (glass at z -3.15), so time and weather are set looking at the city.
+    ("WorldTerminal", "world_terminal", (-1.67, 1.35, -2.9), (0, 0, 0)),
 ]
 
 # Blind A/B pairs (core/debug/ab_switch.gd): name, scene A, scene B, position, rotation.

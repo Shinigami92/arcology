@@ -11,7 +11,9 @@ extends Node3D
 ## its roof lands at a random height. Every tower, near and far, stands on a
 ## dark root reaching [member root_bottom] (one MultiMesh of boxes): there is
 ## no street plane, the city goes down into the haze and no tower's end is
-## ever in view (D-053). Cells
+## ever in view (D-053). Beyond the towers, out to [member band_radius], a
+## band of plain boxes with the same lit-window facade stands in for the rest
+## of the city: silhouettes layered into the haze (D-054). Cells
 ## behind [member max_z] (the apartment's window wall faces -Z, nothing behind
 ## it can be seen from inside), inside [member keep_out] (our own building) and
 ## around the near towers stay empty; under a traffic corridor roofs stay
@@ -52,6 +54,13 @@ extends Node3D
 @export_custom(PROPERTY_HINT_NONE, "suffix:m") var root_bottom := -2000.0
 ## A root's footprint as a share of its tower's (inside the silhouette).
 @export_range(0.3, 1.0) var root_scale := 0.8
+## The far skyline band: boxes out to this radius, one per cell of
+## [member band_cell], their roofs between [member band_height] (above the
+## street), footprints between [member band_width].
+@export_custom(PROPERTY_HINT_NONE, "suffix:m") var band_radius := 3500.0
+@export_custom(PROPERTY_HINT_NONE, "suffix:m") var band_cell := 130.0
+@export var band_height := Vector2(120.0, 640.0)
+@export var band_width := Vector2(40.0, 85.0)
 
 ## The roots' facade: lit windows in world space, antialiased (D-020).
 const ROOT_SHADER := preload("res://assets/shaders/skyline_facade.gdshader")
@@ -134,7 +143,7 @@ func generate() -> void:
 	for t in types.size():
 		for tower_xform: Transform3D in placed[t]:
 			roots.append(_root(tower_xform, types[t]["footprint"]))
-	_add_roots(roots)
+	_add_roots(roots + _band())
 
 	for t in types.size():
 		var towers: Array = placed[t]
@@ -167,6 +176,29 @@ func generate() -> void:
 func set_light_scale(share: float) -> void:
 	if _root_material:
 		_root_material.set_shader_parameter(&"window_energy", _root_energy * share)
+
+
+## The far skyline band's boxes (deterministic), from [member root_bottom]
+## up to their roofs.
+func _band() -> Array[Transform3D]:
+	var boxes: Array[Transform3D] = []
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value + 2
+	var n := int(ceil(band_radius / band_cell))
+	for ix in range(-n, n + 1):
+		for iz in range(-n, 1):
+			var center := Vector2(ix, iz) * band_cell
+			center += Vector2(rng.randf_range(-0.3, 0.3), rng.randf_range(-0.3, 0.3)) * band_cell
+			var roof := street_y + lerpf(band_height.x, band_height.y, pow(rng.randf(), 1.8))
+			var size := Vector2(rng.randf_range(band_width.x, band_width.y), rng.randf_range(band_width.x, band_width.y))
+			var yaw := rng.randf_range(-0.4, 0.4) + atan2(-center.x, -center.y)
+			var dist := center.length()
+			if dist < outer_radius or dist > band_radius or center.y > max_z:
+				continue
+			var height := roof - root_bottom
+			var box_basis := Basis(Vector3.UP, yaw).scaled_local(Vector3(size.x, height, size.y))
+			boxes.append(Transform3D(box_basis, Vector3(center.x, roof - height * 0.5, center.y)))
+	return boxes
 
 
 ## A box from a tower's base down to [member root_bottom], inside its footprint.

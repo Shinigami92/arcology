@@ -1,15 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://core/world_state/world_terminal.gd" id="1_script"]
-[ext_resource type="Material" path="res://assets/materials/gunmetal.tres" id="2_trim"]
-[ext_resource type="Material" path="res://assets/materials/neon_cyan.tres" id="3_led"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/button_click.wav" id="4_click"]
-
-[sub_resource type="BoxMesh" id="BoxMesh_emitter"]
-size = Vector3(0.48, 0.022, 0.05)
-
-[sub_resource type="BoxMesh" id="BoxMesh_led"]
-size = Vector3(0.44, 0.004, 0.004)
 
 [sub_resource type="QuadMesh" id="QuadMesh_backdrop"]
 size = Vector2(0.46, 0.44)
@@ -17,23 +9,12 @@ size = Vector2(0.46, 0.44)
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_backdrop"]
 transparency = 1
 shading_mode = 0
-albedo_color = Color(0.005, 0.015, 0.025, 0.6)
+albedo_color = Color(0.005, 0.015, 0.025, 0.62)
 
 [node name="WorldTerminal" type="Node3D" node_paths=PackedStringArray("click")]
 script = ExtResource("1_script")
 click = NodePath("Click")
-metadata/_doc = "Holographic world-state terminal (D-053): 0.46 x 0.44 m hologram 3.5 cm in front of the wall above a 0.48 m emitter bar; origin = the panel's center on the wall, +Z out of the wall. Fingertip touch keys: time, sunrise/noon/sunset, NOW, clock speed, weather, rain, date. Built at start by WorldTerminal."
-
-[node name="Emitter" type="MeshInstance3D" parent="."]
-position = Vector3(0, -0.236, 0.025)
-mesh = SubResource("BoxMesh_emitter")
-surface_material_override/0 = ExtResource("2_trim")
-
-[node name="EmitterLed" type="MeshInstance3D" parent="."]
-position = Vector3(0, -0.2245, 0.04)
-cast_shadow = 0
-mesh = SubResource("BoxMesh_led")
-surface_material_override/0 = ExtResource("3_led")
+metadata/_doc = "Holographic world-state terminal (D-053, D-054): a free-floating 0.46 x 0.44 m hologram 3.5 cm in front of the origin (the panel's center), +Z toward the viewer. Fingertip touch keys: time, sunrise/noon/sunset, NOW, clock speed, weather, rain, date. Built at start by WorldTerminal."
 
 [node name="Backdrop" type="MeshInstance3D" parent="."]
 position = Vector3(0, 0, 0.033)
@@ -41,7 +22,7 @@ layers = 2048
 cast_shadow = 0
 mesh = SubResource("QuadMesh_backdrop")
 surface_material_override/0 = SubResource("StandardMaterial3D_backdrop")
-metadata/_doc = "Smoked glass behind the hologram: keeps it readable against a sunlit wall (additive light can't darken)."
+metadata/_doc = "Smoked glass behind the hologram: keeps it readable against the bright window (additive light can't darken)."
 
 [node name="Click" type="AudioStreamPlayer3D" parent="."]
 position = Vector3(0, 0, 0.05)

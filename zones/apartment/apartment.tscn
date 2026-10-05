@@ -1318,8 +1318,7 @@ rotation_degrees = Vector3(0, -90, 0)
 position = Vector3(1.9, 0.922, 6.35)
 
 [node name="WorldTerminal" parent="Props" instance=ExtResource("28_world_terminal")]
-position = Vector3(-3, 1.35, -2.6)
-rotation_degrees = Vector3(0, 90, 0)
+position = Vector3(-1.67, 1.35, -2.9)
 
 [node name="Seats" type="Node3D" parent="." unique_id=632372354]
 

@@ -11,6 +11,13 @@ extends Node3D
 ##
 ## Replaces XR Tools' built-in ranged grab, which is broken in 4.6.0-dev1
 ## (see docs/decisions.md D-017).
+##
+## The same ray presses buttons from afar (D-054): pointing at anything a
+## fingertip can press ([RayButtons]) snaps the ray to it and highlights it;
+## [member press_action] (Steam Frame: R1 or R2; elsewhere the trigger)
+## presses it through the button's own touch signals, as a fingertip would,
+## and holds it until released. An exact hit on a button wins over a pickable;
+## a pickable wins over a button the ray only passes near.
 
 @export_custom(PROPERTY_HINT_NONE, "suffix:m") var max_distance := 6.0
 @export_range(1.0, 30.0, 0.5, "degrees") var max_angle := 12.0
@@ -24,8 +31,17 @@ extends Node3D
 @export var idle_color := Color(0.02, 0.85, 0.91, 0.12)
 @export var target_color := Color(0.02, 0.85, 0.91, 0.75)
 @export_custom(PROPERTY_HINT_NONE, "suffix:m") var radius := 0.003
+## OpenXR action that presses the pointed button.
+@export var press_action := "ui_press"
+## The ray snaps to a button whose center is within this angle.
+@export_range(0.5, 10.0, 0.5, "degrees") var snap_angle := 3.0
+
+const HIGHLIGHT := preload("res://assets/materials/grab_highlight.tres")
 
 var target: XRToolsPickable
+## The button the ray points at (or holds pressed), and where it meets it.
+var button: Area3D
+var button_point := Vector3.ZERO
 
 var _pickup: XRToolsFunctionPickup
 var _controller: XRController3D
@@ -35,6 +51,11 @@ var _grip_down := false
 var _query := PhysicsShapeQueryParameters3D.new()
 var _sphere := SphereShape3D.new()
 var _ray := PhysicsRayQueryParameters3D.new()
+# Stand-in fingertip that presses buttons (it never touches physics).
+var _presser: Area3D
+var _pressing: Area3D
+var _press_down := false
+var _hover_meshes: Array[MeshInstance3D] = []
 
 
 func _ready() -> void:
@@ -49,18 +70,43 @@ func _ready() -> void:
 	_query.collision_mask = pickable_mask
 	_ray.collision_mask = occluder_mask
 	_build_beam()
+	_presser = Area3D.new()
+	_presser.name = "RayPresser"
+	_presser.top_level = true
+	_presser.monitoring = false
+	_presser.monitorable = false
+	_presser.collision_layer = 0
+	_presser.collision_mask = 0
+	_presser.set_meta(&"ray_presser", true)
+	add_child(_presser)
 
 
 func _process(_delta: float) -> void:
 	var active := _controller and _controller.get_is_active() and _pickup.enabled
 	var busy := is_instance_valid(_pickup.picked_up_object) or is_instance_valid(_pickup.closest_object)
-	_set_target(_find_target() if active and not busy else null)
+	var aim := {}
+	var pickable: XRToolsPickable = null
+	if is_instance_valid(_pressing):
+		aim = {"area": _pressing, "point": button_point}
+	elif active and not busy:
+		aim = find_button(_pickup.global_position, -_pickup.global_basis.z)
+		if aim.is_empty() or not aim["exact"]:
+			pickable = _find_target()
+			if pickable:
+				aim = {}
+	_set_target(pickable)
+	_set_button(aim.get("area"), aim.get("point", Vector3.ZERO))
 
 	if active:
 		_handle_grip()
+		_handle_press()
+	elif is_instance_valid(_pressing):
+		release_button()
 
 	if not active or is_instance_valid(_pickup.picked_up_object):
 		_beam.visible = false
+	elif button:
+		_show(_pickup.global_position, button_point, target_color)
 	elif target:
 		_show(_pickup.global_position, target.global_position, target_color)
 	elif show_idle_ray and not busy:
@@ -83,6 +129,81 @@ func _handle_grip() -> void:
 			# XR Tools has no public "pick up this" call; this is what its own
 			# ranged grab does on grip.
 			_pickup._pick_up_object(grabbed)
+
+
+## The button a ray from [param origin] along [param forward] points at
+## ({"area", "point", "exact"}, empty if none); see [RayButtons].
+func find_button(origin: Vector3, forward: Vector3) -> Dictionary:
+	return RayButtons.pick(get_tree(), get_world_3d().direct_space_state, origin, forward.normalized(),
+			max_distance, snap_angle, occluder_mask)
+
+
+## Presses [param area] at [param point] as a fingertip would, until
+## [method release_button].
+func press_button(area: Area3D, point: Vector3) -> void:
+	release_button()
+	_pressing = area
+	button_point = point
+	_presser.global_position = point
+	area.area_entered.emit(_presser)
+	if _controller:
+		_controller.trigger_haptic_pulse("haptic", 0.0, 0.35, 0.04, 0.0)
+
+
+func release_button() -> void:
+	if is_instance_valid(_pressing):
+		_pressing.area_exited.emit(_presser)
+	_pressing = null
+
+
+func _handle_press() -> void:
+	var down := _controller.is_button_pressed(press_action)
+	if down == _press_down:
+		return
+	_press_down = down
+	if down and button:
+		press_button(button, button_point)
+	elif not down:
+		release_button()
+
+
+func _set_button(area: Area3D, point: Vector3) -> void:
+	button_point = point
+	if area == button:
+		return
+	_hover(button, false)
+	button = area
+	_hover(button, true)
+
+
+## Hover look: the button's own (a "ray_hover" Callable in its metadata, e.g.
+## the world terminal's keys), else the grab highlight on its visible part.
+func _hover(area: Area3D, on: bool) -> void:
+	if not is_instance_valid(area):
+		for mesh in _hover_meshes:
+			if is_instance_valid(mesh):
+				mesh.material_overlay = null
+		_hover_meshes.clear()
+		return
+	if area.has_meta(&"ray_hover"):
+		(area.get_meta(&"ray_hover") as Callable).call(on)
+		return
+	if on:
+		var root: Node = area
+		var area_button := area as XRToolsInteractableAreaButton
+		if area_button and area_button.has_node(area_button.button):
+			root = area_button.get_node(area_button.button)
+		if root is MeshInstance3D:
+			_hover_meshes.append(root)
+		for node in root.find_children("*", "MeshInstance3D", true, false):
+			_hover_meshes.append(node as MeshInstance3D)
+		for mesh in _hover_meshes:
+			mesh.material_overlay = HIGHLIGHT
+	else:
+		for mesh in _hover_meshes:
+			if is_instance_valid(mesh):
+				mesh.material_overlay = null
+		_hover_meshes.clear()
 
 
 func _find_target() -> XRToolsPickable:

@@ -87,6 +87,7 @@ func _registry() -> Array[Array]:
 		["world", "world_rain", _test_world_rain],
 		["world", "world_terminal_touch", _test_world_terminal_touch],
 		["world", "world_terminal_keys", _test_world_terminal_keys],
+		["world", "ray_buttons", _test_ray_buttons],
 		["world", "probe_recapture", _test_probe_recapture],
 		["bathroom", "bath_magnifier", _test_bath_magnifier],
 		["bathroom", "bath_mirror_touch", _test_bath_mirror_touch],
@@ -2442,6 +2443,64 @@ func _test_world_terminal_keys() -> void:
 	world.set_time(22.0, 0.0)
 	await _frames(2)
 	_check("world_terminal_keys", fails.is_empty(), "%d keys checked, wrong: %s" % [WorldTerminal.KEYS.size(), fails])
+
+
+## The controller ray finds every fingertip button, snaps to a key it
+## passes near, can't see through walls, highlights what it points at, and
+## presses like a fingertip: the world terminal's keys and XR Tools buttons
+## (D-054).
+func _test_ray_buttons() -> void:
+	var world := _world()
+	var ray: GrabRay = _main.get_node("Player/RightHand/CollisionHand/FunctionPickup/GrabRay")
+	var terminal: WorldTerminal = _main.get_node("Zones/Apartment/Props/WorldTerminal")
+	var targets := RayButtons.targets(get_tree())
+	var noon := terminal.get_key_area("noon")
+	var panel_button: XRToolsInteractableAreaButton = null
+	for area in targets:
+		if area is XRToolsInteractableAreaButton and str(area.get_path()).contains("LivingWindow"):
+			panel_button = area
+			break
+	var found := targets.size() >= 20 and targets.has(noon) and panel_button != null
+
+	var forward := -noon.global_basis.z
+	var origin := noon.global_position - forward * 2.0
+	var exact := ray.find_button(origin, forward)
+	var side := forward.rotated(noon.global_basis.y, deg_to_rad(1.45))
+	var snapped := ray.find_button(origin, side)
+	var through_wall := ray.find_button(Vector3(-5.0, 1.4, -1.0), (noon.global_position - Vector3(-5.0, 1.4, -1.0)).normalized())
+	var aim_ok: bool = exact.get("area") == noon and exact.get("exact", false) \
+			and snapped.get("area") == noon and not snapped.get("exact", true) and through_wall.is_empty()
+
+	ray._set_button(noon, exact["point"])
+	var hovered: bool = terminal.get("_hovered") == "noon"
+	ray._set_button(null, Vector3.ZERO)
+	var unhovered: bool = terminal.get("_hovered") == ""
+	ray.press_button(noon, exact["point"])
+	ray.release_button()
+	var pressed_noon := absf(world.hours - 13.03) < 0.1
+
+	var panel_hit := ray.find_button(panel_button.global_position + panel_button.global_basis.z * 1.5, -panel_button.global_basis.z)
+	var states: Array[bool] = []
+	var count := [0]
+	var on_press := func(_b: Variant) -> void: count[0] += 1
+	panel_button.button_pressed.connect(on_press)
+	ray.press_button(panel_button, panel_button.global_position)
+	states.append(panel_button.pressed)
+	ray.release_button()
+	states.append(panel_button.pressed)
+	panel_button.button_pressed.disconnect(on_press)
+	await _frames(2)
+	# The press moved a shade or changed the tint: put the window back.
+	ray.press_button(panel_button, panel_button.global_position)
+	ray.release_button()
+	world.set_time(22.0, 0.0)
+	await _frames(30)
+	_check("ray_buttons", found and aim_ok and hovered and unhovered and pressed_noon and panel_hit.get("area") == panel_button
+			and states == [true, false] and count[0] == 1,
+			"%d targets (terminal keys, %s); exact %s, near miss snaps %s, through a wall %s; hover %s/%s; NOON pressed %s; panel button aimed %s, pressed/released %s" % [
+			targets.size(), panel_button.get_path().get_concatenated_names().get_slice("/", 6) if panel_button else "no panel button",
+			exact.get("exact", false), snapped.get("area") == noon, not through_wall.is_empty(), hovered, unhovered,
+			pressed_noon, panel_hit.get("area") == panel_button, states])
 
 
 ## Re-capturing the probes renders them again: a few frames in UPDATE_ALWAYS

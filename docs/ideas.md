@@ -133,6 +133,8 @@ New subagents when a phase starts (the user agreed to add or update agents whene
 
 ## Done
 
+- Ray presses and a deeper skyline (2026-10-05): every button can be pressed from afar by pointing the controller ray and pulling R1/R2 (snap and hover highlight); the world terminal floats in the living room window's left bay; a far skyline band out to 3.5 km (D-054).
+
 - World terminal and a city without a floor (2026-10-05): a holographic wall terminal sets time, clock speed, weather, rain and date by touch (D-053); the street plane is gone, the towers reach down into the haze with lit windows fading in the depth, deep traffic lanes below the window.
 
 - Sun, seasons and weather (2026-10-05): the real sun for the date at 48° N, windows facing 240° (winter sunsets in front of them), sun patches with window-frame shadows moving across the floor, hazy-sun and overcast days, a less white day (D-052).

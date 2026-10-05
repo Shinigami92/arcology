@@ -3,15 +3,18 @@ extends Node3D
 ## Holographic wall terminal for the world state (D-053): the time, date,
 ## weather and temperature, and touch keys the fingertips press (D-031) to
 ## step the time, jump to sunrise, noon or sunset, go back to the PC's clock,
-## set the clock's speed, the weather and the rain, and step the date.
+## set the clock's speed, the weather and the rain, and step the date. The
+## controller rays press them from afar too (GrabRay, D-054): a pointed key
+## lights up.
 ##
 ## The hologram is built at start from [constant KEYS]: one MultiMesh of tiles
 ## (assets/shaders/hologram_tile.gdshader: unshaded, additive, scanlines), a
 ## Label3D per key with an MSDF font (crisp at any distance) and a touch
 ## Area3D per key on the fingertips' layer. A touch flashes the key, clicks
 ## and buzzes the controller of the touching hand; the time keys repeat while
-## held. Origin: the panel's center on the wall, +Z out of the wall. Render
-## layer 12 (in-world UI is never reflected).
+## held. Origin: the panel's center, +Z toward the viewer; the hologram floats
+## [constant PLANE_Z] in front of it. Render layer 12 (in-world UI is never
+## reflected).
 
 ## [id, label, row, column, repeats while held]
 const KEYS: Array[Array] = [
@@ -53,6 +56,7 @@ var _labels := {}          # header name -> Label3D
 var _font: SystemFont
 var _flash := {}           # tile index -> seconds left
 var _held := ""
+var _hovered := ""
 var _held_for := 0.0
 var _next_repeat := 0.0
 var _controllers: Array[XRController3D] = []
@@ -117,7 +121,12 @@ func refresh() -> void:
 	}
 	for id: String in _keys:
 		var on: bool = active.get(id, false)
-		_set_tile(_keys[id]["index"], color * (1.0 if on else 0.55), 1.0 if on else 0.0)
+		var tint := color * (1.0 if on else 0.55)
+		var fill := 1.0 if on else 0.0
+		if id == _hovered:
+			tint = color.lerp(Color.WHITE, 0.35) * 1.3
+			fill = 1.5
+		_set_tile(_keys[id]["index"], tint, fill)
 
 
 func _on_time_changed(_hours: float) -> void:
@@ -177,11 +186,21 @@ func _process(delta: float) -> void:
 		set_process(false)
 
 
+func _on_hover(on: bool, id: String) -> void:
+	if on:
+		_hovered = id
+	elif _hovered == id:
+		_hovered = ""
+	refresh()
+
+
 func _on_touch(area: Area3D, id: String) -> void:
 	_on_key(id)
 	if click:
 		click.play()
-	_buzz(area.global_position)
+	# A controller ray buzzes its own hand.
+	if not area.has_meta(&"ray_presser"):
+		_buzz(area.global_position)
 	if _keys[id]["repeats"]:
 		_held = id
 		_held_for = 0.0
@@ -226,8 +245,8 @@ func _build() -> void:
 	for i in rects.size():
 		var r := rects[i]
 		var center := r.get_center()
-		var basis := Basis.from_scale(Vector3(r.size.x, r.size.y, 1.0))
-		_tiles.set_instance_transform(i, Transform3D(basis, Vector3(center.x, center.y, PLANE_Z)))
+		var tile_basis := Basis.from_scale(Vector3(r.size.x, r.size.y, 1.0))
+		_tiles.set_instance_transform(i, Transform3D(tile_basis, Vector3(center.x, center.y, PLANE_Z)))
 		_tiles.set_instance_custom_data(i, Color(r.size.x, r.size.y, 0.0, 0.0))
 		_tiles.set_instance_color(i, color * 0.3)
 	var material := ShaderMaterial.new()
@@ -265,6 +284,7 @@ func _build() -> void:
 		area.add_child(shape)
 		area.area_entered.connect(_on_touch.bind(id))
 		area.area_exited.connect(_on_release.bind(id))
+		area.set_meta(&"ray_hover", _on_hover.bind(id))
 		add_child(area)
 		_keys[id] = {"index": i + 1, "area": area, "repeats": key[4]}
 
