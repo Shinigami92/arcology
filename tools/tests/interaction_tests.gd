@@ -91,6 +91,7 @@ func _registry() -> Array[Array]:
 		["world", "world_terminal_keys", _test_world_terminal_keys],
 		["world", "ray_buttons", _test_ray_buttons],
 		["world", "probe_recapture", _test_probe_recapture],
+		["rendering", "foveation_on_xr_start", _test_foveation_on_xr_start],
 		["bathroom", "bath_magnifier", _test_bath_magnifier],
 		["bathroom", "bath_mirror_touch", _test_bath_mirror_touch],
 		["bathroom", "toilet_lid_and_seat", _test_toilet_lid_and_seat],
@@ -2217,6 +2218,23 @@ func _test_world_sun() -> void:
 			and noon_dir.x < -0.5 and noon_dir.z < 0.0 and set_azimuth > 255.0 and set_azimuth < 270.0 and set_dir.x > 0.2 and set_dir.z < -0.8,
 			"rise %.2f h, set %.2f h (azimuth %.0f°, ahead-right %s), noon %.1f° ahead-left %s" % [
 			rise, down, set_azimuth, set_dir.x > 0.2 and set_dir.z < -0.8, noon, noon_dir.x < -0.5 and noon_dir.z < 0.0])
+
+
+## Foveation starts with XR, not before, and refills the shading rate map every
+## frame: VRS from the first (desktop) frame with Godot's update-once default
+## left XR's map empty, and the headset rendered black (D-056).
+func _test_foveation_on_xr_start() -> void:
+	var foveation := _main.get_node("Foveation") as Foveation
+	var viewport := _main.get_viewport()
+	var before := [viewport.vrs_mode, viewport.vrs_update_mode]
+	var setting: int = ProjectSettings.get_setting("rendering/vrs/mode")
+	foveation.call("_on_xr_started")
+	var mode := viewport.vrs_mode
+	var update := viewport.vrs_update_mode
+	viewport.vrs_mode = before[0]
+	viewport.vrs_update_mode = before[1]
+	_check("foveation_on_xr_start", setting == Viewport.VRS_DISABLED and mode == Viewport.VRS_XR and update == Viewport.VRS_UPDATE_ALWAYS,
+			"project vrs/mode %d (0), after XR start mode %d (XR=2), update %d (always=2)" % [setting, mode, update])
 
 
 ## Seasons follow the date: long June evenings, short December days with the

@@ -5,7 +5,7 @@ A first-class VR experience in a cyberpunk megacity. It starts as one apartment 
 ## Hard constraints
 
 - **Godot 4.7** (latest stable 4.x), Forward+, **Vulkan** (D-011), OpenXR, Jolt physics at 90 Hz.
-- **Target:** Valve Steam Frame streamed from a Windows PC (RTX 4080 Super) via SteamVR. PC build only.
+- **Target:** Valve Steam Frame streamed from a Windows PC (RTX 4080 Super) via SteamVR, rendered at SteamVR's 100 % target (2644² per eye) with foveated shading (D-056). PC build only.
 - **90 FPS in stereo, always.** Every feature respects the budget below. Measure, don't guess.
 - **Claude does nearly all the work.** The user supplies ideas, steers, and tests in the headset. Prefer text-based, diffable assets and automation over manual editor steps. When a manual step is unavoidable, give exact, short instructions.
 
@@ -46,7 +46,7 @@ blender/                  .blend sources (LFS) + their build scripts, exported t
 core/
   player/                 ArcologyPlayer rig (player.tscn), avatar/ (the player's body: AvatarBody, BodyIK (head, spine, legs, arms from headset and hand targets; hip drop while stepping; seated pose), LimbIK (two-bone, roll-safe), FootSteps (procedural stepping, D-042), AvatarSprings (coat skirt and belt item spring bones, leg and seat colliders, D-044), AvatarEyes (gaze: eye tracking, eye contact in mirrors, ahead; lids, D-050), generated silena_vesper_body.tscn, D-041; the first-person meshes draw after SSAO, D-055), hands/ (AvatarHand: XR Tools hand behavior, the body's hand target and finger curls, generated silena_vesper_hand_*.tscn; left/right_hand.tscn = the old XR Tools hands), StickSprint, GrabRay (ranged grab and ray presses on buttons, D-054), player_physics.tres (jump height), Fingertip press areas (D-031)
   interaction/            ImpactSound, TrashReceiver, HingeStopSound, HingeBodyBlocker, HingeSwing, HingeLight, SliderSwing, KinematicFollower, GrabPassThrough, Seat, GrabHighlight, RayButtons (the ray's press targets, D-054), LightSwitch, EmissiveMaterials, OpenAlarm, HangingRail, RailHanger; windows: MotorizedShade, SmartGlass, WindowLight, WindowHud, HingeAmbience, NamedMaterialOverride
-  rendering/              PlanarReflection: live mirror and glass reflections, one SubViewport per eye; coplanar surfaces share one renderer, up to 3 planes at once (D-049)
+  rendering/              PlanarReflection: live mirror and glass reflections, one SubViewport per eye; coplanar surfaces share one renderer, up to 3 planes at once (D-049); Foveation: variable rate shading, eye-tracked where the runtime offers the gaze (D-056)
   debug/                  ABSwitch + ABPanel: blind A/B variants in one spot, flipped by a wall button (D-030); ABEnvironment: A/B of Environment settings
   world_state/            WorldState (time of day and date: the PC's by default, set_time/follow_clock/set_date; the real sun at 48° N, windows facing 240°; weather, clouds and rain; HUD state), DayNight (sky, ambient, fog, sun/moon, city emission and traffic lights, window spill from the clock; `changed` signal), InteriorDaylight (a zone's smart dimming and probe re-capture, D-051), WorldTerminal (the holographic terminal in the living room window: time, speed, weather, rain, date by touch or ray, D-053, D-054)
   weather/                RainOnGlass (rain on the windows: smoothing, wetness, shader swap, rain sounds; set_rain() is the entry point, D-034); more in M2
@@ -178,7 +178,7 @@ Behavior checks that don't need the headset or the editor. Run the `interaction`
 "$GODOT4_EDITOR" --path . --xr-mode off -- --test=skyline                            # window shimmer (D-020, D-023), traffic lanes clear the near towers (D-047), city hidden without a window in view (D-048), live reflections (D-049)
 ```
 
-Groups: `player` (doorways, blocker, pass-through, jump, ranged grab), `doors_fridge`, `furniture` (sofa, bed, wardrobe doors, nightstand), `variants` (spare props), `switches` (A/B panel, lamp), `avatar`, `wardrobe` (interior), `windows` (incl. rain), `world` (clock, sun, seasons, weather, day/night, world terminal, probe re-capture), `bathroom`. The suite runs at a fixed, stopped 22:00 on Oct 5, clear (`WorldState`); a test that changes the time, date or weather puts it back (`set_time(22.0, 0.0)`, `set_date(10, 5, 2.0)`). Each prints `TEST PASS/FAIL <name>: <details>`, then the time per group and `TEST DONE`, and exits with the failure count (2 if the suite doesn't load, e.g. a parse error, or `--only` matches nothing). Add a test as one line in `_registry()` of `tools/tests/interaction_tests.gd`; tests that move the player or hold something needn't undo it (the runner resets the rig before each test), anything else they change they put back.
+Groups: `player` (doorways, blocker, pass-through, jump, ranged grab), `doors_fridge`, `furniture` (sofa, bed, wardrobe doors, nightstand), `variants` (spare props), `switches` (A/B panel, lamp), `avatar`, `wardrobe` (interior), `windows` (incl. rain), `world` (clock, sun, seasons, weather, day/night, world terminal, probe re-capture), `rendering` (foveation), `bathroom`. The suite runs at a fixed, stopped 22:00 on Oct 5, clear (`WorldState`); a test that changes the time, date or weather puts it back (`set_time(22.0, 0.0)`, `set_date(10, 5, 2.0)`). Each prints `TEST PASS/FAIL <name>: <details>`, then the time per group and `TEST DONE`, and exits with the failure count (2 if the suite doesn't load, e.g. a parse error, or `--only` matches nothing). Add a test as one line in `_registry()` of `tools/tests/interaction_tests.gd`; tests that move the player or hold something needn't undo it (the runner resets the rig before each test), anything else they change they put back.
 
 Visual check without the headset or editor: `--shots` renders 1920×1080 stills to `tools/shots/results/shot-<n>.png` (views are `x,y,z,yaw,pitch[,fov]`, yaw 0 = -Z, 90 = -X; `--shot-hinge=<Props path>:<deg>` opens hinged props first, e.g. `Fridge:80` or `Wardrobe/A/DoorLeft:80`; `--shot-ab=B` shows every A/B pair's B variant; `--shot-no-player` hides the hands; `--shot-player=x,z,yaw` puts the player's eyes there at 1.8 m first, e.g. in front of a mirror; a view `eye,dx,dy,dz,yaw,pitch[,fov]` is relative to the player's camera: `eye,0,0,0,0,0,12` zooms on what they see, `eye,0,0,-0.45,180,0,25` looks back at their face):
 
@@ -202,6 +202,10 @@ Each zone has a `PerfPath` node with `Marker3D` waypoints at eye height (-Z = vi
 
 # A/B the cost of specific nodes (zone-relative paths; ../../Skyline/Traffic reaches the skyline)
 "$GODOT4_EDITOR" --path . --xr-mode off -- --perf=apartment --perf-hide=Lighting/ReflectionProbe
+
+# A/B foveated rendering (on by default, D-056) and MSAA samples (project: 4x)
+"$GODOT4_EDITOR" --path . --xr-mode off -- --perf=apartment --foveation=off
+"$GODOT4_EDITOR" --path . --xr-mode off -- --perf=apartment --foveation=20,1.5 --msaa=2
 
 # Machine hitch check: an almost empty scene; if this hitches, so does every perf run (D-025)
 "$GODOT4_EDITOR" --path . --xr-mode off res://tools/perf/stall_probe.tscn

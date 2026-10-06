@@ -11,6 +11,7 @@ extends Node3D
 ##   --shots=<views>      render still images and quit (see tools/shots/shots.gd)
 ##   --shot-no-player     with --shots: hide the player rig (hands) in the stills
 ##   --shot-player=x,z,yaw  with --shots: stand the player there first (mirrors)
+##   --shot-foveation     with --shots: render with the shading rate map (Foveation)
 ##   --rain=<0..1>        start with rain on the glass (wet at once; RainOnGlass)
 ##   --rain-delay=<s>     with --rain: start dry and let the rain set in after s seconds
 ##   --time=<h|HH:MM|now> time of day (WorldState); tests, stills and perf runs
@@ -19,6 +20,8 @@ extends Node3D
 ##   --date=<MM-DD>       the date (the sun's path); automated runs default to FIXED_DATE
 ##   --weather=<clear|cloudy>  sun out or overcast (WorldState)
 ##   --ab=B               start with every A/B switch on its B variant (perf runs)
+##   --foveation=<off|r[,s]>  foveated rendering off, or its min radius and strength (Foveation)
+##   --msaa=<0|2|4|8>     3D MSAA samples instead of the project's (perf A/B)
 
 const PERF_SCRIPT := "res://tools/perf/perf_flythrough.gd"
 const SHOTS_SCRIPT := "res://tools/shots/shots.gd"
@@ -32,6 +35,7 @@ const FIXED_UTC_OFFSET := 2.0
 @export var entry := NodePath("Zones/Apartment/Entries/Default")
 
 @onready var _player: ArcologyPlayer = $Player
+var _foveation := Foveation.new()
 
 
 func _ready() -> void:
@@ -42,6 +46,15 @@ func _ready() -> void:
 		push_warning("Entry marker not found: %s" % entry)
 
 	var args := _user_args()
+	if args.has("msaa"):
+		var samples: int = {"0": Viewport.MSAA_DISABLED, "2": Viewport.MSAA_2X, "4": Viewport.MSAA_4X, "8": Viewport.MSAA_8X}.get(args["msaa"], -1)
+		if samples >= 0:
+			get_viewport().msaa_3d = samples as Viewport.MSAA
+		else:
+			push_warning("--msaa: expected 0, 2, 4 or 8, got '%s'" % args["msaa"])
+	_foveation.name = "Foveation"
+	_foveation.configure(args.get("foveation", ""))
+	add_child(_foveation)
 	_set_time(args)
 	if args.has("rain"):
 		var world := $WorldState as WorldState
@@ -70,6 +83,8 @@ func _ready() -> void:
 		shots.set("calls", (args.get("shot-call", "") as String).split(",", false))
 		shots.set("player_at", args.get("shot-player", ""))
 		shots.set("player", _player)
+		if args.has("shot-foveation"):
+			shots.set("foveation", _foveation)
 		if args.has("shot-no-player"):
 			_player.visible = false
 		add_child(shots)
@@ -118,6 +133,7 @@ func _start_perf(args: Dictionary) -> void:
 	perf.set("zone_name", zone_name)
 	perf.set("zone", zone)
 	perf.set("player", _player)
+	perf.set("foveation", _foveation)
 	if args.has("perf-duration"):
 		perf.set("duration", float(args["perf-duration"]))
 	if args.has("perf-hide"):

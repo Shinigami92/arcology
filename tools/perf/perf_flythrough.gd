@@ -22,6 +22,8 @@ const DESKTOP_SIZE := Vector2i(5288, 2644)
 var zone_name := ""
 var zone: Node3D
 var player: XROrigin3D
+## Foveated rendering: the desktop SubViewport gets the headset's shading rate map.
+var foveation: Foveation
 var duration := 20.0
 var warmup := 3.0
 ## Zone-relative node paths to hide for A/B cost comparisons (--perf-hide).
@@ -96,6 +98,9 @@ func _ready() -> void:
 		sub.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 		sub.msaa_3d = get_viewport().msaa_3d
 		sub.use_occlusion_culling = get_viewport().use_occlusion_culling
+		if foveation and foveation.enabled:
+			sub.vrs_mode = Viewport.VRS_TEXTURE
+			sub.vrs_texture = foveation.desktop_texture(Vector2i(DESKTOP_SIZE.x / 2, DESKTOP_SIZE.y), 2)
 		sub.world_3d = get_viewport().world_3d
 		var cam := Camera3D.new()
 		cam.fov = 100.0
@@ -117,8 +122,8 @@ func _ready() -> void:
 		var body := player.get_node_or_null("PlayerBody")
 		if body:
 			body.set("enabled", false)
-	print("PERF: zone=%s mode=%s duration=%.0fs warmup=%.0fs markers=%d hidden=%s" % [
-			zone_name, "xr" if _xr else "desktop-approx", duration, warmup, _markers.size(), hide_nodes])
+	print("PERF: zone=%s mode=%s duration=%.0fs warmup=%.0fs markers=%d hidden=%s foveation=%s" % [
+			zone_name, "xr" if _xr else "desktop-approx", duration, warmup, _markers.size(), hide_nodes, _foveation_label()])
 	_last_usec = Time.get_ticks_usec()
 	_last_compiles = _pipeline_compiles()
 
@@ -224,6 +229,7 @@ func _finish() -> void:
 		"zone": zone_name,
 		"mode": "xr" if _xr else "desktop-approx",
 		"hidden": hide_nodes,
+		"foveation": _foveation_label(),
 		"date": Time.get_datetime_string_from_system(),
 		"gpu": RenderingServer.get_video_adapter_name(),
 		"frames": _frame_ms.size(),
@@ -308,6 +314,12 @@ func _per_marker() -> Array[Dictionary]:
 			"objects_max": _max_i(objects),
 		})
 	return out
+
+
+func _foveation_label() -> String:
+	if not foveation or not foveation.enabled:
+		return "off"
+	return "%.0f,%.1f" % [foveation.min_radius, foveation.strength]
 
 
 static func _avg(values: PackedFloat32Array) -> float:

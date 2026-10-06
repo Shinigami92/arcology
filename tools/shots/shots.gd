@@ -18,6 +18,7 @@ extends Node
 ## camera is within 25 cm of the eyes), "eye,0,0,-0.5,180,0,30" looks back at
 ## their face (D-050). Writes
 ## tools/shots/results/shot-<n>.png (gitignored) at [constant SIZE] and quits.
+## --shot-foveation renders with the headset's shading rate map (one eye, D-056).
 
 const SIZE := Vector2i(1920, 1080)
 const OUT_DIR := "res://tools/shots/results"
@@ -35,6 +36,8 @@ var calls: PackedStringArray = []
 ## "x,z,yaw" to stand the player at (the avatar shows in mirrors), or "".
 var player_at := ""
 var player: Node3D
+## Foveation to render with (--shot-foveation), or null.
+var foveation: Foveation
 
 
 func _ready() -> void:
@@ -43,6 +46,9 @@ func _ready() -> void:
 	sub.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	sub.msaa_3d = Viewport.MSAA_4X
 	sub.use_occlusion_culling = get_viewport().use_occlusion_culling
+	if foveation and foveation.enabled:
+		sub.vrs_mode = Viewport.VRS_TEXTURE
+		sub.vrs_texture = foveation.desktop_texture(SIZE, 1)
 	sub.world_3d = get_viewport().world_3d
 	var cam := Camera3D.new()
 	cam.near = 0.03
