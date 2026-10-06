@@ -21,6 +21,10 @@ extends Node3D
 ## the largest on screen first. Starting and stopping fades over [constant FADE_TIME], to and from the
 ## ReflectionProbe the materials fall back to (reflection_enabled 0).
 ##
+## On the first drawn frame every plane renders once from a viewer in front of
+## it, unseen: the reflection passes compile their pipelines while the game
+## loads, not when a mirror first comes into view (a 20-35 ms stall).
+##
 ## The cameras are placed on the RenderingServer right before drawing: a node
 ## transform set then would only reach the renderer a frame later, while the
 ## frustum (near plane on the surface) applies at once, and while the viewer
@@ -56,6 +60,8 @@ const SIGHT_SLACK := 0.06
 ## or behind the surface (leaning in, one eye past a glass edge) would collapse
 ## the frustum.
 const MIN_EYE_DISTANCE := 0.01
+## The warm-up viewer's distance in front of a surface (m).
+const WARM_DISTANCE := 1.2
 ## Environment properties [method sync_environment] copies.
 const SYNCED_ENVIRONMENT: Array[StringName] = [&"ambient_light_color", &"ambient_light_energy",
 		&"ambient_light_sky_contribution", &"fog_light_color", &"fog_light_energy", &"fog_density"]
@@ -73,6 +79,7 @@ static var _instances: Array[PlanarReflection] = []
 static var _reflection_env: Environment
 static var _frame := -1
 static var _last_usec := 0
+static var _warmed := false
 
 ## Rectangle size (m): local X, Y.
 @export var size := Vector2(1.0, 1.0)
@@ -205,6 +212,16 @@ static func _update_all(eyes: PackedVector3Array, forward: Vector3, space: Physi
 		if score > 0.0:
 			scored.append([score, g])
 	scored.sort_custom(func(a: Array, b: Array) -> bool: return a[0] > b[0])
+
+	if not _warmed:
+		# Once, all planes at once, nothing shown (see the class doc).
+		_warmed = true
+		for g in groups:
+			var lead: PlanarReflection = g[0]
+			lead._warm(g)
+		for r in _instances:
+			r._live = false
+		return
 
 	var leads: Array[PlanarReflection] = []
 	for i in mini(scored.size(), max_active):
@@ -347,6 +364,16 @@ func _set_rendering(on: bool, eye_count: int) -> void:
 		var mode := SubViewport.UPDATE_ALWAYS if on and i < eye_count else SubViewport.UPDATE_DISABLED
 		if _viewports[i].render_target_update_mode != mode:
 			_viewports[i].render_target_update_mode = mode
+
+
+## Warm-up: renders this plane once for a viewer [constant WARM_DISTANCE] in
+## front of its middle (what a mirror sees in use), compiling its pipelines.
+func _warm(group: Array) -> void:
+	var eye := _plane.origin + _plane.basis.z * WARM_DISTANCE
+	var half_ipd := _plane.basis.x * DESKTOP_IPD * 0.5
+	var seen: Array[PlanarReflection] = []
+	seen.assign(group)
+	_render(group, seen, PackedVector3Array([eye - half_ipd, eye + half_ipd]))
 
 
 ## The mirrored eye looks through the rectangle ([param origin], [param extent]

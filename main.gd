@@ -7,6 +7,7 @@ extends Node3D
 ##   --perf=<zone>        run the perf flythrough for that zone and quit
 ##   --perf-duration=<s>  flythrough length in seconds (default 20)
 ##   --perf-hide=<a,b>    zone-relative node paths to hide (A/B cost tests)
+##   --reflections=<n>    live reflection planes at once (PlanarReflection.max_active; 0 = none)
 ##   --test=<suite>       run tools/tests/<suite>_tests.gd and quit with the failure count
 ##   --shots=<views>      render still images and quit (see tools/shots/shots.gd)
 ##   --shot-no-player     with --shots: hide the player rig (hands) in the stills
@@ -46,6 +47,8 @@ func _ready() -> void:
 		push_warning("Entry marker not found: %s" % entry)
 
 	var args := _user_args()
+	if args.has("reflections"):
+		PlanarReflection.max_active = int(args["reflections"])
 	if args.has("msaa"):
 		var samples: int = {"0": Viewport.MSAA_DISABLED, "2": Viewport.MSAA_2X, "4": Viewport.MSAA_4X, "8": Viewport.MSAA_8X}.get(args["msaa"], -1)
 		if samples >= 0:

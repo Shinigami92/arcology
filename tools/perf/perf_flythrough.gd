@@ -51,7 +51,10 @@ var _frame_marker: PackedInt32Array = []
 # Pipeline compilations per frame (draw-time and specialization; the
 # monitors are totals since startup). A hitch with compiles is a shader stall.
 var _frame_compiles: PackedInt32Array = []
+## Of those, compiled while drawing (the frame waits): the rest specialize in the background.
+var _frame_draw_compiles: PackedInt32Array = []
 var _last_compiles := 0
+var _last_draw_compiles := 0
 var _frame_start := _FrameStart.new()
 # Other viewports that render 3D (live reflections, D-049): their GPU/CPU time counts too.
 var _extra_viewports: Array[SubViewport] = []
@@ -126,6 +129,7 @@ func _ready() -> void:
 			zone_name, "xr" if _xr else "desktop-approx", duration, warmup, _markers.size(), hide_nodes, _foveation_label()])
 	_last_usec = Time.get_ticks_usec()
 	_last_compiles = _pipeline_compiles()
+	_last_draw_compiles = int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_DRAW))
 
 
 func _process(delta: float) -> void:
@@ -144,6 +148,9 @@ func _process(delta: float) -> void:
 		var compiles := _pipeline_compiles()
 		_frame_compiles.append(compiles - _last_compiles)
 		_last_compiles = compiles
+		var draw_compiles := int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_DRAW))
+		_frame_draw_compiles.append(draw_compiles - _last_draw_compiles)
+		_last_draw_compiles = draw_compiles
 		var gpu := RenderingServer.viewport_get_measured_render_time_gpu(_viewport_rid)
 		# Physics monitor is in seconds; render time is in ms.
 		var render_cpu := RenderingServer.viewport_get_measured_render_time_cpu(_viewport_rid)
@@ -211,7 +218,8 @@ func _finish() -> void:
 	var compiles_at: Array[Dictionary] = []
 	for i in _frame_ms.size():
 		if _frame_compiles[i] > 0:
-			compiles_at.append({"t": snappedf(_frame_time[i], 0.01), "n": _frame_compiles[i], "ms": snappedf(_frame_ms[i], 0.1)})
+			compiles_at.append({"t": snappedf(_frame_time[i], 0.01), "n": _frame_compiles[i], "draw": _frame_draw_compiles[i],
+					"ms": snappedf(_frame_ms[i], 0.1), "marker": _markers[_frame_marker[i]].name})
 		var ms := _frame_ms[i]
 		if ms > frame_budget:
 			over += 1

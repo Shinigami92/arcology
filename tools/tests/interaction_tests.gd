@@ -94,6 +94,7 @@ func _registry() -> Array[Array]:
 		["world", "probe_recapture", _test_probe_recapture],
 		["rendering", "foveation_on_xr_start", _test_foveation_on_xr_start],
 		["rendering", "ab_viewport", _test_ab_viewport],
+		["rendering", "reflections_warmed", _test_reflections_warmed],
 		["bathroom", "bath_magnifier", _test_bath_magnifier],
 		["bathroom", "bath_mirror_touch", _test_bath_mirror_touch],
 		["bathroom", "toilet_lid_and_seat", _test_toilet_lid_and_seat],
@@ -2251,6 +2252,22 @@ func _test_foveation_on_xr_start() -> void:
 	viewport.vrs_update_mode = before[1]
 	_check("foveation_on_xr_start", setting == Viewport.VRS_DISABLED and mode == Viewport.VRS_XR and update == Viewport.VRS_UPDATE_ALWAYS,
 			"project vrs/mode %d (0), after XR start mode %d (XR=2), update %d (always=2)" % [setting, mode, update])
+
+
+## Every live reflection rendered once at start (its own renderer or a coplanar
+## lead's), so its pipelines compiled while loading: entering the bathroom used
+## to compile 38 at once (a 23 ms frame, D-056).
+func _test_reflections_warmed() -> void:
+	var cold: Array[String] = []
+	var instances: Array[PlanarReflection] = PlanarReflection._instances
+	for r in instances:
+		var warmed := not r._viewports.is_empty()
+		for other in instances:
+			if not other._viewports.is_empty() and r.magnification == 1.0 and other.magnification == 1.0 and other._coplanar(r):
+				warmed = true
+		if not warmed:
+			cold.append(str(r.get_path()))
+	_check("reflections_warmed", instances.size() > 0 and cold.is_empty(), "%d surfaces, cold: %s" % [instances.size(), cold])
 
 
 ## ABViewport flips MSAA and foveation with its variant and puts them back.
