@@ -59,6 +59,7 @@ func _registry() -> Array[Array]:
 		["furniture", "bedroom", _test_bedrooms],
 		["switches", "ab_panel", _test_ab_panel],
 		["switches", "ab_environment", _test_ab_environment],
+		["switches", "ab_panel_has_switches", _test_ab_panel_has_switches],
 		["avatar", "fingertips", _test_fingertips],
 		# Hand rig and arm IK share the posed hands, so they are one test.
 		["avatar", "hand_rig_arm_ik", _test_hand_rig],
@@ -92,6 +93,7 @@ func _registry() -> Array[Array]:
 		["world", "ray_buttons", _test_ray_buttons],
 		["world", "probe_recapture", _test_probe_recapture],
 		["rendering", "foveation_on_xr_start", _test_foveation_on_xr_start],
+		["rendering", "ab_viewport", _test_ab_viewport],
 		["bathroom", "bath_magnifier", _test_bath_magnifier],
 		["bathroom", "bath_mirror_touch", _test_bath_mirror_touch],
 		["bathroom", "toilet_lid_and_seat", _test_toilet_lid_and_seat],
@@ -683,6 +685,20 @@ func _test_bedroom(v: String) -> void:
 ## The A/B panel: a fingertip pressing its button flips an ABSwitch (and the
 ## hidden variant is disabled); a second press flips back. Built away from the
 ## apartment, so it runs with or without A/B pairs placed.
+## An ABPanel in the zone has something to flip: a panel without any ABSwitch
+## clicks but stays on "A" (the first viewport A/B was generated that way).
+func _test_ab_panel_has_switches() -> void:
+	var zones := _main.get_node("Zones")
+	var panels := 0
+	var switches := 0
+	for node in zones.find_children("*", "Node3D", true, false):
+		if node is ABPanel:
+			panels += 1
+		elif node is ABSwitch:
+			switches += 1
+	_check("ab_panel_has_switches", panels == 0 or switches > 0, "%d panel(s), %d switch(es)" % [panels, switches])
+
+
 func _test_ab_panel() -> void:
 	var sw := ABSwitch.new()
 	for name in ["A", "B"]:
@@ -2235,6 +2251,26 @@ func _test_foveation_on_xr_start() -> void:
 	viewport.vrs_update_mode = before[1]
 	_check("foveation_on_xr_start", setting == Viewport.VRS_DISABLED and mode == Viewport.VRS_XR and update == Viewport.VRS_UPDATE_ALWAYS,
 			"project vrs/mode %d (0), after XR start mode %d (XR=2), update %d (always=2)" % [setting, mode, update])
+
+
+## ABViewport flips MSAA and foveation with its variant and puts them back.
+func _test_ab_viewport() -> void:
+	var viewport := _main.get_viewport()
+	var foveation := Foveation.find(_main.get_tree())
+	var before := [viewport.msaa_3d, foveation.enabled, foveation.min_radius, foveation.strength]
+	var ab := ABViewport.new()
+	ab.a = {"msaa": 4, "foveation_radius": 35.0}
+	ab.b = {"msaa": 2, "foveation_radius": 0.0}
+	_main.add_child(ab)
+	var a_ok := viewport.msaa_3d == Viewport.MSAA_4X and foveation.enabled and is_equal_approx(foveation.min_radius, 35.0)
+	ab.set_variant("B")
+	var b_ok := viewport.msaa_3d == Viewport.MSAA_2X and not foveation.enabled
+	ab.set_variant("A")
+	var back_ok := viewport.msaa_3d == Viewport.MSAA_4X and foveation.enabled
+	ab.free()
+	viewport.msaa_3d = before[0]
+	foveation.set_foveation(before[1], before[2], before[3])
+	_check("ab_viewport", a_ok and b_ok and back_ok, "A %s, B (2x, foveation off) %s, A again %s" % [a_ok, b_ok, back_ok])
 
 
 ## Seasons follow the date: long June evenings, short December days with the

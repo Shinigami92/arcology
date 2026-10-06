@@ -47,7 +47,7 @@ core/
   player/                 ArcologyPlayer rig (player.tscn), avatar/ (the player's body: AvatarBody, BodyIK (head, spine, legs, arms from headset and hand targets; hip drop while stepping; seated pose), LimbIK (two-bone, roll-safe), FootSteps (procedural stepping, D-042), AvatarSprings (coat skirt and belt item spring bones, leg and seat colliders, D-044), AvatarEyes (gaze: eye tracking, eye contact in mirrors, ahead; lids, D-050), generated silena_vesper_body.tscn, D-041; the first-person meshes draw after SSAO, D-055), hands/ (AvatarHand: XR Tools hand behavior, the body's hand target and finger curls, generated silena_vesper_hand_*.tscn; left/right_hand.tscn = the old XR Tools hands), StickSprint, GrabRay (ranged grab and ray presses on buttons, D-054), player_physics.tres (jump height), Fingertip press areas (D-031)
   interaction/            ImpactSound, TrashReceiver, HingeStopSound, HingeBodyBlocker, HingeSwing, HingeLight, SliderSwing, KinematicFollower, GrabPassThrough, Seat, GrabHighlight, RayButtons (the ray's press targets, D-054), LightSwitch, EmissiveMaterials, OpenAlarm, HangingRail, RailHanger; windows: MotorizedShade, SmartGlass, WindowLight, WindowHud, HingeAmbience, NamedMaterialOverride
   rendering/              PlanarReflection: live mirror and glass reflections, one SubViewport per eye; coplanar surfaces share one renderer, up to 3 planes at once (D-049); Foveation: variable rate shading, eye-tracked where the runtime offers the gaze (D-056)
-  debug/                  ABSwitch + ABPanel: blind A/B variants in one spot, flipped by a wall button (D-030); ABEnvironment: A/B of Environment settings
+  debug/                  ABSwitch + ABPanel: blind A/B variants in one spot, flipped by a wall button (D-030); ABEnvironment: A/B of Environment settings; ABViewport: A/B of MSAA and foveation (D-056)
   world_state/            WorldState (time of day and date: the PC's by default, set_time/follow_clock/set_date; the real sun at 48° N, windows facing 240°; weather, clouds and rain; HUD state), DayNight (sky, ambient, fog, sun/moon, city emission and traffic lights, window spill from the clock; `changed` signal), InteriorDaylight (a zone's smart dimming and probe re-capture, D-051), WorldTerminal (the holographic terminal in the living room window: time, speed, weather, rain, date by touch or ray, D-053, D-054)
   weather/                RainOnGlass (rain on the windows: smoothing, wetness, shader swap, rain sounds; set_rain() is the entry point, D-034); more in M2
   zones/                  OutsideView: hides the city while no window is on screen (D-048); zone loader (M3)
@@ -144,7 +144,7 @@ Per-zone budgets live in `tools/perf/budgets.json`. Current zones:
 
 | Zone | Draw calls | Triangles | Lights (shadowed) | GI | Last measured |
 |---|---|---|---|---|---|
-| apartment (5 rooms) | ≤ 1150 (a live reflection adds two scene passes, D-049; by day each also renders the sun's shadow map, D-052) | ≤ 1.5 M | ≤ 16 (1) | none (D-012); 1 ReflectionProbe per room | XR: GPU p95 5.0 ms, CPU p95 1.7 ms, 151 draw calls, 23 k tris, 8 dropped frames (0.45 %): 50–58 ms hitches caused by the machine, not the zone (D-025) |
+| apartment (5 rooms) | ≤ 1150 (a live reflection adds two scene passes, D-049; by day each also renders the sun's shadow map, D-052) | ≤ 1.5 M | ≤ 16 (1) | none (D-012); 1 ReflectionProbe per room | XR (2026-10-06, MSAA 2x, foveation, D-056): GPU p95 5.4 ms, CPU p95 4.8 ms, 812 draw calls, 1.06 M tris, 23 dropped frames (1.3 %, over budget): most at normal GPU/CPU (from outside the frame), 4 with shader compiles |
 
 Asset budgets (realistic style, see the style guide):
 
@@ -203,9 +203,9 @@ Each zone has a `PerfPath` node with `Marker3D` waypoints at eye height (-Z = vi
 # A/B the cost of specific nodes (zone-relative paths; ../../Skyline/Traffic reaches the skyline)
 "$GODOT4_EDITOR" --path . --xr-mode off -- --perf=apartment --perf-hide=Lighting/ReflectionProbe
 
-# A/B foveated rendering (on by default, D-056) and MSAA samples (project: 4x)
+# A/B foveated rendering (on by default, D-056) and MSAA samples (project: 2x)
 "$GODOT4_EDITOR" --path . --xr-mode off -- --perf=apartment --foveation=off
-"$GODOT4_EDITOR" --path . --xr-mode off -- --perf=apartment --foveation=20,1.5 --msaa=2
+"$GODOT4_EDITOR" --path . --xr-mode off -- --perf=apartment --foveation=20,1.5 --msaa=4
 
 # Machine hitch check: an almost empty scene; if this hitches, so does every perf run (D-025)
 "$GODOT4_EDITOR" --path . --xr-mode off res://tools/perf/stall_probe.tscn

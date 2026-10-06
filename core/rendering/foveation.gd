@@ -19,6 +19,7 @@ const MIN_RADIUS := 35.0
 const STRENGTH := 1.0
 ## Eye gaze tracker (AvatarEyes.GAZE_TRACKER): present while the runtime tracks the eyes.
 const GAZE_TRACKER := &"/user/eyes_ext"
+const GROUP := &"foveation"
 
 var enabled := true
 var min_radius := MIN_RADIUS
@@ -26,15 +27,27 @@ var strength := STRENGTH
 
 
 func _ready() -> void:
-	var viewport := get_viewport()
+	add_to_group(GROUP)
 	if not enabled:
-		viewport.vrs_mode = Viewport.VRS_DISABLED
 		print("Foveation: off")
-		return
 	var start_xr := XRToolsStartXR.get_start_xr_node()
 	if start_xr:
 		start_xr.xr_started.connect(_on_xr_started)
-	if viewport.use_xr:
+	if get_viewport().use_xr:
+		_on_xr_started()
+
+
+## The scene's Foveation (main.gd creates one), or null.
+static func find(tree: SceneTree) -> Foveation:
+	return tree.get_first_node_in_group(GROUP) as Foveation
+
+
+## Turns foveation on or off or changes its shape at runtime (ABViewport).
+func set_foveation(on: bool, radius: float, rate_strength: float) -> void:
+	enabled = on
+	min_radius = clampf(radius, 1.0, 100.0)
+	strength = clampf(rate_strength, 0.1, 10.0)
+	if get_viewport().use_xr:
 		_on_xr_started()
 
 
@@ -55,6 +68,10 @@ func _on_xr_started() -> void:
 	if not xr:
 		return
 	var viewport := get_viewport()
+	if not enabled:
+		viewport.vrs_mode = Viewport.VRS_DISABLED
+		print("Foveation: off")
+		return
 	viewport.vrs_mode = Viewport.VRS_XR
 	# Godot's default copies the map into the render buffers once; XR's buffers
 	# come after the first desktop frames, and a never-filled map renders black

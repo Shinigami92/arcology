@@ -92,6 +92,7 @@ SCENES = {
 SEAT_SCRIPT = "res://core/interaction/seat.gd"
 AB_SCRIPT = "res://core/debug/ab_switch.gd"
 AB_ENVIRONMENT_SCRIPT = "res://core/debug/ab_environment.gd"
+AB_VIEWPORT_SCRIPT = "res://core/debug/ab_viewport.gd"
 
 boxes = []  # (group, name, center, size, material, collide)
 
@@ -254,6 +255,11 @@ AB_INSTANCES = []
 # (D-055). Flip it with an ABPanel (SCENES "ab_panel": res://assets/props/ab_panel/ab_panel.tscn) in
 # INSTANCES, e.g. on the living room's west wall at (-3.0, 1.25, 0.5), rotated (0, 90, 0).
 AB_ENVIRONMENT = []
+# Blind A/B of the player's render settings (core/debug/ab_viewport.gd: "msaa" samples,
+# "foveation_radius" (0 = off), "foveation_strength"), flipped by the same ABPanel:
+# node name under Lighting, settings for A, settings for B. Empty outside an A/B test (D-056).
+# e.g. ("MsaaAB", {"msaa": 4}, {"msaa": 2}) with the ABPanel at (-3.0, 1.25, 0.5), rotated (0, 90, 0).
+AB_VIEWPORT = []
 
 # Seats: name, area center, area size, sit eye point, sit yaw, stand point, stand yaw, prompt pos
 # Sit points are the avatar's seated eye height: seat surface + 0.83 m (hip joint
@@ -446,6 +452,8 @@ def main():
         add_ext("ab", "Script", AB_SCRIPT)
     if AB_ENVIRONMENT:
         add_ext("ab_environment", "Script", AB_ENVIRONMENT_SCRIPT)
+    if AB_VIEWPORT:
+        add_ext("ab_viewport", "Script", AB_VIEWPORT_SCRIPT)
 
     sizes = {}
     all_sizes = [b[3] for b in boxes] + [b[5][1] for b in boxes if isinstance(b[5], tuple)]
@@ -584,6 +592,10 @@ def main():
     for name, values_a, values_b in AB_ENVIRONMENT:
         nodes.append(f'[node name="{name}" type="Node3D" parent="Lighting"]\n'
                      f'script = ExtResource("{ids["ab_environment"]}")\n'
+                     f"a = {gd_dict(values_a)}\nb = {gd_dict(values_b)}\n")
+    for name, values_a, values_b in AB_VIEWPORT:
+        nodes.append(f'[node name="{name}" type="Node3D" parent="Lighting"]\n'
+                     f'script = ExtResource("{ids["ab_viewport"]}")\n'
                      f"a = {gd_dict(values_a)}\nb = {gd_dict(values_b)}\n")
 
     nodes.append('[node name="Entries" type="Node3D" parent="."]\n')
