@@ -44,10 +44,10 @@ blender/                  .blend sources (LFS) + their build scripts, exported t
   characters/<name>/      one character's stage scripts (character-artist, D-037)
   surfaces/               tileable surface texture generator (vinyl, carpet, concrete, plaster) -> assets/materials/surfaces/
 core/
-  player/                 ArcologyPlayer rig (player.tscn), avatar/ (the player's body: AvatarBody, BodyIK (head, spine, legs, arms from headset and hand targets; hip drop while stepping; seated pose), LimbIK (two-bone, roll-safe), FootSteps (procedural stepping, D-042), AvatarSprings (coat skirt and belt item spring bones, leg and seat colliders, D-044), AvatarEyes (gaze: eye tracking, eye contact in mirrors, ahead; lids, D-050), generated silena_vesper_body.tscn, D-041), hands/ (AvatarHand: XR Tools hand behavior, the body's hand target and finger curls, generated silena_vesper_hand_*.tscn; left/right_hand.tscn = the old XR Tools hands), StickSprint, GrabRay (ranged grab and ray presses on buttons, D-054), player_physics.tres (jump height), Fingertip press areas (D-031)
+  player/                 ArcologyPlayer rig (player.tscn), avatar/ (the player's body: AvatarBody, BodyIK (head, spine, legs, arms from headset and hand targets; hip drop while stepping; seated pose), LimbIK (two-bone, roll-safe), FootSteps (procedural stepping, D-042), AvatarSprings (coat skirt and belt item spring bones, leg and seat colliders, D-044), AvatarEyes (gaze: eye tracking, eye contact in mirrors, ahead; lids, D-050), generated silena_vesper_body.tscn, D-041; the first-person meshes draw after SSAO, D-055), hands/ (AvatarHand: XR Tools hand behavior, the body's hand target and finger curls, generated silena_vesper_hand_*.tscn; left/right_hand.tscn = the old XR Tools hands), StickSprint, GrabRay (ranged grab and ray presses on buttons, D-054), player_physics.tres (jump height), Fingertip press areas (D-031)
   interaction/            ImpactSound, TrashReceiver, HingeStopSound, HingeBodyBlocker, HingeSwing, HingeLight, SliderSwing, KinematicFollower, GrabPassThrough, Seat, GrabHighlight, RayButtons (the ray's press targets, D-054), LightSwitch, EmissiveMaterials, OpenAlarm, HangingRail, RailHanger; windows: MotorizedShade, SmartGlass, WindowLight, WindowHud, HingeAmbience, NamedMaterialOverride
   rendering/              PlanarReflection: live mirror and glass reflections, one SubViewport per eye; coplanar surfaces share one renderer, up to 3 planes at once (D-049)
-  debug/                  ABSwitch + ABPanel: blind A/B variants in one spot, flipped by a wall button (D-030)
+  debug/                  ABSwitch + ABPanel: blind A/B variants in one spot, flipped by a wall button (D-030); ABEnvironment: A/B of Environment settings
   world_state/            WorldState (time of day and date: the PC's by default, set_time/follow_clock/set_date; the real sun at 48° N, windows facing 240°; weather, clouds and rain; HUD state), DayNight (sky, ambient, fog, sun/moon, city emission and traffic lights, window spill from the clock; `changed` signal), InteriorDaylight (a zone's smart dimming and probe re-capture, D-051), WorldTerminal (the holographic terminal in the living room window: time, speed, weather, rain, date by touch or ray, D-053, D-054)
   weather/                RainOnGlass (rain on the windows: smoothing, wetness, shader swap, rain sounds; set_rain() is the entry point, D-034); more in M2
   zones/                  OutsideView: hides the city while no window is on screen (D-048); zone loader (M3)
@@ -196,6 +196,9 @@ Each zone has a `PerfPath` node with `Marker3D` waypoints at eye height (-Z = vi
 
 # Real stereo in the headset (SteamVR running, headset on). The user runs this before a milestone is done.
 "$GODOT4_EDITOR" --path . -- --perf=apartment
+
+# Start on every A/B switch's B variant (an A/B's cost: run once with, once without)
+"$GODOT4_EDITOR" --path . --xr-mode off -- --perf=apartment --ab=B
 
 # A/B the cost of specific nodes (zone-relative paths; ../../Skyline/Traffic reaches the skyline)
 "$GODOT4_EDITOR" --path . --xr-mode off -- --perf=apartment --perf-hide=Lighting/ReflectionProbe

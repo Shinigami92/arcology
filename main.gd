@@ -18,6 +18,7 @@ extends Node3D
 ##   --time-speed=<x>     game seconds per real second from --time on (0 stops the clock)
 ##   --date=<MM-DD>       the date (the sun's path); automated runs default to FIXED_DATE
 ##   --weather=<clear|cloudy>  sun out or overcast (WorldState)
+##   --ab=B               start with every A/B switch on its B variant (perf runs)
 
 const PERF_SCRIPT := "res://tools/perf/perf_flythrough.gd"
 const SHOTS_SCRIPT := "res://tools/shots/shots.gd"
@@ -48,6 +49,8 @@ func _ready() -> void:
 			get_tree().create_timer(float(args["rain-delay"])).timeout.connect(world.set_rain.bind(float(args["rain"])))
 		else:
 			world.set_rain(float(args["rain"]), true)
+	if args.get("ab", "") == "B":
+		ABSwitch.toggle_all(get_tree())
 	if args.has("perf"):
 		_start_perf(args)
 	elif args.has("test"):

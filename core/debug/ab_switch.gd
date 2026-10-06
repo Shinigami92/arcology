@@ -3,6 +3,8 @@ extends Node3D
 ## Holds two variants of an asset as children "A" and "B" in the same spot and
 ## shows one at a time, for blind comparisons in the headset (see ABPanel).
 ## The hidden variant is also disabled, so its collision leaves the world.
+## Subclasses compare something else by overriding [method _apply_variant]
+## (e.g. [ABEnvironment]).
 
 const GROUP := "ab_switch"
 
@@ -17,8 +19,11 @@ func _ready() -> void:
 
 func set_variant(value: String) -> void:
 	variant = value
-	if not is_inside_tree():
-		return
+	if is_inside_tree():
+		_apply_variant()
+
+
+func _apply_variant() -> void:
 	for name in ["A", "B"]:
 		var child := get_node_or_null(name) as Node3D
 		if child:

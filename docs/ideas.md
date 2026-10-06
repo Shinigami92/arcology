@@ -41,7 +41,8 @@ Inspirations: The Fifth Element (Korben Dallas's apartment block, flying traffic
 - [later] Impact sounds per surface: a falling or thrown object sounds different on vinyl, carpet (muffled), concrete and furniture. Needs a surface tag on static bodies (e.g. a group or metadata per floor material, set by the apartment generator) that `ImpactSound` looks up on contact, plus sound sets per object and surface.
 - [later] Door hardware: levers press down while grabbed (latch: the door opens only with the lever down), bathroom thumb-turn and entrance deadbolt lock the door, smart-lock LED red/green; latch and deadbolt sounds. The glbs already have the levers and turns as separate parts on their axes (D-035).
 - [later] Ceiling trim: maybe a shadow gap with an LED strip. Bathroom wall finish (tiles or a wet-room skirting).
-- [later] Live reflections: a cheaper pass (skip small props via a render layer), a curved magnifier (today a planar zoom), rain and steam on the mirror and the shower screen (D-049).
+- [later] Live reflections: a cheaper pass (skip small props via a render layer), a curved magnifier (today a planar zoom), rain and steam on the mirror and the shower screen (D-049). By day every reflection viewport renders the sun's shadow map again (D-052): the light's `shadow_caster_mask` could keep small props out of it.
+- [?] Ray grabs for handles too: open doors, drawers and the fridge from afar with the controller ray (today the ray grabs pickables and presses buttons, D-054).
 - [M2] Physical light switches and dimmers per room, and/or a smart-home hub panel (could be the same in-world terminal as the world-state control panel).
 - [M2] Windows (D-033): tilt vent in the bedroom, motorized shades and smart-glass tint per room via a wall panel, HUD readout on the living room glass. Done on placeholders; the artist's frame/sash/panel glbs drop in by rerunning `tools/props/window.py`.
 - [M2] Window HUD: more readouts (news ticker, messages). It shows the world's time, temperature and weather (D-051).
@@ -124,7 +125,9 @@ New subagents when a phase starts (the user agreed to add or update agents whene
 - [M1] Scripted camera flythrough per zone that logs frame times and fails on budget regressions.
 - [later] Shader precompile helper, if a perf report ever shows pipeline compiles on dropped frames. The M1 hitches (8 frames up to 58 ms) turned out to come from the machine, not compiles (D-025); the XR Tools demo also hitched when first picking up the scoped rifle.
 - [later] Budget SubViewport cameras (scopes, mirrors, security monitors) explicitly.
-- [M2] Refresh the XR perf baseline with the avatar and occlusion culling: an XR perf run in the headset (the user), then the zone table in CLAUDE.md. The desktop baseline is current (2026-10-04, D-048: GPU p95 5.75 ms, 370 draw calls at peak).
+- [M2] Refresh the perf baselines with the avatar, occlusion culling, live reflections, the sun's shadows and the world terminal: an XR perf run in the headset (the user), then the zone table in CLAUDE.md; and a desktop run at night and by day (`--time=17 --weather=clear`) with SteamVR closed (it adds ~0.9 ms GPU to desktop runs, D-052), copied over `tools/perf/baselines/`.
+- [M2] Ambient occlusion budget (D-055): SSAO is on and the user wants it, but costs +1.8 ms GPU p95 on the desktop flythrough (8.2–8.4 ms, over 8.0), mostly from its normal buffer under MSAA 2x. Measure in XR; if over budget, bake AO into the static shell (generator surfaces or LightmapGI) and keep SSAO small for the furniture, or trade MSAA for another AA.
+- [later] Stagger the probe re-captures (one probe at a time instead of four for 8 frames) if a hitch shows at dawn or dusk (D-051).
 - [later] Faster interaction tests: with `--fixed-fps 90 --disable-vsync` the full suite takes ~17 s instead of ~87 s, but `HingeSwing`/`SliderSwing` measure release speed with the real clock (`Time.get_ticks_usec`); move them and the tests' throws onto engine time first. Waiting until things stop moving instead of fixed frame counts would save another ~13 s.
 
 ## Rejected or low priority
@@ -133,6 +136,7 @@ New subagents when a phase starts (the user agreed to add or update agents whene
 
 ## Done
 
+- Ambient occlusion (2026-10-06, D-055): SSAO in the world environment, blind headset A/B won clearly; radius 0.6 m after halos at 1.0 m by day. `ABEnvironment` A/Bs Environment settings with the same panel.
 - Ray presses and a deeper skyline (2026-10-05): every button can be pressed from afar by pointing the controller ray and pulling R1/R2 (snap and hover highlight); the world terminal floats in the living room window's left bay; a far skyline band out to 3.5 km (D-054).
 
 - World terminal and a city without a floor (2026-10-05): a holographic wall terminal sets time, clock speed, weather, rain and date by touch (D-053); the street plane is gone, the towers reach down into the haze with lit windows fading in the depth, deep traffic lanes below the window.

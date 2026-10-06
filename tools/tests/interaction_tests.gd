@@ -58,6 +58,7 @@ func _registry() -> Array[Array]:
 		["variants", "spare_sofa", _test_spare_sofa],
 		["furniture", "bedroom", _test_bedrooms],
 		["switches", "ab_panel", _test_ab_panel],
+		["switches", "ab_environment", _test_ab_environment],
 		["avatar", "fingertips", _test_fingertips],
 		# Hand rig and arm IK share the posed hands, so they are one test.
 		["avatar", "hand_rig_arm_ik", _test_hand_rig],
@@ -66,6 +67,7 @@ func _registry() -> Array[Array]:
 		["avatar", "sit_pose", _test_sit_pose],
 		["avatar", "coat_springs", _test_coat_springs],
 		["avatar", "eyes", _test_avatar_eyes],
+		["avatar", "after_ssao", _test_avatar_after_ssao],
 		["switches", "lamp_switch", _test_lamp_switches],
 		["doors_fridge", "fridge_alarm", _test_fridge_alarm],
 		["wardrobe", "wardrobe_interior", _test_wardrobe_interior],
@@ -715,6 +717,24 @@ func _test_ab_panel() -> void:
 			"variant before %s, after one press %s (old one disabled %s), after a second press %s" % [before, first, old_disabled, second])
 
 
+## An Environment A/B: flipping every switch applies the other variant's
+## properties to the world's environment; flipping back restores them.
+func _test_ab_environment() -> void:
+	var env: Environment = (_main.get_node("Skyline/WorldEnvironment") as WorldEnvironment).environment
+	var sw := ABEnvironment.new()
+	sw.a = {"ssr_enabled": false, "ssr_max_steps": 64.0}
+	sw.b = {"ssr_enabled": true, "ssr_max_steps": 8.0}
+	_main.add_child(sw)
+	var on_a := not env.ssr_enabled and env.ssr_max_steps == 64
+	ABSwitch.toggle_all(get_tree())
+	var on_b := env.ssr_enabled and env.ssr_max_steps == 8 and sw.variant == "B"
+	ABSwitch.toggle_all(get_tree())
+	var back := not env.ssr_enabled and env.ssr_max_steps == 64 and sw.variant == "A"
+	sw.free()
+	_check("ab_environment", on_a and on_b and back,
+			"A applied %s, B applied %s, back to A %s" % [on_a, on_b, back])
+
+
 ## A small area on the Player Hands layer, like the rig's fingertips.
 func _dummy_fingertip() -> Area3D:
 	var tip := Area3D.new()
@@ -745,6 +765,35 @@ func _test_fingertips() -> void:
 ## in front of the face; a target far to the side turns them only to their
 ## limit; facing the bathroom mirror they look at their own image (eye
 ## contact, so the reflection looks back); the lids close on request.
+## The player's own meshes draw after SSAO (transparent pass, no halos around
+## the hands, D-055) and still cast shadows through a shadow-only copy each.
+func _test_avatar_after_ssao() -> void:
+	var skeleton := _avatar_skeleton("avatar_after_ssao")
+	if skeleton == null:
+		return
+	var problems: Array[String] = []
+	var visible := 0
+	for node in skeleton.get_children():
+		var mesh := node as MeshInstance3D
+		if mesh == null or mesh.name in ["HeadMesh", "Collar"] or (mesh.name as String).ends_with("Shadow"):
+			continue
+		visible += 1
+		var shadow := skeleton.get_node_or_null(NodePath(mesh.name + "Shadow")) as MeshInstance3D
+		if shadow == null or shadow.cast_shadow != GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY:
+			problems.append("%s: no shadow-only copy" % mesh.name)
+		if mesh.cast_shadow != GeometryInstance3D.SHADOW_CASTING_SETTING_OFF:
+			problems.append("%s casts shadows itself" % mesh.name)
+		for i in mesh.mesh.get_surface_count():
+			var mat := mesh.get_active_material(i) as BaseMaterial3D
+			if mat and (mat.transparency != BaseMaterial3D.TRANSPARENCY_ALPHA or mat.depth_draw_mode != BaseMaterial3D.DEPTH_DRAW_ALWAYS):
+				problems.append("%s surface %d is in the opaque pass" % [mesh.name, i])
+			var cast := shadow.get_active_material(i) as BaseMaterial3D if shadow else null
+			if cast and cast.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
+				problems.append("%sShadow surface %d is transparent (casts nothing)" % [mesh.name, i])
+	_check("avatar_after_ssao", visible > 0 and problems.is_empty(),
+			"%d first-person meshes; %s" % [visible, ", ".join(problems) if problems else "all after SSAO with shadow-only copies"])
+
+
 func _test_avatar_eyes() -> void:
 	var skeleton := _avatar_skeleton("avatar_eyes")
 	if skeleton == null:

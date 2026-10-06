@@ -7,7 +7,9 @@ extends Node3D
 ## from the hands, and puts the meshes in [member third_person_meshes] on the
 ## Third Person render layer, which the player's camera skips and reflections
 ## show (D-049): the head, and the collar, which crowds the view when looking
-## down. They still cast shadows.
+## down. They still cast shadows. The other meshes (what the player sees of
+## themself: arms, hands, coat, legs) draw after SSAO (D-055), see
+## [method _draw_after_ssao].
 ##
 ## Scene (written by tools/player/avatar.gd): AvatarBody -> Model (the glb) with
 ## BodyIK, AvatarEyes (gaze and lids, D-050), the AvatarSprings (coat, belt
@@ -18,6 +20,9 @@ const FINGERS: Array[StringName] = [&"Index", &"Middle", &"Ring", &"Thumb"]
 
 ## Meshes (node names under the skeleton) hidden from the player's own camera.
 @export var third_person_meshes: PackedStringArray = ["HeadMesh", "Collar"]
+## Draw the player's own meshes after SSAO, so the hands don't ring the wall
+## behind them with ambient occlusion halos (D-055).
+@export var draw_after_ssao := true
 ## The lashes' and brows' material among them, and its alpha cutoff.
 @export var lash_material := "SilenaLashes"
 @export var lash_alpha_threshold := 0.3
@@ -41,7 +46,33 @@ func _ready() -> void:
 		for node in find_children(mesh_name, "MeshInstance3D", true, false):
 			(node as MeshInstance3D).layers = PlanarReflection.LAYER_THIRD_PERSON
 			_soften_cards(node as MeshInstance3D)
+	if draw_after_ssao:
+		for node in find_children("*", "MeshInstance3D", true, false):
+			if not (node.name as String) in third_person_meshes:
+				_draw_after_ssao(node as MeshInstance3D)
 	_connect.call_deferred()
+
+
+## SSAO reads the depth prepass, which holds only opaque geometry: the player's
+## hands, always close to the eyes, darkened the wall half a meter behind them
+## in a ring. The visible mesh draws in the transparent pass (after SSAO) with
+## depth writes and stays solid (its textures carry no alpha), but transparent
+## materials cast no shadows: a shadow-only copy with the opaque materials casts
+## them (shadow-only meshes stay out of the depth prepass too). The body just
+## gets no SSAO of its own and doesn't occlude the room's.
+func _draw_after_ssao(mesh: MeshInstance3D) -> void:
+	var shadow := mesh.duplicate() as MeshInstance3D
+	shadow.name = mesh.name + "Shadow"
+	shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+	mesh.add_sibling(shadow)
+	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	for i in mesh.mesh.get_surface_count():
+		var mat := mesh.get_active_material(i) as BaseMaterial3D
+		if mat:
+			mat = mat.duplicate() as BaseMaterial3D
+			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_ALWAYS
+			mesh.set_surface_override_material(i, mat)
 
 
 ## Lashes and brows are alpha-scissor cards: thin strands lose their coverage

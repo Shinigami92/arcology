@@ -91,6 +91,7 @@ SCENES = {
 }
 SEAT_SCRIPT = "res://core/interaction/seat.gd"
 AB_SCRIPT = "res://core/debug/ab_switch.gd"
+AB_ENVIRONMENT_SCRIPT = "res://core/debug/ab_environment.gd"
 
 boxes = []  # (group, name, center, size, material, collide)
 
@@ -247,6 +248,12 @@ INSTANCES = [
 # Blind A/B pairs (core/debug/ab_switch.gd): name, scene A, scene B, position, rotation.
 # Add an ABPanel (assets/props/ab_panel) to INSTANCES to flip them. Empty outside an A/B test (D-030, D-032).
 AB_INSTANCES = []
+# Blind A/B of Environment settings (core/debug/ab_environment.gd), flipped by the same
+# ABPanel: node name under Lighting, properties for A, properties for B.
+# Empty outside an A/B test; e.g. ("AmbientOcclusionAB", {"ssao_radius": 0.6}, {"ssao_radius": 1.0})
+# (D-055). Flip it with an ABPanel (SCENES "ab_panel": res://assets/props/ab_panel/ab_panel.tscn) in
+# INSTANCES, e.g. on the living room's west wall at (-3.0, 1.25, 0.5), rotated (0, 90, 0).
+AB_ENVIRONMENT = []
 
 # Seats: name, area center, area size, sit eye point, sit yaw, stand point, stand yaw, prompt pos
 # Sit points are the avatar's seated eye height: seat surface + 0.83 m (hip joint
@@ -410,6 +417,13 @@ def color(t):
     return "Color(%s, 1)" % ", ".join(f"{c:g}" for c in t)
 
 
+def gd_dict(d):
+    """A flat dict of str -> bool/number as a Godot Dictionary literal."""
+    def value(v):
+        return ("true" if v else "false") if isinstance(v, bool) else repr(float(v))
+    return "{" + ", ".join(f'"{k}": {value(v)}' for k, v in d.items()) + "}"
+
+
 def main():
     ext, subs, nodes, ids = [], [], [], {}
 
@@ -430,6 +444,8 @@ def main():
         add_ext("skirting", "PackedScene", "res://" + SKIRTING_GLB)
     if AB_INSTANCES:
         add_ext("ab", "Script", AB_SCRIPT)
+    if AB_ENVIRONMENT:
+        add_ext("ab_environment", "Script", AB_ENVIRONMENT_SCRIPT)
 
     sizes = {}
     all_sizes = [b[3] for b in boxes] + [b[5][1] for b in boxes if isinstance(b[5], tuple)]
@@ -565,6 +581,10 @@ def main():
                  f"lights = [{paths(DAYLIGHT_DIMMED)}]\nfixtures = [{paths('../' + f for f in DAYLIGHT_FIXTURES)}]\n"
                  f"probes = [{paths(DAYLIGHT_PROBES)}]\n"
                  'metadata/_doc = "Dims the lights of the rooms with windows by day and re-captures the probes as the daylight changes (D-051)."\n')
+    for name, values_a, values_b in AB_ENVIRONMENT:
+        nodes.append(f'[node name="{name}" type="Node3D" parent="Lighting"]\n'
+                     f'script = ExtResource("{ids["ab_environment"]}")\n'
+                     f"a = {gd_dict(values_a)}\nb = {gd_dict(values_b)}\n")
 
     nodes.append('[node name="Entries" type="Node3D" parent="."]\n')
     for name, pos, yaw in ENTRIES:

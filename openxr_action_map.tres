@@ -154,12 +154,6 @@ localized_name = "Interact"
 action_type = 0
 toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
 
-[sub_resource type="OpenXRAction" id="OpenXRAction_arc_ui_press"]
-resource_name = "ui_press"
-localized_name = "Press the pointed button"
-action_type = 0
-toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
-
 [sub_resource type="OpenXRAction" id="OpenXRAction_arc_recenter"]
 resource_name = "recenter"
 localized_name = "Recenter"
@@ -208,6 +202,12 @@ toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
 [sub_resource type="OpenXRAction" id="OpenXRAction_arc_finger_thumb_click"]
 resource_name = "finger_thumb_click"
 localized_name = "Thumb press"
+action_type = 0
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_arc_ui_press"]
+resource_name = "ui_press"
+localized_name = "Press the pointed button"
 action_type = 0
 toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
 
@@ -279,102 +279,6 @@ binding_path = "/user/hand/left/input/select/click"
 [sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_simple_controller_1"]
 action = SubResource("OpenXRAction_arc_ui_press")
 binding_path = "/user/hand/right/input/select/click"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_vive_controller_0"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/left/input/trigger/click"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_vive_controller_1"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/right/input/trigger/click"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_motion_controller_0"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/left/input/trigger/value"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_motion_controller_1"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/right/input/trigger/value"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_touch_controller_0"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/left/input/trigger/value"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_touch_controller_1"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/right/input/trigger/value"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_pico_neo3_controller_0"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/left/input/trigger/value"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_pico_neo3_controller_1"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/right/input/trigger/value"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_index_controller_0"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/left/input/trigger/click"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_index_controller_1"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/right/input/trigger/click"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_mixed_reality_controller_0"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/left/input/trigger/value"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_mixed_reality_controller_1"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/right/input/trigger/value"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_odyssey_controller_0"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/left/input/trigger/value"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_odyssey_controller_1"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/right/input/trigger/value"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_vive_cosmos_controller_0"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/left/input/trigger/click"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_vive_cosmos_controller_1"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/right/input/trigger/click"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_vive_focus3_controller_0"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/left/input/trigger/click"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_vive_focus3_controller_1"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/right/input/trigger/click"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_pico4_controller_0"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/left/input/trigger/value"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_pico4_controller_1"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/right/input/trigger/value"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_frame_controller_valve_0"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/left/input/bumper/click"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_frame_controller_valve_1"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/left/input/trigger/click"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_frame_controller_valve_2"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/right/input/bumper/click"
-
-[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_frame_controller_valve_3"]
-action = SubResource("OpenXRAction_arc_ui_press")
-binding_path = "/user/hand/right/input/trigger/click"
 
 [sub_resource type="OpenXRInteractionProfile" id="OpenXRInteractionProfile_q4jv5"]
 interaction_profile_path = "/interaction_profiles/khr/simple_controller"
@@ -491,6 +395,14 @@ binding_path = "/user/hand/left/output/haptic"
 [sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_6o0wr"]
 action = SubResource("OpenXRAction_tbcxk")
 binding_path = "/user/hand/right/output/haptic"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_vive_controller_0"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/left/input/trigger/click"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_vive_controller_1"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/right/input/trigger/click"
 
 [sub_resource type="OpenXRInteractionProfile" id="OpenXRInteractionProfile_gh0s5"]
 interaction_profile_path = "/interaction_profiles/htc/vive_controller"
@@ -615,6 +527,14 @@ binding_path = "/user/hand/left/output/haptic"
 [sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_kooyb"]
 action = SubResource("OpenXRAction_tbcxk")
 binding_path = "/user/hand/right/output/haptic"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_motion_controller_0"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/left/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_motion_controller_1"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/right/input/trigger/value"
 
 [sub_resource type="OpenXRInteractionProfile" id="OpenXRInteractionProfile_hk3uy"]
 interaction_profile_path = "/interaction_profiles/microsoft/motion_controller"
@@ -852,6 +772,14 @@ binding_path = "/user/hand/left/input/thumbstick/click"
 action = SubResource("OpenXRAction_arc_finger_thumb_click")
 binding_path = "/user/hand/right/input/thumbstick/click"
 
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_touch_controller_0"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/left/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_touch_controller_1"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/right/input/trigger/value"
+
 [sub_resource type="OpenXRInteractionProfile" id="OpenXRInteractionProfile_ci0m3"]
 interaction_profile_path = "/interaction_profiles/oculus/touch_controller"
 bindings = [SubResource("OpenXRIPBinding_51qre"), SubResource("OpenXRIPBinding_fncxp"), SubResource("OpenXRIPBinding_qi50k"), SubResource("OpenXRIPBinding_h5icu"), SubResource("OpenXRIPBinding_b1sv6"), SubResource("OpenXRIPBinding_yu2t6"), SubResource("OpenXRIPBinding_labib"), SubResource("OpenXRIPBinding_altuc"), SubResource("OpenXRIPBinding_7p0fp"), SubResource("OpenXRIPBinding_yjnix"), SubResource("OpenXRIPBinding_pgh0x"), SubResource("OpenXRIPBinding_lplyu"), SubResource("OpenXRIPBinding_ifnya"), SubResource("OpenXRIPBinding_jl4vo"), SubResource("OpenXRIPBinding_1n6j6"), SubResource("OpenXRIPBinding_o1nfs"), SubResource("OpenXRIPBinding_unnrh"), SubResource("OpenXRIPBinding_3wafl"), SubResource("OpenXRIPBinding_tjb53"), SubResource("OpenXRIPBinding_lcg2b"), SubResource("OpenXRIPBinding_sp6l2"), SubResource("OpenXRIPBinding_xj6ir"), SubResource("OpenXRIPBinding_igmf3"), SubResource("OpenXRIPBinding_inw5v"), SubResource("OpenXRIPBinding_iy2wq"), SubResource("OpenXRIPBinding_plu03"), SubResource("OpenXRIPBinding_dad45"), SubResource("OpenXRIPBinding_m5e8q"), SubResource("OpenXRIPBinding_5t7jh"), SubResource("OpenXRIPBinding_chplt"), SubResource("OpenXRIPBinding_obxrh"), SubResource("OpenXRIPBinding_on7oi"), SubResource("OpenXRIPBinding_ege4h"), SubResource("OpenXRIPBinding_h7ix0"), SubResource("OpenXRIPBinding_8qanm"), SubResource("OpenXRIPBinding_3senm"), SubResource("OpenXRIPBinding_arc_touch_1"), SubResource("OpenXRIPBinding_arc_touch_2"), SubResource("OpenXRIPBinding_arc_touch_3"), SubResource("OpenXRIPBinding_arc_touch_4"), SubResource("OpenXRIPBinding_arc_finger_touch_1"), SubResource("OpenXRIPBinding_arc_finger_touch_2"), SubResource("OpenXRIPBinding_arc_finger_touch_3"), SubResource("OpenXRIPBinding_arc_finger_touch_4"), SubResource("OpenXRIPBinding_arc_finger_touch_5"), SubResource("OpenXRIPBinding_arc_finger_touch_6"), SubResource("OpenXRIPBinding_arc_finger_touch_7"), SubResource("OpenXRIPBinding_arc_finger_touch_8"), SubResource("OpenXRIPBinding_arc_finger_touch_9"), SubResource("OpenXRIPBinding_arc_finger_touch_10"), SubResource("OpenXRIPBinding_arc_finger_touch_11"), SubResource("OpenXRIPBinding_arc_finger_touch_12"), SubResource("OpenXRIPBinding_arc_finger_touch_13"), SubResource("OpenXRIPBinding_arc_finger_touch_14"), SubResource("OpenXRIPBinding_arc_finger_touch_15"), SubResource("OpenXRIPBinding_arc_finger_touch_16"), SubResource("OpenXRIPBinding_arc_finger_touch_17"), SubResource("OpenXRIPBinding_arc_finger_touch_18"), SubResource("OpenXRIPBinding_arc_ui_touch_controller_0"), SubResource("OpenXRIPBinding_arc_ui_touch_controller_1")]
@@ -1007,6 +935,14 @@ binding_path = "/user/hand/left/output/haptic"
 [sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_32kw4"]
 action = SubResource("OpenXRAction_tbcxk")
 binding_path = "/user/hand/right/output/haptic"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_pico_neo3_controller_0"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/left/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_pico_neo3_controller_1"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/right/input/trigger/value"
 
 [sub_resource type="OpenXRInteractionProfile" id="OpenXRInteractionProfile_8ffkv"]
 interaction_profile_path = "/interaction_profiles/bytedance/pico_neo3_controller"
@@ -1268,6 +1204,14 @@ binding_path = "/user/hand/left/input/thumbstick/click"
 action = SubResource("OpenXRAction_arc_finger_thumb_click")
 binding_path = "/user/hand/right/input/thumbstick/click"
 
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_index_controller_0"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/left/input/trigger/click"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_index_controller_1"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/right/input/trigger/click"
+
 [sub_resource type="OpenXRInteractionProfile" id="OpenXRInteractionProfile_s65fn"]
 interaction_profile_path = "/interaction_profiles/valve/index_controller"
 bindings = [SubResource("OpenXRIPBinding_ktbxl"), SubResource("OpenXRIPBinding_8ldfe"), SubResource("OpenXRIPBinding_nueak"), SubResource("OpenXRIPBinding_vopyr"), SubResource("OpenXRIPBinding_rgbyv"), SubResource("OpenXRIPBinding_bflds"), SubResource("OpenXRIPBinding_pueci"), SubResource("OpenXRIPBinding_jn5l0"), SubResource("OpenXRIPBinding_44ra8"), SubResource("OpenXRIPBinding_bh82f"), SubResource("OpenXRIPBinding_7b312"), SubResource("OpenXRIPBinding_ajt26"), SubResource("OpenXRIPBinding_grl1h"), SubResource("OpenXRIPBinding_dlpx3"), SubResource("OpenXRIPBinding_s4h6a"), SubResource("OpenXRIPBinding_0njdn"), SubResource("OpenXRIPBinding_xtpgr"), SubResource("OpenXRIPBinding_sm8ja"), SubResource("OpenXRIPBinding_fyyqw"), SubResource("OpenXRIPBinding_6yfaw"), SubResource("OpenXRIPBinding_x7rhh"), SubResource("OpenXRIPBinding_8cuio"), SubResource("OpenXRIPBinding_v0kom"), SubResource("OpenXRIPBinding_v1men"), SubResource("OpenXRIPBinding_qujgh"), SubResource("OpenXRIPBinding_8xxre"), SubResource("OpenXRIPBinding_jceb4"), SubResource("OpenXRIPBinding_lvl5r"), SubResource("OpenXRIPBinding_2juyq"), SubResource("OpenXRIPBinding_c1fap"), SubResource("OpenXRIPBinding_34k6i"), SubResource("OpenXRIPBinding_biq8g"), SubResource("OpenXRIPBinding_7rnxc"), SubResource("OpenXRIPBinding_go0kb"), SubResource("OpenXRIPBinding_psf6i"), SubResource("OpenXRIPBinding_q7kgi"), SubResource("OpenXRIPBinding_ggehc"), SubResource("OpenXRIPBinding_8isuk"), SubResource("OpenXRIPBinding_l36rf"), SubResource("OpenXRIPBinding_7xtpc"), SubResource("OpenXRIPBinding_lxj72"), SubResource("OpenXRIPBinding_ipsea"), SubResource("OpenXRIPBinding_arc_index_5"), SubResource("OpenXRIPBinding_arc_index_6"), SubResource("OpenXRIPBinding_arc_index_7"), SubResource("OpenXRIPBinding_arc_index_8"), SubResource("OpenXRIPBinding_arc_finger_index_1"), SubResource("OpenXRIPBinding_arc_finger_index_2"), SubResource("OpenXRIPBinding_arc_finger_index_3"), SubResource("OpenXRIPBinding_arc_finger_index_4"), SubResource("OpenXRIPBinding_arc_finger_index_5"), SubResource("OpenXRIPBinding_arc_finger_index_6"), SubResource("OpenXRIPBinding_arc_finger_index_7"), SubResource("OpenXRIPBinding_arc_finger_index_8"), SubResource("OpenXRIPBinding_arc_finger_index_9"), SubResource("OpenXRIPBinding_arc_finger_index_10"), SubResource("OpenXRIPBinding_arc_finger_index_11"), SubResource("OpenXRIPBinding_arc_finger_index_12"), SubResource("OpenXRIPBinding_arc_finger_index_13"), SubResource("OpenXRIPBinding_arc_finger_index_14"), SubResource("OpenXRIPBinding_arc_finger_index_15"), SubResource("OpenXRIPBinding_arc_finger_index_16"), SubResource("OpenXRIPBinding_arc_finger_index_17"), SubResource("OpenXRIPBinding_arc_finger_index_18"), SubResource("OpenXRIPBinding_arc_ui_index_controller_0"), SubResource("OpenXRIPBinding_arc_ui_index_controller_1")]
@@ -1383,6 +1327,14 @@ binding_path = "/user/hand/left/output/haptic"
 [sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_txme2"]
 action = SubResource("OpenXRAction_tbcxk")
 binding_path = "/user/hand/right/output/haptic"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_mixed_reality_controller_0"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/left/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_mixed_reality_controller_1"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/right/input/trigger/value"
 
 [sub_resource type="OpenXRInteractionProfile" id="OpenXRInteractionProfile_7w34y"]
 interaction_profile_path = "/interaction_profiles/hp/mixed_reality_controller"
@@ -1508,6 +1460,14 @@ binding_path = "/user/hand/left/output/haptic"
 action = SubResource("OpenXRAction_tbcxk")
 binding_path = "/user/hand/right/output/haptic"
 
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_odyssey_controller_0"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/left/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_odyssey_controller_1"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/right/input/trigger/value"
+
 [sub_resource type="OpenXRInteractionProfile" id="OpenXRInteractionProfile_a7xw5"]
 interaction_profile_path = "/interaction_profiles/samsung/odyssey_controller"
 bindings = [SubResource("OpenXRIPBinding_nudtj"), SubResource("OpenXRIPBinding_2a6v2"), SubResource("OpenXRIPBinding_jhul1"), SubResource("OpenXRIPBinding_hpd1k"), SubResource("OpenXRIPBinding_7djuc"), SubResource("OpenXRIPBinding_rlsjo"), SubResource("OpenXRIPBinding_ad82e"), SubResource("OpenXRIPBinding_053t8"), SubResource("OpenXRIPBinding_3y48y"), SubResource("OpenXRIPBinding_eqmbe"), SubResource("OpenXRIPBinding_lml5w"), SubResource("OpenXRIPBinding_bw6yn"), SubResource("OpenXRIPBinding_rmtug"), SubResource("OpenXRIPBinding_got3w"), SubResource("OpenXRIPBinding_cfhcx"), SubResource("OpenXRIPBinding_wuspj"), SubResource("OpenXRIPBinding_j7v05"), SubResource("OpenXRIPBinding_a0qeh"), SubResource("OpenXRIPBinding_hop5q"), SubResource("OpenXRIPBinding_wi6q4"), SubResource("OpenXRIPBinding_0x121"), SubResource("OpenXRIPBinding_pxanv"), SubResource("OpenXRIPBinding_ylsgs"), SubResource("OpenXRIPBinding_lyc6f"), SubResource("OpenXRIPBinding_t1gg6"), SubResource("OpenXRIPBinding_u2vet"), SubResource("OpenXRIPBinding_gh4ss"), SubResource("OpenXRIPBinding_1olwi"), SubResource("OpenXRIPBinding_t23ty"), SubResource("OpenXRIPBinding_eusi4"), SubResource("OpenXRIPBinding_arc_ui_odyssey_controller_0"), SubResource("OpenXRIPBinding_arc_ui_odyssey_controller_1")]
@@ -1627,6 +1587,14 @@ binding_path = "/user/hand/left/output/haptic"
 [sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_pm24r"]
 action = SubResource("OpenXRAction_tbcxk")
 binding_path = "/user/hand/right/output/haptic"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_vive_cosmos_controller_0"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/left/input/trigger/click"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_vive_cosmos_controller_1"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/right/input/trigger/click"
 
 [sub_resource type="OpenXRInteractionProfile" id="OpenXRInteractionProfile_rsga2"]
 interaction_profile_path = "/interaction_profiles/htc/vive_cosmos_controller"
@@ -1763,6 +1731,14 @@ binding_path = "/user/hand/left/output/haptic"
 [sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_awtpp"]
 action = SubResource("OpenXRAction_tbcxk")
 binding_path = "/user/hand/right/output/haptic"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_vive_focus3_controller_0"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/left/input/trigger/click"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_vive_focus3_controller_1"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/right/input/trigger/click"
 
 [sub_resource type="OpenXRInteractionProfile" id="OpenXRInteractionProfile_t3axk"]
 interaction_profile_path = "/interaction_profiles/htc/vive_focus3_controller"
@@ -1987,6 +1963,14 @@ binding_path = "/user/hand/right/input/b/click"
 [sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_kby14"]
 action = SubResource("OpenXRAction_cjtwq")
 binding_path = "/user/hand/right/input/b/touch"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_pico4_controller_0"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/left/input/trigger/value"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_pico4_controller_1"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/right/input/trigger/value"
 
 [sub_resource type="OpenXRInteractionProfile" id="OpenXRInteractionProfile_1qtbb"]
 interaction_profile_path = "/interaction_profiles/bytedance/pico4_controller"
@@ -2223,6 +2207,22 @@ binding_path = "/user/hand/left/input/thumbstick/click"
 [sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_finger_frame_22"]
 action = SubResource("OpenXRAction_arc_finger_thumb_click")
 binding_path = "/user/hand/right/input/thumbstick/click"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_frame_controller_valve_0"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/left/input/bumper/click"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_frame_controller_valve_1"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/left/input/trigger/click"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_frame_controller_valve_2"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/right/input/bumper/click"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_arc_ui_frame_controller_valve_3"]
+action = SubResource("OpenXRAction_arc_ui_press")
+binding_path = "/user/hand/right/input/trigger/click"
 
 [sub_resource type="OpenXRInteractionProfile" id="OpenXRInteractionProfile_arc_frame"]
 interaction_profile_path = "/interaction_profiles/valve/frame_controller_valve"
