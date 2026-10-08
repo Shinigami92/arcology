@@ -23,6 +23,7 @@ from arcology_blender.surface import seam_ratio  # noqa: E402
 LIMITS = {
     "vinyl_plank": (0.45, (0.36, 0.66), 1.2),
     "carpet": (0.40, (0.88, 1.0), 1.2),
+    "carpet_tiles": (0.40, (0.85, 0.96), 1.2),
     "polished_concrete": (0.35, (0.17, 0.46), 1.2),
     "wall_plaster": (0.715, (0.72, 0.88), 1.2),
     "ceiling_plaster": (0.715, (0.84, 0.95), 1.2),

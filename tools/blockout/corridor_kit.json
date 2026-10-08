@@ -1,0 +1,44 @@
+{
+	"_doc": "Corridor kit contract (D-060): what blender-artist builds for floor 44's corridor and how tools/blockout/corridor.py places it. Godot coordinates (Y up, -Z forward), meters. Each glb's origin and facing are given below; the generator relies on them. Placeholders (Godot boxes) stand in until a glb exists.",
+	"carpet": {
+		"_doc": "Hotel carpet tiles, a surface set like blender/surfaces (D-035): seamless, mapped in world space by world_surface.gdshader. 50 cm loop-pile tiles, quarter-turned (each tile's pile direction rotated 90 degrees from its neighbors, so tiles read individually), muted teal and charcoal pattern (a quiet geometric or linear motif, not loud), faint seams, slight per-tile tone variation. Matte (roughness 0.85-0.95), no metal.",
+		"name": "carpet_tiles",
+		"size": 2048,
+		"tile_m": 4.0,
+		"out": "assets/materials/surfaces/carpet_tiles/carpet_tiles_{albedo,normal,orm}.png"
+	},
+	"trim": {
+		"_doc": "Wall wainscot swept along the runs in tools/blockout/corridor_trim.json (same format as apartment_skirting.json, written by corridor.py: polylines at floor level, a normal per segment pointing into the corridor). One glb for the whole corridor, like the apartment's skirting (D-036). Profile, back on the wall plane: a skirting band 0..0.10 m, the panel field 0.10..1.00 m (charcoal/anthracite laminate or fabric-wrapped acoustic panel, vertical V-joints every 1.2 m along each run, measured from the run start), a rail cap 1.00..1.05 m (brushed dark bronze or steel) and right under the cap an LED reveal facing down and out (a 1 cm slot whose inner face uses material `corridor_led`: emissive, the generator sets its color). Depth off the wall: 0.025 m (panel), 0.035 m (rail). Run ends are closed (end caps), outside corners mitered.",
+		"glb": "assets/architecture/corridor/corridor_trim.glb",
+		"height": 1.05,
+		"depth": 0.035,
+		"panel_joint_m": 1.2,
+		"led_material": "corridor_led"
+	},
+	"ceiling_light": {
+		"_doc": "Recessed linear LED fixture, flush in the ceiling. Origin at the ceiling plane, centered; the fixture hangs below it (-Y), at most 0.03 m. Long axis along local X. Trim frame (white or dark metal) and a diffuser whose material is `corridor_light_diffuser` (emissive; the generator scales it with the lights).",
+		"glb": "assets/architecture/corridor/corridor_light.glb",
+		"size": [1.2, 0.03, 0.18]
+	},
+	"vent": {
+		"_doc": "Linear slot diffuser (ventilation) in the ceiling. Origin at the ceiling plane, centered, below it at most 0.02 m. Long axis along local X. Dark slots, metal frame.",
+		"glb": "assets/architecture/corridor/corridor_vent.glb",
+		"size": [0.9, 0.02, 0.12]
+	},
+	"exit_sign": {
+		"_doc": "Back-lit emergency exit sign over the stairs door (physical, not a hologram): a slim box, the face shows the green running-man pictogram, an arrow-free 'EXIT' and a small invented-kanji line under it (style guide: bilingual). Face material `exit_sign_face` (emissive, green #2BE07A on white/near-white). Origin at the back's center on the wall plane; the face looks along +Z; mounted by the generator with its center 2.35 m above the floor.",
+		"glb": "assets/architecture/corridor/exit_sign.glb",
+		"size": [0.36, 0.16, 0.05]
+	},
+	"holo_emitter": {
+		"_doc": "Small projector a hologram floats from (the generator draws the hologram). A round puck with a dark glass lens and a thin cyan ring (material `holo_emitter_ring`, emissive). Origin at the mounting face's center; the lens looks along -Y (ceiling mount; the generator rotates it for walls).",
+		"glb": "assets/architecture/corridor/holo_emitter.glb",
+		"size": [0.09, 0.035, 0.09]
+	},
+	"budgets": {
+		"_doc": "Whole kit in view at once stays well under the corridor budget (600 draw calls). One material per glb where possible; textures 1024 for small parts, the trim may use 2048 (it's long).",
+		"trim_tris": 40000,
+		"small_part_tris": 2000,
+		"surface_px": 2048
+	}
+}

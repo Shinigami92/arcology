@@ -87,7 +87,7 @@ The user's long-term direction (2026-10-04). Too big for one session: each phase
 ### Phase 1: our own building
 
 - [M3] The arcology we live in as a real building: its exterior shell (seen later from outside and from the transit), its floor plan, and the stack of floors as modular, generated parts (one floor in full, the others as shells).
-- [M3] Outer hallway behind the entrance door: blockout done (D-059): side corridor from a facade window past our door (4417) and two neighbors, main corridor with four more units, service and stairs doors, an elevator lobby with two (static) elevators, Label3D signs. Next: real geometry and materials (an `environment-artist` agent: wall panels, ceiling, lighting fixtures, skirting, the window's frame glbs), sounds (corridor hum, footsteps on its floor), signs from the world directory.
+- [M3] Outer hallway behind the entrance door: blockout done (D-059): side corridor from a facade window past our door (4417) and two neighbors, main corridor with four more units, service and stairs doors, an elevator lobby with two (static) elevators, Label3D signs. Dressed (D-060): carpet tiles, wainscot, fixtures, holographic wayfinding, floor guide lights. Still to do: the end window's frame glbs (the window spec `corridor_end`), sounds (corridor hum, footsteps on carpet), signs from the world directory, the corridor's other floors.
 - [M3] Elevator: call button, doors, a cabin that rides 180 m down; the ride is the streaming delay. Floor buttons for later floors.
 - [M3] Lobby at street level (y = -180): concierge desk, mailboxes, security gates, the exit doors.
 - [M3] Persistence: object state across zones, save/load.
@@ -138,6 +138,7 @@ New subagents when a phase starts (the user agreed to add or update agents whene
 
 ## Done
 
+- Corridor dressing (2026-10-08, D-060): hotel carpet tiles, anthracite wainscot with a cyan LED reveal, slim ceiling fixtures and vents, a back-lit exit sign, holographic wayfinding signs with running chevrons, floor guide lights pulsing toward the elevators.
 - Zone streaming and the corridor (2026-10-08, D-059): floor 44's corridor streams in behind the entrance door (the vestibule is gone); the door waits for it with an amber LED; a zone the player isn't in is only drawn through an open door or the peephole (from the corridor: 846 → 186 draw calls); tests `zones`, `--perf-reload`, `--load-depth`.
 - Ambient occlusion (2026-10-06, D-055): SSAO in the world environment, blind headset A/B won clearly; radius 0.6 m after halos at 1.0 m by day. `ABEnvironment` A/Bs Environment settings with the same panel.
 - Ray presses and a deeper skyline (2026-10-05): every button can be pressed from afar by pointing the controller ray and pulling R1/R2 (snap and hover highlight); the world terminal floats in the living room window's left bay; a far skyline band out to 3.5 km (D-054).

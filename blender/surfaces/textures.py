@@ -1,4 +1,4 @@
-"""The five surface recipes (numpy, deterministic). Each takes (size, tile_m, seed) and
+"""The surface recipes (numpy, deterministic). Each takes (size, tile_m, seed) and
 returns linear `albedo` (h, w, 3), `height` (m), `rough`, `metal`, `ao` (extra
 occlusion multiplied with the cavity AO) and the cavity settings; build.py turns
 height into the normal map and AO and writes the PNGs.
@@ -173,6 +173,119 @@ def carpet(size, tile_m, seed):
                 ao=np.ones((size, size)), cavity=(1.6, 0.00035, 0.35), px_m=px_m)
 
 
+# --- carpet tiles ------------------------------------------------------------------------------
+def carpet_tiles(size, tile_m, seed):
+    """Commercial loop-pile carpet tiles, 50 cm, quarter-turned (hotel corridors):
+    a quiet linear strie of charcoal and slate with grouped muted-teal bands, the
+    same design on every tile but each tile turned 90 degrees from its neighbors,
+    so the lines and the loop rows run alternately along U and V. Space-dyed yarn
+    breaks the lines up, the teal yarn sits a little lower (multi-level loop),
+    every tile has its own dye-lot tone, the cut edges leave faint seams. Matte.
+
+    The tile grid is shifted half a tile so the texture border falls mid-tile
+    (seams at 0.25 + 0.5 k m in world space): the seam check then compares like
+    with like."""
+    px_m = tile_m / size
+    tile_px = 0.5 / px_m                                  # 256 px at 2048 / 4 m
+    n_t = round(tile_m / 0.5)
+    rr, cc = np.mgrid[0:size, 0:size].astype(np.float64)
+    gu, gv = cc + 0.5 + tile_px / 2, rr + 0.5 + tile_px / 2
+    ti = np.floor(gu / tile_px).astype(np.int64) % n_t
+    tj = np.floor(gv / tile_px).astype(np.int64) % n_t
+    lu, lv = np.mod(gu, tile_px), np.mod(gv, tile_px)    # pixels inside the tile
+    turned = ((ti + tj) % 2 == 1)
+    a = np.where(turned, lv, lu)                         # along the lines / loop rows
+    b = np.where(turned, tile_px - lu, lv)               # across them
+    tid = tj * n_t + ti
+    rng = np.random.default_rng(seed + 1)
+    nt = n_t * n_t
+
+    def along(size_a, size_b, s):
+        """Streaky field running along each tile's own direction."""
+        fu = oriented_noise(size, size, size_a, size_b, 0.0, s)
+        fv = oriented_noise(size, size, size_a, size_b, 90.0, s + 1)
+        return np.where(turned, fv, fu)
+
+    # --- the design (same on every tile, in mm across b) ---
+    bm = b * px_m * 1000.0
+    wob = along(60.0, 6.0, seed + 2) * 1.2                # lines wander a little (mm)
+    x = bm + wob
+    teal = np.zeros((size, size))
+    slate = np.zeros((size, size))
+    accent = np.zeros((size, size))
+    lay = np.random.default_rng(seed + 3)
+    for g in range(4):                                     # four band groups per tile, 125 mm apart
+        c0 = 62.5 + 125.0 * g + lay.uniform(-14.0, 14.0)
+        wt = lay.uniform(10.0, 18.0)
+        teal = np.maximum(teal, 1 - smoothstep(np.abs(x - c0), wt / 2 - 2.0, wt / 2 + 2.0))
+        for side in (-1, 1):                               # slate lines flanking the band
+            off = wt / 2 + lay.uniform(7.0, 16.0)
+            ws = lay.uniform(4.5, 8.0)
+            slate = np.maximum(slate, 1 - smoothstep(np.abs(x - (c0 + side * off)), ws / 2 - 1.5, ws / 2 + 1.5))
+        if lay.random() < 0.6:                             # an occasional pale accent line in the band
+            ca = c0 + lay.uniform(-wt / 4, wt / 4)
+            accent = np.maximum(accent, 1 - smoothstep(np.abs(x - ca), 1.8, 4.0))
+    accent *= teal
+    # space-dyed yarn: the lines break up along their length
+    dye = along(28.0, 2.2, seed + 4)
+    dye2 = along(9.0, 1.4, seed + 5)
+    teal_m = teal * (0.78 + 0.22 * smoothstep(dye, -1.6, -0.2))
+    slate_m = slate * smoothstep(dye2, -1.3, 0.2)
+    accent_m = accent * smoothstep(dye, 0.4, 1.4)
+
+    charcoal = _srgb("34373B")
+    slate_c = _srgb("4B5459")
+    teal_c = _srgb("3A5859")
+    pale = _srgb("6F8584")
+    ground = charcoal * np.ones((size, size, 1))
+    heather = along(40.0, 1.0, seed + 6)                 # yarn-to-yarn tone in the ground
+    ground = ground * (1 + 0.045 * heather + 0.02 * dye2)[..., None]
+    col = _mix(ground, slate_c * (1 + 0.05 * heather)[..., None], 0.6 * slate_m)
+    col = _mix(col, teal_c * (1 + 0.06 * heather + 0.05 * dye)[..., None], 0.85 * teal_m)
+    col = _mix(col, pale, 0.30 * accent_m)
+
+    # per-tile dye lot and a faint quarter-turn sheen difference
+    lot = rng.normal(0.0, 1.0, nt)[tid]
+    hue = rng.normal(0.0, 1.0, nt)[tid]
+    col = col * (1 + 0.028 * lot + 0.018 * np.where(turned, 1.0, -1.0))[..., None] * np.dstack(
+        [1 - 0.012 * hue, np.ones_like(hue), 1 + 0.012 * hue])
+
+    # --- loop pile: rows along a, stitches staggered between rows ---
+    pitch_b, pitch_a = 3.0, 2.6                            # px (5.9 x 5.1 mm)
+    row = np.floor(b / pitch_b)
+    fb = b / pitch_b - row
+    fa = np.mod(a / pitch_a + 0.5 * row, 1.0)
+    loop = np.sin(math.pi * fb) * (0.55 + 0.45 * np.sin(math.pi * fa) ** 0.8)
+    loop_var = along(1.2, 1.0, seed + 7)                  # loop to loop height
+    # every loop its own shade of the yarn (heathered, twisted plies): the textile grain
+    col_i = np.floor(a / pitch_a + 0.5 * row)
+    hsh = np.sin(row * 12.9898 + col_i * 78.233 + tid * 37.719) * 43758.5453
+    ply = (hsh - np.floor(hsh)) - 0.5
+    col = col * (1 + 0.16 * ply * (0.6 + 0.4 * np.sin(math.pi * fb)))[..., None]
+    height = 0.00028 * loop * (1 + 0.25 * loop_var)
+    height += 0.00010 * along(40.0, 3.0, seed + 8)        # row-to-row unevenness
+    height -= 0.00045 * teal_m                             # multi-level: teal loops lower
+    height += 0.00008 * slate_m
+    # seams: the cut edges dip and darken a little
+    d_edge = np.minimum(np.minimum(lu, tile_px - lu), np.minimum(lv, tile_px - lv))
+    seam = 1 - smoothstep(d_edge, 0.4, 2.2)
+    height -= 0.00055 * seam
+    col = col * (1 - 0.07 * seam)[..., None]
+
+    # lived in: soft soiling mottle and crushed patches (low contrast, it repeats every 4 m)
+    soil = fbm(size, size, 260.0, 260.0, 4, 0.5, seed + 9)
+    crush = smoothstep(fbm(size, size, 180.0, 180.0, 3, 0.5, seed + 10), 0.6, 1.8)
+    col = col * (1 - 0.035 * smoothstep(soil, 0.0, 2.0) - 0.03 * crush)[..., None] * np.dstack(
+        [1 + 0.01 * soil, np.ones_like(soil), 1 - 0.01 * soil])
+    height *= (1 - 0.3 * crush)
+
+    rough = (0.915 + 0.02 * loop_var * 0.5 - 0.02 * teal_m - 0.02 * crush + 0.025 * seam
+             + 0.008 * heather)
+    return dict(albedo=col, height=height, rough=np.clip(rough, 0.86, 0.95), metal=0.0,
+                ao=np.ones((size, size)), cavity=(1.5, 0.0004, 0.40), px_m=px_m,
+                info=f"{n_t} x {n_t} tiles of {tile_px:.0f} px, quarter-turned, grid shifted half a tile")
+
+
 # --- polished concrete ------------------------------------------------------------------------
 def polished_concrete(size, tile_m, seed):
     """Sealed, ground and polished concrete: cloudy paste, exposed fine aggregate
@@ -305,6 +418,7 @@ def ceiling_plaster(size, tile_m, seed):
 RECIPES = {
     "vinyl_plank": vinyl_plank,
     "carpet": carpet,
+    "carpet_tiles": carpet_tiles,
     "polished_concrete": polished_concrete,
     "wall_plaster": wall_plaster,
     "ceiling_plaster": ceiling_plaster,

@@ -124,6 +124,7 @@ func _registry() -> Array[Array]:
 		["zones", "zone_reflection_warm", _test_zone_reflection_warm],
 		["zones", "zone_rain", _test_zone_rain],
 		["zones", "zone_drawn_when_seen", _test_zone_drawn_when_seen],
+		["zones", "corridor_wayfinding", _test_corridor_wayfinding],
 	]
 	return tests
 
@@ -2663,6 +2664,39 @@ func _test_zone_drawn_when_seen() -> void:
 			and door_drawn and rest_hidden and home and all_back,
 			"door closed: corridor hidden %s; open: shown %s; closed: hidden %s; peephole: shown %s, after: hidden %s; in the corridor: apartment hidden %s, its entrance door still drawn %s, the rest hidden %s; home: corridor hidden %s, apartment all back %s" % [
 				hidden, open_shows, closed_hides, peek_shows, peek_ends, from_corridor, door_drawn, rest_hidden, home, all_back])
+
+
+## The corridor's holographic signs are built (panel and text, chevrons where
+## they point) and their shader compiled; the floor guide lights pulse toward
+## the elevators (D-060).
+func _test_corridor_wayfinding() -> void:
+	var corridor := ZoneStreamer.find(get_tree()).get_zone(&"corridor")
+	var signs: Array[Node] = corridor.find_children("*", "HoloSign", true, false)
+	var broken: Array[String] = []
+	var arrows := 0
+	for node in signs:
+		var sign := node as HoloSign
+		var panel := sign.get_child(0, true) as MeshInstance3D
+		var label := sign.get_child(1, true) as Label3D
+		var mat := panel.material_override as ShaderMaterial if panel else null
+		# A shader that fails to compile has no uniforms (door_viewer learned this the hard way).
+		if not panel or not label or label.text.is_empty() or not mat or mat.shader.get_shader_uniform_list().is_empty():
+			broken.append(str(sign.name))
+		elif mat.get_shader_parameter("arrow") != 0.0:
+			arrows += 1
+	var strips: Array[Node] = corridor.get_node("Guidance").get_children()
+	var toward := 0
+	for strip: MeshInstance3D in strips:
+		var flow: Vector3 = strip.get_instance_shader_parameter("flow")
+		var to_lobby := Vector3(13.0, 0, 10.8) - strip.global_position
+		if flow.length() > 0.99 and flow.dot(Vector3(to_lobby.x, 0, to_lobby.z)) > 0.0:
+			toward += 1
+	var guide_mat := (strips[0] as MeshInstance3D).mesh.surface_get_material(0) as ShaderMaterial
+	var guide_ok := not guide_mat.shader.get_shader_uniform_list().is_empty()
+	_check("corridor_wayfinding", signs.size() >= 8 and broken.is_empty() and arrows >= 6 and strips.size() >= 7
+			and toward == strips.size() and guide_ok,
+			"%d holo signs (broken: %s), %d with chevrons; %d guide strips, %d pulse toward the elevators, shader ok %s" % [
+				signs.size(), broken, arrows, strips.size(), toward, guide_ok])
 
 
 ## A window that streams in while it rains gets the rain (RainOnGlass follows

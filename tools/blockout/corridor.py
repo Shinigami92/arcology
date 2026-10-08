@@ -25,7 +25,9 @@ Signs and unit numbers are Label3D placeholders until the world directory (roadm
 import math
 import sys
 
-from blockout import T, Zone, door_gap
+import skirting  # noqa: E402  (tools/blockout/skirting.py)
+from blockout import FLOOR_MATS, ROOT, T, Zone, door_gap
+from prop_scenes import glb_bounds  # noqa: E402  (tools/props/prop_scenes.py, on the path via blockout)
 
 H = 2.8  # ceiling height
 NORTH = -3.1  # facade wall line (the apartment's window wall)
@@ -70,6 +72,57 @@ def door_size(yaw, size):
     return size if round(yaw / 90) % 2 == 0 else (size[2], size[1], size[0])
 
 
+# Wall trim (D-060): the wainscot swept along these runs by blender/architecture/corridor/ into TRIM_GLB
+# (tools/blockout/corridor_kit.json has the profile). Same run format as the apartment's skirting (D-036).
+TRIM_JSON = ROOT / "tools" / "blockout" / "corridor_trim.json"
+TRIM_PROFILE = {"height": 1.05, "thickness": 0.035}
+DOOR_FRAME_GLB = "assets/props/door_entrance/door_entrance_frame.glb"
+# The apartment's entrance door (apartment.py INSTANCES): its frame cuts the trim on the corridor side.
+ENTRANCE = ((WEST, 0, 2.9), -90)
+
+
+KIT_DIR = "assets/architecture/corridor"
+
+
+def kit(name):
+    """The corridor kit glb's res:// path once the artist exported it, else None."""
+    path = f"{KIT_DIR}/{name}.glb"
+    return "res://" + path if (ROOT / path).exists() else None
+
+
+def placed_bounds(glb, pos, yaw, pad=0.0):
+    """World (x0, z0, x1, z1) of a glb's bounds placed at pos with a yaw (multiples of 90)."""
+    lo, hi = glb_bounds(glb)
+    c, s = round(math.cos(math.radians(yaw))), round(math.sin(math.radians(yaw)))
+    xs, zs = [], []
+    for x in (lo[0], hi[0]):
+        for z in (lo[2], hi[2]):
+            xs.append(pos[0] + x * c + z * s)
+            zs.append(pos[2] - x * s + z * c)
+    return (min(xs) - pad, min(zs) - pad, max(xs) + pad, max(zs) + pad)
+
+
+def trim_runs(z: Zone) -> list[dict]:
+    """Runs along the foot of every corridor wall, cut at door frames, the window and the elevators."""
+    def footprint(center, size):
+        return (center[0] - size[0] / 2, center[2] - size[2] / 2, center[0] + size[0] / 2, center[2] + size[2] / 2)
+
+    floors = [footprint(c, sz) for _, _, c, sz, mat, _ in z.boxes if mat in FLOOR_MATS]
+    blocked = [footprint(c, sz) for _, _, c, sz, mat, _ in z.boxes if mat == "wall" and c[1] - sz[1] / 2 < 1e-6]
+    cuts = []
+    x0, x1, _, _ = z.window_gap("corridor_end", SIDE_X)
+    blocked.append((x0, NORTH - T / 2, x1, NORTH + T / 2))  # glass, not a doorway
+    cuts.append((x0, NORTH - T / 2, x1, NORTH + T / 2 + 0.05))  # the floor-level frame
+    for x in ELEVATORS:  # the car doors fill the openings
+        blocked.append((x - ELEVATOR_W / 2, LOBBY_S - T / 2, x + ELEVATOR_W / 2, LOBBY_S + T / 2))
+        cuts.append((x - ELEVATOR_W / 2 - 0.07, LOBBY_S - T / 2 - 0.03, x + ELEVATOR_W / 2 + 0.07, LOBBY_S))
+    for _, axis, line, at, yaw, _ in DOORS:
+        pos = (line, 0, at) if axis == "z" else (at, 0, line)
+        cuts.append(placed_bounds(DOOR_FRAME_GLB, pos, yaw))
+    cuts.append(placed_bounds(DOOR_FRAME_GLB, *ENTRANCE))
+    return skirting.runs(floors, blocked, cuts)
+
+
 def build() -> Zone:
     z = Zone("Corridor", "zones/corridor/corridor.tscn", height=H, doc=(
         "Zone: corridor, floor 44 (side corridor with the facade window and our entrance, main corridor, elevator "
@@ -77,10 +130,12 @@ def build() -> Zone:
         "Streamed in by ZoneStreamer (D-059)."))
 
     # --- Shell: floors and ceilings on the wall center lines -----------------------------------------
+    # Hotel carpet tiles (D-060) once the surface set exists.
+    floor = "carpet_tiles" if (ROOT / "assets" / "materials" / "carpet_tiles.tres").exists() else "concrete"
     for name, x0, x1, z0, z1, mat in [
-        ("Side", WEST, EAST, NORTH, MAIN_N, "concrete"),
-        ("Main", MAIN_W, MAIN_E, MAIN_N, MAIN_S, "concrete"),
-        ("Lobby", LOBBY_W, LOBBY_E, MAIN_S, LOBBY_S, "concrete"),
+        ("Side", WEST, EAST, NORTH, MAIN_N, floor),
+        ("Main", MAIN_W, MAIN_E, MAIN_N, MAIN_S, floor),
+        ("Lobby", LOBBY_W, LOBBY_E, MAIN_S, LOBBY_S, floor),
     ]:
         center, size = ((x0 + x1) / 2, (z0 + z1) / 2), (x1 - x0, z1 - z0)
         z.box("Shell", f"{name}Floor", (center[0], -0.1, center[1]), (size[0], 0.2, size[1]), mat)
@@ -134,27 +189,82 @@ def build() -> Zone:
         z.sign(f"{name}Number", door_point(pos, yaw, (px, py, pz - PLATE_COVER[2] - 0.0035)), (yaw + 180) % 360,
                label, font_size=96 if len(label) <= 4 else 64, pixel_size=0.0006, col=(0.92, 0.9, 0.85), lit=False)
 
-    # --- Light fixtures, accents ---------------------------------------------------------------------------
-    side_lights = [-1.5, 2.0, 5.2]
-    main_lights = [-5.0, 0.0, 4.5, 9.5, 17.5]
-    for i, zz in enumerate(side_lights):
-        z.box("Fixtures", f"SideLamp{i}", (SIDE_X, H - 0.015, zz), (0.3, 0.03, 0.9), "lamp", False)
-    for i, x in enumerate(main_lights):
-        z.box("Fixtures", f"MainLamp{i}", (x, H - 0.015, MAIN_Z), (0.9, 0.03, 0.3), "lamp", False)
-    z.box("Fixtures", "LobbyLamp", (LOBBY_X, H - 0.015, 10.8), (1.2, 0.03, 0.6), "lamp", False)
-    # A cyan cove along the side corridor's east wall, a magenta band over the lobby opening.
-    z.box("Fixtures", "SideCove", (EAST - T / 2 - 0.01, 2.55, (NORTH + MAIN_N) / 2 + 0.1), (0.02, 0.025, 9.6), "cyan", False)
+    # --- Kit (D-060, tools/blockout/corridor_kit.json): the artist's glbs once they exist, stand-ins until then ---
+    trim = kit("corridor_trim")
+    if trim:
+        z.instance("Trim", trim, (0, 0, 0))
+    else:
+        # A cyan cove along the side corridor's east wall until the wainscot brings its LED reveal.
+        z.box("Fixtures", "SideCove", (EAST - T / 2 - 0.01, 2.55, (NORTH + MAIN_N) / 2 + 0.1), (0.02, 0.025, 9.6), "cyan", False)
     z.box("Fixtures", "LobbyBand", (LOBBY_X, 2.42, MAIN_S - T / 2 - 0.01), (4.0, 0.025, 0.02), "magenta", False)
 
-    # --- Signs ---------------------------------------------------------------------------------------------------
-    south_face = MAIN_S - T / 2 - 0.005
-    z.sign("Junction", (SIDE_X, 1.85, south_face), 180, "<  4421 - 4423  ·  STAIRS\nELEVATORS  ·  4420  >",
-           font_size=72, pixel_size=0.0012)
-    z.sign("Elevators", (LOBBY_X, 2.6, south_face), 180, "ELEVATORS", font_size=96, pixel_size=0.0016,
-           col=(1.0, 0.45, 0.8))
-    z.sign("Directory", (LOBBY_W + T / 2 + 0.005, 1.55, 10.8), 90,
-           "FLOOR 44\n\n4417 - 4419   north wing\n4420 - 4423   main corridor\nSTAIRS  ·  SERVICE   west",
-           font_size=64, pixel_size=0.0011, align="left")
+    side_lights = [-1.5, 2.0, 5.2]
+    main_lights = [-5.0, 0.0, 4.5, 9.5, 17.5]
+    fixtures = ([(f"SideLamp{i}", SIDE_X, zz, 90) for i, zz in enumerate(side_lights)]
+                + [(f"MainLamp{i}", x, MAIN_Z, 0) for i, x in enumerate(main_lights)]
+                + [("LobbyLamp", LOBBY_X, 10.8, 0)])
+    light_glb = kit("corridor_light")
+    for name, x, zz, yaw in fixtures:
+        if light_glb:
+            z.instance(name, light_glb, (x, H, zz), (0, yaw, 0))
+        else:
+            z.box("Fixtures", name, (x, H - 0.015, zz), (0.3, 0.03, 0.9) if yaw else (0.9, 0.03, 0.3), "lamp", False)
+    vent_glb = kit("corridor_vent")
+    if vent_glb:
+        for i, (x, zz, yaw) in enumerate([(SIDE_X, 0.3, 90), (SIDE_X, 3.6, 90), (-2.5, MAIN_Z, 0), (2.2, MAIN_Z, 0),
+                                          (7.0, MAIN_Z, 0), (15.5, MAIN_Z, 0), (19.5, MAIN_Z, 0)]):
+            z.instance(f"Vent{i}", vent_glb, (x, H, zz), (0, yaw, 0))
+
+    # Emergency exit over the stairs door (physical, back-lit).
+    exit_at = (MAIN_W + T / 2, 2.35, MAIN_Z)
+    exit_glb = kit("exit_sign")
+    if exit_glb:
+        z.instance("ExitSign", exit_glb, exit_at, (0, 90, 0))
+    else:
+        z.box("Fixtures", "ExitSign", (exit_at[0] + 0.025, exit_at[1], exit_at[2]), (0.05, 0.16, 0.36), "dark", False)
+        z.sign("ExitSignFace", (exit_at[0] + 0.052, exit_at[1], exit_at[2]), 90, "EXIT", font_size=96,
+               pixel_size=0.0009, col=(0.17, 0.88, 0.48))
+
+    # --- Holographic wayfinding (HoloSign) on the walls, each under a ceiling emitter -------------------------
+    south = MAIN_S - T / 2 - 0.03
+    north = MAIN_N + T / 2 + 0.03
+    magenta = (1.0, 0.16, 0.43)
+    holos = [
+        # name, position, yaw (the reader faces it), text, size, arrow (as read), extra
+        ("JunctionElevators", (SIDE_X, 1.92, south), 180, "ELEVATORS  ·  4420", (1.4, 0.2), "left", {}),
+        ("JunctionStairs", (SIDE_X, 1.64, south), 180, "4421 – 4423  ·  STAIRS", (1.4, 0.2), "right", {}),
+        ("SideToElevators", (EAST - T / 2 - 0.03, 1.7, 6.1), -90, "ELEVATORS", (0.9, 0.2), "right", {}),
+        ("WestToElevators", (1.5, 1.7, north), 0, "ELEVATORS  ·  4420", (1.4, 0.2), "right", {}),
+        ("EastToElevators", (17.0, 1.7, north), 0, "ELEVATORS", (0.9, 0.2), "left", {}),
+        ("FromElevatorsEast", (LOBBY_X, 1.92, north), 0, "4420", (0.8, 0.2), "right", {}),
+        ("FromElevatorsWest", (LOBBY_X, 1.64, north), 0, "4417 – 4419  ·  4421 – 4423  ·  STAIRS", (2.1, 0.2),
+         "left", {}),
+        ("LobbyHeader", (LOBBY_X, 2.6, MAIN_S - T / 2 - 0.02), 180, "ELEVATORS", (1.8, 0.3), "",
+         {"tint": magenta, "line_height": 0.13}),
+        ("Directory", (LOBBY_W + T / 2 + 0.03, 1.5, 10.8), 90,
+         "FLOOR 44\n4417 – 4419  ·  north wing\n4420 – 4423  ·  main corridor\nSTAIRS  ·  SERVICE  ·  west",
+         (1.1, 0.5), "", {"align": "left", "line_height": 0.06}),
+    ]
+    emitter = kit("holo_emitter")
+    for name, pos, yaw, text, size, arrow, extra in holos:
+        z.holo(name, pos, yaw, text, size, arrow=arrow, **extra)
+        if emitter:
+            # On the ceiling 12 cm out from the wall, over the sign.
+            nx, nz = math.sin(math.radians(yaw)), math.cos(math.radians(yaw))
+            z.instance(f"{name}Emitter", emitter, (round(pos[0] + nx * 0.12, 4), H, round(pos[2] + nz * 0.12, 4)))
+
+    # --- Floor guide lights: two lines along the walls, pulses running toward the elevators -----------------
+    off = T / 2 + 0.035 + 0.12  # from the wall line: past the wainscot, then 12 cm
+    side_z = (NORTH + T / 2 + 0.3, MAIN_N + T / 2)
+    z.guide_strip("SideWest", (WEST + off, side_z[0]), (WEST + off, side_z[1]), (0, 1))
+    z.guide_strip("SideEast", (EAST - off, side_z[0]), (EAST - off, side_z[1]), (0, 1))
+    west_end, east_end = MAIN_W + off, MAIN_E - off
+    for name, x0, x1, zz, flow in [
+        ("NorthWest", west_end, WEST + T / 2, MAIN_N + off, 1), ("NorthMiddle", EAST - T / 2, LOBBY_X, MAIN_N + off, 1),
+        ("NorthEast", LOBBY_X, east_end, MAIN_N + off, -1),
+        ("SouthWest", west_end, LOBBY_W + T / 2, MAIN_S - off, 1), ("SouthEast", LOBBY_E - T / 2, east_end, MAIN_S - off, -1),
+    ]:
+        z.guide_strip(name, (round(x0, 4), round(zz, 4)), (round(x1, 4), round(zz, 4)), (flow, 0))
 
     # --- Lighting -----------------------------------------------------------------------------------------------
     cool = (0.8, 0.9, 1.0)
@@ -186,4 +296,12 @@ def build() -> Zone:
 
 
 if __name__ == "__main__":
-    sys.exit(build().save(check="--check" in sys.argv))
+    zone = build()
+    check = "--check" in sys.argv
+    runs = trim_runs(zone)
+    if not check:
+        skirting.write(TRIM_JSON, TRIM_PROFILE, runs,
+                       "GENERATED by tools/blockout/corridor.py: the corridor's wall trim runs (D-060; format: "
+                       "tools/blockout/skirting.py).")
+        print(f"wrote {TRIM_JSON.relative_to(ROOT)}: {len(runs)} runs")
+    sys.exit(zone.save(check=check))

@@ -407,7 +407,8 @@ class TrimMesh:
 
     def polyline_sweep(self, path, profile, bands, up=(0.0, 0.0, 1.0), sides=None, closed=False,
                        u_offsets=None, ease=None, ease_steps=4, ease_bands=None, margin=0.0,
-                       margin_bands=None, caps=(True, True), cap_band=None, stretch=()):
+                       margin_bands=None, caps=(True, True), cap_band=None, stretch=(), grooves=None,
+                       groove=(0.006, 0.003, ())):
         """Sweep a closed 2D profile (s, v) along a polyline lying in a plane, with
         true miters (constant width on both legs) and real-world UVs: skirting,
         dados, picture rails, coving, kerbs. s offsets toward the segment's side
@@ -430,7 +431,16 @@ class TrimMesh:
         margin_bands[band] (rubbed paint fading off a corner). Concave corners
         stay sharp miters. Open paths end square at their end points; caps
         (start, end) close them with the profile polygon in `cap_band` (U across s).
-        Zero-length faces (points with s <= s0 on an arris) are dropped."""
+        Zero-length faces (points with s <= s0 on an arris) are dropped.
+
+        grooves: {segment index: [t, ...]} V-grooves across the profile at t meters
+        from the segment's start point (panel joints in a wainscot): three extra rings
+        at t - width / 2, t and t + width / 2, where the center ring moves the profile
+        points listed in groove = (width, depth, point indices) `depth` toward the
+        back (s - depth); the other points stay, so the notch runs out into the
+        neighboring faces. A groove that doesn't fit between the segment's end
+        rings (miters, margin rings) is skipped with a warning. Without grooves the
+        result is unchanged."""
         up = Vector(up).normalized()
         P = [Vector(p) for p in path]
         n = len(P)
@@ -499,6 +509,31 @@ class TrimMesh:
         def u_of(ring, seg):
             return [(p - P[seg]).dot(D[seg]) + uo[seg] for p in ring]
 
+        def groove_rings(seg, rings, tables, ts):
+            """Insert each groove's three rings into the interval of `rings` that holds it."""
+            width, depth, moved = groove
+            moved = set(moved)
+
+            def straight(t, push):
+                base = P[seg] + D[seg] * t
+                return [base + S[seg] * (s - (push if j in moved else 0.0)) + up * v
+                        for j, (s, v) in enumerate(prof)]
+
+            ring_t = [[(p - P[seg]).dot(D[seg]) for p in r] for r in rings]
+            out_r, out_t = [rings[0]], []
+            for k, table in enumerate(tables):
+                lo, hi = max(ring_t[k]), min(ring_t[k + 1])
+                for t in sorted(ts):
+                    if lo + 1e-6 < t - width / 2 and t + width / 2 < hi - 1e-6:
+                        out_r += [straight(t - width / 2, 0.0), straight(t, depth), straight(t + width / 2, 0.0)]
+                        out_t += [table] * 3
+                out_r.append(rings[k + 1])
+                out_t.append(table)
+            placed = (len(out_r) - len(rings)) // 3
+            if placed < len(ts):
+                self.warnings.append(f"segment {seg}: {len(ts) - placed} of {len(ts)} grooves don't fit")
+            return out_r, out_t
+
         for seg in range(nseg):
             i0, i1 = seg, (seg + 1) % n
             r0, r1 = leg_ring(i0, seg), leg_ring(i1, seg)
@@ -516,6 +551,8 @@ class TrimMesh:
                 tables.append(None)
             rings.append(r1)
             tables.append(margin_bands if m1 else None)
+            if grooves and grooves.get(seg):
+                rings, tables = groove_rings(seg, rings, tables, grooves[seg])
             for ra, rb, table in zip(rings[:-1], rings[1:], tables):
                 strip(ra, rb, u_of(ra, seg), u_of(rb, seg), S[seg], S[seg], D[seg], table)
             # eased arris at the segment's end vertex (U continues from this segment)

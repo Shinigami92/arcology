@@ -45,11 +45,14 @@ MATS = {
     "wall": "wall_plaster", "ceiling": "ceiling_plaster",
     "gunmetal": "gunmetal", "steel": "brushed_steel", "dark": "furniture_dark",
     "magenta": "neon_magenta", "cyan": "neon_cyan", "lamp": "ceiling_lamp",
-    "wood": "wood_dark", "ceramic": "ceramic",
+    "wood": "wood_dark", "ceramic": "ceramic", "carpet_tiles": "carpet_tiles",
 }
 UNSHADOWED = {"magenta", "cyan", "lamp"}
-OCCLUDER_MATS = {"wall", "ceiling", "vinyl", "carpet", "concrete"}
-FLOOR_MATS = {"vinyl", "carpet", "concrete"}
+OCCLUDER_MATS = {"wall", "ceiling", "vinyl", "carpet", "concrete", "carpet_tiles"}
+FLOOR_MATS = {"vinyl", "carpet", "concrete", "carpet_tiles"}
+HOLO_SIGN_SCRIPT = "res://core/signage/holo_sign.gd"
+GUIDE_LIGHT_SHADER = "res://assets/shaders/guide_light.gdshader"
+GUIDE_LIGHT_SIZE = (0.02, 0.004)  # width, height of a floor guide strip (m)
 OCCLUDER_INSET = 0.02
 WINDOW_VIEW_MARGIN = 0.3
 WINDOW_VIEW_DEPTH = 1.0
@@ -86,6 +89,8 @@ class Zone:
         self.windows = []    # (spec, node name, position, yaw)
         self.instances = []  # (name, scene key, position, rotation)
         self.signs = []      # (name, position, yaw, text, font_size, pixel_size, color)
+        self.holos = []      # (name, position, yaw, text, size, tint, arrow, line_height, align)
+        self.strips = []     # (name, start, end, flow)
         self.lights = []     # (name, kind, position, rotation, color, energy, range, shadow, extra)
         self.probes = []     # (name, center, size, blend)
         self.daylight_probes = []
@@ -138,6 +143,16 @@ class Zone:
         """A generated window scene (tools/props/window.py); its wall needs the window_gap()."""
         self.windows.append((spec, name, tuple(position), yaw))
 
+    def holo(self, name, position, yaw, text, size, *, tint=(0.02, 0.85, 0.91), arrow="", line_height=0.07,
+             align="center"):
+        """A HoloSign (core/signage/holo_sign.gd): panel center at position, facing +Z turned by yaw;
+        arrow "left"/"right" (as the reader sees it) draws chevrons on that side."""
+        self.holos.append((name, tuple(position), yaw, text, tuple(size), tuple(tint), arrow, line_height, align))
+
+    def guide_strip(self, name, start, end, flow):
+        """A floor guide light from start to end (x, z; axis-aligned), pulses running along flow (x, z)."""
+        self.strips.append((name, tuple(start), tuple(end), tuple(flow)))
+
     def instance(self, name, key, position, rotation=(0, 0, 0)):
         self.instances.append((name, key, tuple(position), tuple(rotation)))
 
@@ -175,7 +190,12 @@ class Zone:
         for mat in dict.fromkeys(b[4] for b in self.boxes):
             add_ext(mat, "Material", f"res://assets/materials/{MATS[mat]}.tres")
         for key in dict.fromkeys(i[1] for i in self.instances):
-            add_ext(key, "PackedScene", SCENES[key])
+            # A SCENES key, or a res:// path (a glb placed as is).
+            add_ext(key, "PackedScene", key if key.startswith("res://") else SCENES[key])
+        if self.holos:
+            add_ext("holo_sign", "Script", HOLO_SIGN_SCRIPT)
+        if self.strips:
+            add_ext("guide_light", "Shader", GUIDE_LIGHT_SHADER)
         for spec in dict.fromkeys(w[0] for w in self.windows):
             add_ext(spec, "PackedScene", "res://" + window_specs.paths(spec)["tscn"])
         if self.daylight_probes:
@@ -196,6 +216,16 @@ class Zone:
                 oid = f"o{len(occluders)}"
                 occluders[osize] = oid
                 subs.append(f'[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_{oid}"]\nsize = {v3(osize)}\n')
+        strip_meshes = {}
+        if self.strips:
+            subs.append('[sub_resource type="ShaderMaterial" id="ShaderMaterial_guide"]\n'
+                        f'render_priority = 0\nshader = ExtResource("{ids["guide_light"]}")\n')
+            for _, size in self._strip_boxes():
+                if size not in strip_meshes:
+                    gid = f"g{len(strip_meshes)}"
+                    strip_meshes[size] = gid
+                    subs.append(f'[sub_resource type="BoxMesh" id="BoxMesh_{gid}"]\n'
+                                f'material = SubResource("ShaderMaterial_guide")\nsize = {v3(size)}\n')
         bounds = self.bounds()
         bound_ids = {}
         for _, size in bounds:
@@ -262,10 +292,18 @@ class Zone:
             nodes.append(f'[node name="{name}" parent="Props" instance=ExtResource("{ids[key]}")]\n'
                          f"position = {v3(pos)}\n{rot_line}")
 
-        if self.signs:
+        if self.signs or self.holos:
             nodes.append('[node name="Signs" type="Node3D" parent="."]\n'
-                         'metadata/_doc = "Wayfinding and unit numbers (placeholders until the world directory, '
-                         'roadmap). GENERATED."\n')
+                         'metadata/_doc = "Wayfinding: holograms (HoloSign) and lettering (Label3D), until the world '
+                         'directory writes them (roadmap). GENERATED."\n')
+            for name, pos, yaw, text, size, tint, arrow, line_height, align in self.holos:
+                rot = f"rotation_degrees = Vector3(0, {yaw:g}, 0)\n" if yaw else ""
+                arrow_line = f"arrow = {({'left': 1, 'right': 2})[arrow]}\n" if arrow else ""
+                align_line = "align = 0\n" if align == "left" else ""
+                nodes.append(f'[node name="{name}" type="Node3D" parent="Signs"]\nposition = {v3(pos)}\n{rot}'
+                             f'script = ExtResource("{ids["holo_sign"]}")\ntext = {quote(text)}\n'
+                             f"tint = {color(tint)}\nsize = Vector2({size[0]:g}, {size[1]:g})\n{arrow_line}"
+                             f"line_height = {line_height:g}\n{align_line}")
             for name, pos, yaw, text, font_size, pixel_size, col, lit, align in self.signs:
                 rot = f"rotation_degrees = Vector3(0, {yaw:g}, 0)\n" if yaw else ""
                 shaded = "" if lit else "shaded = true\n"
@@ -274,6 +312,16 @@ class Zone:
                              f"pixel_size = {pixel_size:g}\n{shaded}double_sided = false\n"
                              f"modulate = {color(col)}\noutline_size = 0\nfont_size = {font_size}\n"
                              f"text = {quote(text)}\n{aligned}")
+
+        if self.strips:
+            nodes.append('[node name="Guidance" type="Node3D" parent="."]\n'
+                         'metadata/_doc = "Floor guide lights (assets/shaders/guide_light.gdshader): pulses run '
+                         'toward the elevators. GENERATED."\n')
+            for (name, _, _, flow), (center, size) in zip(self.strips, self._strip_boxes()):
+                nodes.append(f'[node name="{name}" type="MeshInstance3D" parent="Guidance"]\n'
+                             f"position = {v3(center)}\ncast_shadow = 0\n"
+                             f"instance_shader_parameters/flow = {v3((flow[0], 0, flow[1]))}\n"
+                             f'mesh = SubResource("BoxMesh_{strip_meshes[size]}")\n')
 
         nodes.append('[node name="Lighting" type="Node3D" parent="."]\n')
         for name, kind, pos, rot, col, energy, rng, shadow, extra in self.lights:
@@ -309,6 +357,16 @@ class Zone:
         text = "[gd_scene format=3]\n\n" + "\n".join(ext) + "\n\n" + "\n".join(subs) + "\n" + "\n".join(nodes)
         text = carry_ids(text, self.out)
         return text
+
+    def _strip_boxes(self) -> list[tuple]:
+        """Each guide strip as a box (center, size) sitting on the floor."""
+        w, h = GUIDE_LIGHT_SIZE
+        out = []
+        for _, (x0, z0), (x1, z1), _ in self.strips:
+            center = (round((x0 + x1) / 2, 4), h / 2, round((z0 + z1) / 2, 4))
+            size = (round(abs(x1 - x0), 4) or w, h, round(abs(z1 - z0), 4) or w)
+            out.append((center, size))
+        return out
 
     def bounds(self) -> list[tuple]:
         """Floor footprints, floor to ceiling: (center, size)."""

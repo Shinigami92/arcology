@@ -38,10 +38,11 @@ SETS = {
     "vinyl_plank": dict(size=2048, tile_m=7.32, seed=4101, use="floor: living room, kitchen, hallway, vestibule"),
     "carpet": dict(size=2048, tile_m=4.0, seed=4202, use="floor: bedroom (wall-to-wall)"),
     "polished_concrete": dict(size=2048, tile_m=4.0, seed=4303, use="floor: bathroom"),
+    "carpet_tiles": dict(size=2048, tile_m=4.0, seed=4606, use="floor: floor 44 corridor (50 cm tiles, quarter-turned)"),
     "wall_plaster": dict(size=2048, tile_m=4.0, seed=4404, use="all walls"),
     "ceiling_plaster": dict(size=1024, tile_m=4.0, seed=4505, use="all ceilings"),
 }
-FLOORS = ("vinyl_plank", "carpet", "polished_concrete")
+FLOORS = ("vinyl_plank", "carpet", "polished_concrete", "carpet_tiles")
 
 
 def texture_dir(name):

@@ -8,6 +8,8 @@ lamp with emission, per-board veneer), `bed` (cloth simulation, heightfield coll
 `wardrobe_lit` (sweeps, shared props atlas, `Spread`), `blender/architecture/windows/` (spec-driven
 builder: many assets from one JSON, shared trim sheet instead of a per-part bake, `trim`),
 `blender/architecture/skirting/` (skirting swept along generated runs, `TrimMesh.polyline_sweep`),
+`blender/architecture/corridor/` (wainscot with V-joint grooves and an LED reveal along generated runs; small
+ceiling/wall fixtures from `rect_sweep` and `lathe`, one baked material plus one emissive, joined after the bake),
 `blender/surfaces/` (seamless tileable floor/wall/ceiling texture sets, `surface`). Characters (D-037)
 start from an MPFB human (`human`) on a humanoid skeleton (`rig`), dress it with shells and lofts weighted from the
 skin (`garment`) and export with `export_glb(..., rigged=True)`; example: `blender/characters/silena_vesper/` (gloves:
@@ -157,7 +159,8 @@ from the repo root (Blender 5.2: `"C:/Program Files/Blender Foundation/Blender 5
 - `TrimMesh(sheet, basis, origin, band_mats, u_offset)` faces with a band each, real-world UVs (U along the member): `poly`, `quad_strip`, `rect_sweep(rect, profile, bands, side_offset, sides, skip)` (profile mitered around a rectangle: frames, gaskets, sashes), `extrude` (straight member), `loft(rings, center="rings")`, `bridge(inner, outer)` (planar ring between loops, no T-junctions), `grid(cuts, cell)` (planar face with holes: slots, inlays), `to_object(name, coll, {slot: Material})`
 - `TrimMesh.polyline_sweep(path, profile, bands, up, sides, u_offsets, ease, ease_bands, margin, margin_bands, caps)`
   profile along a planar polyline with true miters, U along each segment + offset, an optional eased arris and a
-  rubbed-band margin on convex corners, square capped ends (skirting, dados, picture rails)
+  rubbed-band margin on convex corners, square capped ends (skirting, dados, picture rails); `grooves={seg: [t]}`,
+  `groove=(width, depth, point indices)` V-grooves across the profile (wainscot panel joints)
 - `GODOT_TO_BLENDER` basis for authoring in Godot axes; `image_from_array`, `image_pixels`, `write_png(path, rgb)` (8-bit PNG, no color management)
 
 ### surface (seamless square tiles for floors, walls, ceilings; numpy, periodic in U and V)

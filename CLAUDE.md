@@ -32,12 +32,14 @@ assets/
   characters/<name>/      rigged character glbs (player avatar Silena Vesper, D-037)
   architecture/skirting/  apartment_skirting.glb: skirting boards swept along the generator's runs (D-036)
   architecture/city/      near-ring towers, one folder per tower (<name>.glb); _kit/<style>/ = the shared baked sets (D-045)
+  architecture/corridor/  the corridor kit (D-060): corridor_trim.glb (wainscot swept along corridor_trim.json), corridor_light, corridor_vent, exit_sign, holo_emitter
   architecture/windows/   generated window scenes, one folder per window (<name>.tscn + the artist's frame/sash/shade-bar glbs); _kit/ = panel, button, shade fabric (D-033)
   shaders/                shared .gdshader
 blender/                  .blend sources (LFS) + their build scripts, exported to assets/ as .glb (.gdignore: Godot doesn't import them)
   lib/arcology_blender/   shared toolkit for build scripts: geometry, curves, materials, wood, metal, wear, soft goods, fabric, cloth, collision, bake, export, studio, checks (D-028); human (MPFB2 bodies) and rig (humanoid skeleton, poses) for characters
   lib/README.md           toolkit quick reference: every function in one line, conventions, Blender pitfalls
   architecture/skirting/  skirting sweep along tools/blockout/apartment_skirting.json (build/bake/export/render/verify)
+  architecture/corridor/  the corridor kit from tools/blockout/corridor_kit.json (D-060): wainscot sweep, fixtures, exit sign, holo emitter
   architecture/city/      near-ring towers per style (brutalist, spire) from tools/city/near_towers.json (D-045)
   props/_template/        copyable skeleton of an asset's five stage scripts + <name>_common.py
   props/<name>/           one asset's build/bake/export/render/verify scripts (e.g. fridge)
@@ -50,6 +52,7 @@ core/
   debug/                  ABSwitch + ABPanel: blind A/B variants in one spot, flipped by a wall button (D-030); ABEnvironment: A/B of Environment settings; ABViewport: A/B of MSAA and foveation (D-056)
   world_state/            WorldState (time of day and date: the PC's by default, set_time/follow_clock/set_date; the real sun at 48° N, windows facing 240°; weather, clouds and rain; HUD state), DayNight (sky, ambient, fog, sun/moon, city emission and traffic lights, window spill from the clock; `changed` signal), InteriorDaylight (a zone's smart dimming and probe re-capture, D-051), WorldTerminal (the holographic terminal in the living room window: time, speed, weather, rain, date by touch or ray, D-053, D-054)
   weather/                RainOnGlass (rain on the windows: smoothing, wetness, shader swap, rain sounds; set_rain() is the entry point, D-034); more in M2
+  signage/                HoloSign: holographic wayfinding sign (panel with chevrons + MSDF text, D-060), written by the zone generators
   zones/                  OutsideView: hides the city while no window is on screen (D-048); ZoneStreamer: loads the zones next to the player's from zones/zone_graph.json in the background, frees those two connections away, draws a zone the player isn't in only through an open door or the peephole; ZoneGate: holds a connection's door shut (amber LED) until both zones are in (D-059)
   persistence/            (M3)
 zones/
@@ -64,7 +67,7 @@ tools/
   audio/synth_sfx.py      placeholder SFX generator
   city/near_towers.json   near-ring tower spec shared by the Blender builds and tools/props/city.py (D-045)
   blockout/apartment.py   apartment layout -> zones/apartment/apartment.tscn, plus apartment_skirting.json (runs from skirting.py)
-  blockout/corridor.py    corridor layout -> zones/corridor/corridor.tscn (`--check`), on blockout.py: the shared zone writer (shell, occluders, window notifiers, Bounds, props, signs, lights, probes, entries, perf path)
+  blockout/corridor.py    corridor layout -> zones/corridor/corridor.tscn (`--check`) and corridor_trim.json (the wainscot runs); corridor_kit.json = the kit contract with blender-artist (D-060); on blockout.py: the shared zone writer (shell, occluders, window notifiers, Bounds, props, signs, lights, probes, entries, perf path)
   player/avatar.gd        avatar scenes from the character's body glb: body (BodyIK, Fingertips, finger blend tree) and hand targets fitted onto the XR Tools hand placement (D-038, D-041)
   props/                  prop .tscn generator: prop_scenes.py (doors, drawers, pickables, switches) + one definition per prop (--check); window.py builds the windows from windows/*.json; city.py the near-ring towers (`--imports [--force]` before the editor sees new tower glbs); traffic.py the vehicles' import settings (`--imports`)
   bake_gi.gd              VoxelGI bake script (currently unused, see D-012)
@@ -148,7 +151,7 @@ Per-zone budgets live in `tools/perf/budgets.json`. Current zones:
 | Zone | Draw calls | Triangles | Lights (shadowed) | GI | Last measured |
 |---|---|---|---|---|---|
 | apartment (5 rooms) | ≤ 1150 (a live reflection adds two scene passes, D-049; by day each also renders the sun's shadow map, D-052) | ≤ 1.5 M | ≤ 16 (1) | none (D-012); 1 ReflectionProbe per room | XR (2026-10-06, MSAA 2x, foveation, reflection warm-up, D-056, D-057): GPU p95 5.4 ms, CPU p95 4.9 ms, 812 draw calls, 1.06 M tris, 19 dropped frames (1.1 %, over budget): none with compiles, all at normal GPU/CPU; the stall probe hitches the same way (the machine, D-025) |
-| corridor (side, main, lobby) | ≤ 600 | ≤ 1.0 M | ≤ 16 (0) | none; 3 ReflectionProbes | desktop (2026-10-08, D-059): GPU p95 4.5 ms, CPU p95 2.3 ms, 186 draw calls, 0.29 M tris; streams in in ~40 ms (worst frame 15.7 ms) |
+| corridor (side, main, lobby) | ≤ 600 | ≤ 1.0 M | ≤ 16 (0) | none; 3 ReflectionProbes | desktop (2026-10-08, kit and holograms, D-060): GPU p95 4.5 ms, CPU p95 2.3 ms, 211 draw calls, 0.32 M tris; streams in in ~40 ms (worst frame 15.7 ms, D-059) |
 
 Asset budgets (realistic style, see the style guide):
 
@@ -186,7 +189,7 @@ Behavior checks that don't need the headset or the editor. Run the `interaction`
 "$GODOT4_EDITOR" --path . --xr-mode off -- --test=skyline                            # window shimmer (D-020, D-023), traffic lanes clear the near towers (D-047), city hidden without a window in view (D-048), live reflections (D-049)
 ```
 
-Groups: `player` (doorways, blocker, pass-through, jump, ranged grab), `doors_fridge`, `furniture` (sofa, bed, wardrobe doors, nightstand), `variants` (spare props), `switches` (A/B panel, lamp), `avatar`, `wardrobe` (interior), `windows` (incl. rain), `world` (clock, sun, seasons, weather, day/night, world terminal, probe re-capture), `rendering` (foveation, reflection warm-up), `bathroom`, `zones` (streaming, gate, unload, visibility, rain and reflections in a streamed zone). The suite runs at a fixed, stopped 22:00 on Oct 5, clear (`WorldState`); a test that changes the time, date or weather puts it back (`set_time(22.0, 0.0)`, `set_date(10, 5, 2.0)`). Each prints `TEST PASS/FAIL <name>: <details>`, then the time per group and `TEST DONE`, and exits with the failure count (2 if the suite doesn't load, e.g. a parse error, or `--only` matches nothing). Add a test as one line in `_registry()` of `tools/tests/interaction_tests.gd`; tests that move the player or hold something needn't undo it (the runner resets the rig before each test), anything else they change they put back.
+Groups: `player` (doorways, blocker, pass-through, jump, ranged grab), `doors_fridge`, `furniture` (sofa, bed, wardrobe doors, nightstand), `variants` (spare props), `switches` (A/B panel, lamp), `avatar`, `wardrobe` (interior), `windows` (incl. rain), `world` (clock, sun, seasons, weather, day/night, world terminal, probe re-capture), `rendering` (foveation, reflection warm-up), `bathroom`, `zones` (streaming, gate, unload, visibility, rain and reflections in a streamed zone, corridor wayfinding). The suite runs at a fixed, stopped 22:00 on Oct 5, clear (`WorldState`); a test that changes the time, date or weather puts it back (`set_time(22.0, 0.0)`, `set_date(10, 5, 2.0)`). Each prints `TEST PASS/FAIL <name>: <details>`, then the time per group and `TEST DONE`, and exits with the failure count (2 if the suite doesn't load, e.g. a parse error, or `--only` matches nothing). Add a test as one line in `_registry()` of `tools/tests/interaction_tests.gd`; tests that move the player or hold something needn't undo it (the runner resets the rig before each test), anything else they change they put back.
 
 Visual check without the headset or editor: `--shots` renders 1920×1080 stills to `tools/shots/results/shot-<n>.png` (views are `x,y,z,yaw,pitch[,fov]`, yaw 0 = -Z, 90 = -X; `--shot-hinge=<Props path>:<deg>` opens hinged props first, e.g. `Fridge:80` or `Wardrobe/A/DoorLeft:80`; `--shot-ab=B` shows every A/B pair's B variant; `--shot-no-player` hides the hands; `--shot-player=x,z,yaw` puts the player's eyes there at 1.8 m first, e.g. in front of a mirror; a view `eye,dx,dy,dz,yaw,pitch[,fov]` is relative to the player's camera: `eye,0,0,0,0,0,12` zooms on what they see, `eye,0,0,-0.45,180,0,25` looks back at their face):
 
