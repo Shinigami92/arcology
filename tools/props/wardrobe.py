@@ -107,7 +107,8 @@ def wardrobe(tag: str, v: dict) -> Scene:
             hinge_position=(-0.75 * sign, 0, 0.3), hinge_rotation=rotation, open_max=95,
             boxes=boxes, grip=boxes[1][1],
             stop=Sound("sfx/door_bump", props={"volume_db": -8.0}),  # at the grip (the default)
-            swing={"friction": 90.0, "damping": 1.2, "bounce": 0.2, "latch_angle": 4.0, "latch_pull": 220.0})
+            swing={"friction": 90.0, "damping": 1.2, "bounce": 0.2, "latch_angle": 4.0, "latch_pull": 220.0},
+            hand_push=True)
     s.flush_subs()  # the grab sphere sits between the door and drawer boxes
     for name, origin in v["drawers"].items():
         s.sliding_drawer(name, glb=glb["drawer"], origin=origin, travel=0.4, boxes=v["drawer"], grip=v["drawer_grip"])

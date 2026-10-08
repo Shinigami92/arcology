@@ -424,6 +424,70 @@ def toilet_flush_full() -> list[float]:
     return _flush(25, 7.0, 3.0)
 
 
+def deadbolt() -> list[float]:
+    """A deadbolt thrown by its thumb-turn: a short steel slide, then a solid clunk as it seats."""
+    rng = random.Random(21)
+    n = int(RATE * 0.35)
+    noise = lowpass([rng.uniform(-1, 1) for _ in range(n)], 0.35)
+    out = []
+    for i in range(n):
+        t = i / RATE
+        # Slide: filtered scrape rising then cut off when the bolt seats.
+        s = 0.25 * noise[i] * (min(1.0, t / 0.05) if t < 0.11 else math.exp(-(t - 0.11) / 0.004))
+        t2 = t - 0.11
+        if t2 > 0:
+            s += 0.9 * math.sin(2 * math.pi * 95 * t2) * env(t2, 0.001, 0.045)
+            s += 0.45 * math.sin(2 * math.pi * 410 * t2) * env(t2, 0.0005, 0.02)
+            s += 0.5 * noise[i] * env(t2, 0.0003, 0.006)
+            s += 0.12 * math.sin(2 * math.pi * 2650 * t2) * env(t2, 0.0005, 0.05)
+        out.append(s)
+    return out
+
+
+def door_rattle() -> list[float]:
+    """A locked door pulled by its lever: the leaf knocks twice against the bolt, the lever clacks."""
+    rng = random.Random(22)
+    n = int(RATE * 0.45)
+    noise = [rng.uniform(-1, 1) for _ in range(n)]
+    out = []
+    for i in range(n):
+        t = i / RATE
+        s = 0.0
+        for at, gain in ((0.0, 1.0), (0.11, 0.7), (0.19, 0.35)):
+            t2 = t - at
+            if t2 > 0:
+                s += gain * 0.8 * math.sin(2 * math.pi * 120 * t2) * env(t2, 0.001, 0.05)
+                s += gain * 0.4 * noise[i] * env(t2, 0.0003, 0.005)
+                s += gain * 0.2 * math.sin(2 * math.pi * 1720 * t2) * env(t2, 0.0005, 0.03)
+        out.append(s)
+    return out
+
+
+def lock_beep(rising: bool) -> list[float]:
+    """Smart lock confirmation: two short soft beeps, rising (locked) or falling (unlocked)."""
+    n = int(RATE * 0.26)
+    tones = (1568.0, 2093.0) if rising else (2093.0, 1568.0)
+    out = []
+    for i in range(n):
+        t = i / RATE
+        k = 0 if t < 0.13 else 1
+        t2 = t - 0.13 * k
+        a = min(1.0, t2 / 0.004) * min(1.0, max(0.0, 0.09 - t2) / 0.01)
+        out.append(a * math.sin(2 * math.pi * tones[k] * t2))
+    return out
+
+
+def shower_spray() -> list[float]:
+    """Water from a shower head on tiles: dense bright hiss with a softer splash layer;
+    4 s seamless loop (import with loop mode Forward)."""
+    rng = random.Random(23)
+    hiss = _loop_noise(rng, int(RATE * 4.5), 0.55)
+    body = _loop_noise(rng, int(RATE * 4.5), 0.08)
+    drops = _ticks(rng, len(hiss), 140.0, 0.004, 1800.0, 4200.0, 0.35)
+    out = [0.55 * h + 0.9 * b + d for h, b, d in zip(hiss, body, drops)]
+    return out
+
+
 # In this order (rain_patter's lowpass keeps state across calls).
 SOUNDS = [
     ("ball_bounce", ball_bounce), ("can_hit", can_hit), ("trash_accept", trash_accept), ("door_bump", door_bump),
@@ -432,7 +496,9 @@ SOUNDS = [
     ("fridge_alarm", fridge_alarm), ("shade_motor", shade_motor), ("tint_tone", tint_tone),
     ("vent_latch", vent_latch), ("city_ambience", city_ambience), ("rain_patter", rain_patter),
     ("rain_outside", rain_outside), ("toilet_flush_short", toilet_flush_short),
-    ("toilet_flush_full", toilet_flush_full),
+    ("toilet_flush_full", toilet_flush_full), ("deadbolt", deadbolt), ("door_rattle", door_rattle),
+    ("lock_beep_locked", lambda: lock_beep(True)), ("lock_beep_unlocked", lambda: lock_beep(False)),
+    ("shower_spray", shower_spray),
 ]
 
 

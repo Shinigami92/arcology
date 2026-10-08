@@ -16,6 +16,9 @@
 [ext_resource type="Script" uid="uid://0qo7w8nlh6eu" path="res://core/interaction/hinge_stop_sound.gd" id="stop_sound"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/button_click.wav" id="button_click"]
 [ext_resource type="PackedScene" path="res://assets/props/shower/shower_handheld.tscn" id="shower_handheld"]
+[ext_resource type="Shader" path="res://assets/shaders/hose_braid.gdshader" id="hose_braid"]
+[ext_resource type="Script" path="res://core/interaction/shower_hose.gd" id="shower_hose"]
+[ext_resource type="Script" path="res://core/interaction/shower_water.gd" id="shower_water"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_glass"]
 resource_local_to_scene = true
@@ -28,11 +31,20 @@ size = Vector3(0.047, 0.11, 0.03)
 [sub_resource type="BoxShape3D" id="BoxShape3D_temp0"]
 size = Vector3(0.06, 0.06, 0.04)
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hose"]
+render_priority = 0
+shader = ExtResource("hose_braid")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ferrule"]
+albedo_color = Color(0.62, 0.63, 0.65, 1)
+metallic = 1.0
+roughness = 0.2
+
 [sub_resource type="SphereShape3D" id="SphereShape3D_mixer"]
 radius = 0.035
 
 [node name="Shower" type="Node3D"]
-metadata/_doc = "Walk-in shower 2.80 x 1.40 m with a frameless glass screen (entry at the -X end), rain head, slide rail, wall mixer and a marble shelf. Origin = footprint center on the floor; the back wall is at z -0.70, +Z points into the room. The flow lever turns ±90 degrees (+ rain head, - hand shower) and clicks into off and both ends; the thermostat dial turns ±120 degrees with a click at 38 °C (indicator up). The hand shower sits in its holder until grabbed; put it back near the holder and it clicks in again. No water yet."
+metadata/_doc = "Walk-in shower 2.80 x 1.40 m with a frameless glass screen (entry at the -X end), rain head, slide rail, wall mixer and a marble shelf. Origin = footprint center on the floor; the back wall is at z -0.70, +Z points into the room. The flow lever turns ±90 degrees (+ rain head, - hand shower) and clicks into off and both ends; the thermostat dial turns ±120 degrees with a click at 38 °C (indicator up). The hand shower sits in its holder until grabbed; put it back near the holder and it clicks in again. Its hose hangs from the wall outlet (ShowerHose, 1.85 m); the flow lever runs water from the hand shower or the rain head (ShowerWater)."
 
 [node name="Body" parent="." instance=ExtResource("shower_body")]
 
@@ -185,3 +197,25 @@ rotation_degrees = Vector3(12, 0, 0)
 [node name="HandShower" parent="." instance=ExtResource("shower_handheld")]
 position = Vector3(-0.05, 1.55, -0.585)
 rotation_degrees = Vector3(12, 0, 0)
+
+[node name="HoseOutlet" type="Marker3D" parent="."]
+position = Vector3(-0.3, 0.806, -0.652)
+
+[node name="Hose" type="Node3D" parent="." node_paths=PackedStringArray("start", "end", "body")]
+script = ExtResource("shower_hose")
+start = NodePath("../HoseOutlet")
+end = NodePath("../HandShower/HoseEnd")
+body = NodePath("../HandShower")
+length = 1.85
+material = SubResource("ShaderMaterial_hose")
+ferrule_material = SubResource("StandardMaterial3D_ferrule")
+
+[node name="RainNozzles" type="Marker3D" parent="."]
+position = Vector3(0.5, 2.592, 0)
+
+[node name="Water" type="Node" parent="." node_paths=PackedStringArray("flow", "hand_nozzle", "rain_nozzle")]
+script = ExtResource("shower_water")
+flow = NodePath("../FlowLever/HingeOrigin/InteractableHinge")
+hand_nozzle = NodePath("../HandShower/SprayFace")
+rain_nozzle = NodePath("../RainNozzles")
+colliders = Array[AABB]([AABB(-3, -0.2, -3, 6, 0.2, 6), AABB(-1.5, 0, -0.9, 3, 2.6, 0.2), AABB(-1.6, 0, -0.8, 0.2, 2.6, 1.6), AABB(1.4, 0, -0.8, 0.2, 2.6, 1.6), AABB(-0.4, 0, 0.694, 1.786, 2, 0.012)])

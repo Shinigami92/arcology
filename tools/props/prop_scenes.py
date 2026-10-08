@@ -121,6 +121,11 @@ CATALOG: dict[str, tuple[str, str, str | None]] = {
     "hinge_detents": ("Script", "res://core/interaction/hinge_detents.gd", None),
     "press_sound": ("Script", "res://core/interaction/press_sound.gd", None),
     "holder_snap": ("Script", "res://core/interaction/holder_snap.gd", None),
+    "hand_push": ("Script", "res://core/interaction/hinge_hand_push.gd", None),
+    "door_lock": ("Script", "res://core/interaction/door_lock.gd", None),
+    "door_viewer": ("Script", "res://core/rendering/door_viewer.gd", None),
+    "shower_hose": ("Script", "res://core/interaction/shower_hose.gd", None),
+    "shower_water": ("Script", "res://core/interaction/shower_water.gd", None),
     "planar_reflection": ("Script", "res://core/rendering/planar_reflection.gd", None),
 }
 # assets/audio/sfx/<name>.wav referenced as "sfx/<name>"; uid where committed scenes use one.
@@ -280,6 +285,24 @@ class AlarmSpec:
     delay: float | None = None
     open_angle: float | None = None
     name: str = "OpenAlarm"
+
+
+@dataclass
+class LockSpec:
+    """A thumb-turn deadbolt for Scene.door_lock() (D-058). position: the turn's axis on the leaf
+    face (door frame), the hinge turning about the leaf's +Z, 0 = open .. 90 = locked; boxes and
+    grip in that frame. glb: the turning part's model; or visual: the scene path of a node of the
+    door's model to turn with it, about its local `visual_axis`."""
+    position: Vec3
+    boxes: Sequence[BoxSpec]
+    grip: Vec3
+    glb: str | None = None
+    visual: str | None = None
+    visual_axis: Vec3 = (0, 0, 1)
+    led_root: str | None = None
+    beeps: bool = False
+    bolt: Sound = field(default_factory=lambda: Sound("sfx/deadbolt", props={"volume_db": -6.0}))
+    rattle: Sound = field(default_factory=lambda: Sound("sfx/door_rattle", props={"volume_db": -4.0}))
 
 
 @dataclass
@@ -445,6 +468,12 @@ class Scene:
         root.props = [(k, _fmt(v, ".")) for k, v in props.items()]
         root.node_paths = [k for k, v in props.items() if _is_ref(v)]
 
+    def set_node_props(self, path: str, props: dict) -> None:
+        """Adds properties to an existing node (written before its other properties)."""
+        n = next(m for m in self._nodes if m.path == path)
+        n.props = [(k, _fmt(v, n.path)) for k, v in props.items()] + n.props
+        n.node_paths = [k for k, v in props.items() if _is_ref(v)] + n.node_paths
+
     def node(self, name: str, type: str | None = None, *, parent: str | None = ".", props: dict | None = None,
              instance: str | None = None, groups: Sequence[str] = (), before: str | None = None, **kw: object) -> str:
         """Adds a node; props (then kw) are written in order. Returns its scene path."""
@@ -532,7 +561,8 @@ class Scene:
                     grab_radius: float = 0.06, grab_shape: str = "SphereShape3D_grab",
                     stop: Sound | None = Sound("sfx/door_bump"), stop_props: dict | None = None,
                     swing: dict | None = None, no_swing: bool = False, open_sound: Sound | None = None,
-                    light: HingeLightSpec | None = None, alarm: AlarmSpec | None = None) -> Joint:
+                    light: HingeLightSpec | None = None, alarm: AlarmSpec | None = None,
+                    hand_push: bool = False, edge: tuple[Vec3, Vec3] | None = None) -> Joint:
         """A door, lid or flap on an XRToolsInteractableHinge (CLAUDE.md "Add a hinged interactable").
 
         Nodes: [group] / HingeOrigin (hinge_position, hinge_rotation: its local X is the
@@ -543,7 +573,12 @@ class Scene:
         HandleOrigin<suffix>/InteractableHandle per grip; then StopSound (HingeStopSound,
         `stop.position` in hinge space, default at the grip; stop_props = its exports),
         [open_sound], [light.light], Swing (HingeSwing, `swing` = its exports; no_swing
-        drops it), [HingeLight], BodyBlocker, GrabPassThrough, [alarm sound, OpenAlarm].
+        drops it), [HingeLight], BodyBlocker, GrabPassThrough, [alarm sound, OpenAlarm],
+        [HandPush].
+        hand_push: bare hands push the open leaf (HingeHandPush, D-058; faces normal to the
+        leaf's Z). edge: (handle origin, box size) in the door frame: a HandleOriginEdge
+        handle on the free edge that HandPush slides to the hand, grabbable only while open
+        (needs hand_push).
         glb=None leaves out the model (add placeholder meshes under the returned body).
         Zero rotations aren't written.
         """
@@ -562,6 +597,14 @@ class Scene:
         if glb is not None:
             self.node(model_name, parent=body, instance=self.ext_id(glb))
         self._handles(leaf, grip_map, grab_radius, grab_shape)
+        if edge is not None:
+            if not hand_push:
+                raise ValueError("an edge handle needs hand_push")
+            edge_origin = self.node("HandleOriginEdge", "Node3D", parent=leaf, position=tuple(edge[0]))
+            edge_handle = self.node("InteractableHandle", "RigidBody3D", parent=edge_origin, props={
+                "collision_layer": LAYER_HANDLES, "collision_mask": 0, "freeze": True,
+                "script": self.ext("handle"), "enabled": False, "picked_up_layer": 0})
+            self.boxes(edge_handle, [("CollisionShape3D", (0, 0, 0), edge[1], "BoxShape3D_edge")])
         if stop is not None:
             position = stop.position if stop.position is not None else rotate(leaf_rot, next(iter(grip_map.values())))
             self.sound(stop.name or "StopSound", stop.stream, parent=hinge, position=position,
@@ -587,6 +630,13 @@ class Scene:
         self.node("BodyBlocker", "Node", parent=base, script=self.ext("blocker"), hinge=ref(hinge), leaf=ref(body))
         self.node("GrabPassThrough", "Node", parent=base, script=self.ext("pass_through"), body=ref(body),
                   handles_root=ref(leaf))
+        if hand_push:
+            props = {"script": self.ext("hand_push"), "hinge": ref(hinge), "leaf": ref(body)}
+            if not no_swing:
+                props["swing"] = ref(f"{base}/Swing" if base != "." else "Swing")
+            if edge is not None:
+                props["edge_handle"] = ref(f"{leaf}/HandleOriginEdge/InteractableHandle")
+            self.node("HandPush", "Node", parent=base, props=props)
         if alarm:
             alarm_sound = self._sound(alarm.sound, base, "AlarmSound")
             props = {"script": self.ext("open_alarm"), "hinge": ref(hinge), "alarm": ref(alarm_sound)}
@@ -596,6 +646,37 @@ class Scene:
                 props["open_angle"] = alarm.open_angle
             self.node(alarm.name, "Node", parent=base, props=props)
         return Joint(base, hinge, leaf, body)
+
+    def door_lock(self, door: Joint, hinge_position: Vec3, lock: LockSpec) -> Joint:
+        """A thumb-turn deadbolt on a hinged door (D-058): ThumbTurnMount (RemoteTransform3D on the
+        door's leaf) carries the ThumbTurn group (its own hinge, outside the door's hinge so its handle
+        doesn't count as a door handle; detents at 0 and 90, the bolt sound), plus Rattle on the leaf,
+        [BeepLocked, BeepUnlocked] and the DoorLock node `Lock`. hinge_position: the door's."""
+        self.node("ThumbTurnMount", "RemoteTransform3D", parent=door.leaf, position=tuple(lock.position),
+                  remote_path=node_path("ThumbTurn"), update_scale=False)
+        turn = self.hinged_door(
+            group="ThumbTurn", glb=lock.glb, hinge_position=(0, 0, 0), hinge_rotation=(0, -90, 0),
+            open_max=90.0, boxes=lock.boxes, grip=lock.grip, grab_radius=0.03, grab_shape="SphereShape3D_turn",
+            shape_prefix="turn", stop=None, no_swing=True)
+        self.set_node_props(turn.group, {"position": tuple(h + t for h, t in zip(hinge_position, lock.position))})
+        bolt = self._sound(lock.bolt, turn.group, "Deadbolt")
+        self.node("Detents", "Node", parent=turn.group, props={
+            "script": self.ext("hinge_detents"), "hinge": ref(turn.joint),
+            "detents": raw("PackedFloat32Array(0, 90)"), "capture": 40.0, "click": ref(bolt)})
+        props: dict = {"script": self.ext("door_lock"), "door": ref(door.joint), "turn": ref(turn.joint)}
+        if lock.visual:
+            props["turn_visual"] = ref(lock.visual)
+            props["turn_visual_axis"] = tuple(lock.visual_axis)
+        if lock.led_root:
+            props["led_root"] = ref(lock.led_root)
+        if lock.beeps:
+            props["beep_locked"] = ref(self.sound("BeepLocked", "sfx/lock_beep_locked", parent=turn.group,
+                                                  volume_db=-18.0))
+            props["beep_unlocked"] = ref(self.sound("BeepUnlocked", "sfx/lock_beep_unlocked", parent=turn.group,
+                                                    volume_db=-18.0))
+        props["rattle"] = ref(self._sound(lock.rattle, door.leaf, "Rattle"))
+        self.node("Lock", "Node", props=props)
+        return turn
 
     def sliding_drawer(self, name: str, *, glb: str, origin: Vec3, travel: float, boxes: Sequence[BoxSpec],
                        grip: Vec3 | None = None, grips: dict[str, Vec3] | None = None,

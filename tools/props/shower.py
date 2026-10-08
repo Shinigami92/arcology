@@ -23,8 +23,8 @@ from __future__ import annotations
 
 import sys
 
-from prop_scenes import (RENDER_UNREFLECTED, TEXTURE_IMPORT, Scene, Sound, TextResource, glb_images, glb_import_text,
-                         glb_node_position, main, pickable_scene, ref, raw, write_new_file)
+from prop_scenes import (RENDER_UNREFLECTED, TEXTURE_IMPORT, Scene, Sound, TextResource, color, glb_images,
+                         glb_import_text, glb_node_position, main, pickable_scene, ref, raw, write_new_file)
 
 D = "assets/props/shower"
 BODY = f"{D}/shower_body.glb"
@@ -55,14 +55,28 @@ HAND_HOLDER_GROUP = "shower_hand_holder"
 HAND_POSE = ((-0.05, 1.55, -0.585), (12, 0, 0))   # holder seat and tilt
 HAND_CENTER = (0, 0.03, 0)                        # the snap compares the middle of the hand shower
 
+# The hose (D-058): simulated in Godot (ShowerHose) from the wall outlet's ferrule (the body glb keeps
+# outlet, elbow, nut and that ferrule) to the hand shower's bottom; 1.85 m (1.5 and 1.7 m felt short in the headset).
+HOSE_OUTLET = (-0.30, 0.806, -0.652)   # 8 mm inside the outlet ferrule (closed lathe, it hides the end); leaves down (-Y)
+HOSE_LENGTH = 1.85
+HOSE_SHADER = "assets/shaders/hose_braid.gdshader"
+HAND_HOSE_END = (0, -0.105, 0)         # handheld frame: the handle's bottom; the hose leaves along -Y
+HAND_SPRAY = (0, 0.115, 0.014)         # handheld frame: the spray face's middle; water leaves along +Z
+RAIN_NOZZLES = (0.5, 2.592, 0.0)       # the rain head's nozzle plate; water falls along -Y
+# Boxes the water vanishes on (min corner, size): floor, back wall, end walls, glass screen.
+WATER_COLLIDERS = [((-3.0, -0.2, -3.0), (6.0, 0.2, 6.0)), ((-1.5, 0.0, -0.9), (3.0, 2.6, 0.2)),
+                   ((-1.6, 0.0, -0.8), (0.2, 2.6, 1.6)), ((1.4, 0.0, -0.8), (0.2, 2.6, 1.6)),
+                   ((-0.40, 0.0, 0.694), (1.786, 2.0, 0.012))]
+
 DOC = ("Walk-in shower 2.80 x 1.40 m with a frameless glass screen (entry at the -X end), rain head, slide rail, "
        "wall mixer and a marble shelf. Origin = footprint center on the floor; the back wall is at z -0.70, +Z "
        "points into the room. The flow lever turns ±90 degrees (+ rain head, - hand shower) and clicks into off and "
        "both ends; the thermostat dial turns ±120 degrees with a click at 38 °C (indicator up). The hand shower sits "
-       "in its holder until grabbed; put it back near the holder and it clicks in again. No water yet.")
+       "in its holder until grabbed; put it back near the holder and it clicks in again. Its hose hangs from the wall "
+       "outlet (ShowerHose, 1.85 m); the flow lever runs water from the hand shower or the rain head (ShowerWater).")
 HANDHELD_DOC = ("Hand shower 0.108 x 0.274 x 0.033 m, 0.35 kg. Origin = holder seat; handle along +Y, spray along +Z. "
                 "Pickable; it starts in (and dropped near) a holder (a Marker3D in the 'shower_hand_holder' group), "
-                "it sits there frozen until grabbed.")
+                "it sits there frozen until grabbed. HoseEnd: where the shower's hose attaches; SprayFace: where water leaves.")
 
 
 def parts_material() -> TextResource:
@@ -125,6 +139,19 @@ def shower() -> Scene:
     position, rotation = HAND_POSE
     s.node("HandShowerHolder", "Marker3D", groups=[HAND_HOLDER_GROUP], position=position, rotation_degrees=rotation)
     s.instance("HandShower", HANDHELD_TSCN, position=position, rotation=rotation)
+
+    s.node("HoseOutlet", "Marker3D", position=HOSE_OUTLET)
+    braid = s.sub("ShaderMaterial", "ShaderMaterial_hose", {"render_priority": 0, "shader": s.ext(HOSE_SHADER)})
+    chrome = s.sub("StandardMaterial3D", "StandardMaterial3D_ferrule", {
+        "albedo_color": color(0.62, 0.63, 0.65), "metallic": 1.0, "roughness": 0.2})
+    s.node("Hose", "Node3D", props={
+        "script": s.ext("shower_hose"), "start": ref("HoseOutlet"), "end": ref("HandShower/HoseEnd"),
+        "body": ref("HandShower"), "length": HOSE_LENGTH, "material": braid, "ferrule_material": chrome})
+    s.node("RainNozzles", "Marker3D", position=RAIN_NOZZLES)
+    boxes = ", ".join("AABB(%g, %g, %g, %g, %g, %g)" % (*lo, *size) for lo, size in WATER_COLLIDERS)
+    s.node("Water", "Node", props={
+        "script": s.ext("shower_water"), "flow": ref(flow.joint), "hand_nozzle": ref("HandShower/SprayFace"),
+        "rain_nozzle": ref("RainNozzles"), "colliders": raw(f"Array[AABB]([{boxes}])")})
     return s
 
 
@@ -136,6 +163,8 @@ def handheld() -> Scene:
         sound="sfx/can_hit", friction=0.7, bounce=0.1, release_unfrozen=True,
         holder=HAND_HOLDER_GROUP, holder_props={"center": HAND_CENTER, "snap_sound": ref("SnapSound")})
     s.sound("SnapSound", "sfx/vent_latch", volume_db=-12.0)
+    s.node("HoseEnd", "Marker3D", position=HAND_HOSE_END)
+    s.node("SprayFace", "Marker3D", position=HAND_SPRAY)
     return s
 
 

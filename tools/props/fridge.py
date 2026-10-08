@@ -41,7 +41,8 @@ def scenes() -> dict[str, Scene]:
         light=HingeLightSpec(OmniLight((0, 1.7, 0.15), energy=0.6, range=0.9, color=(1, 0.96, 0.92, 1),
                                        attenuation=1.5, visible=False, name="InteriorLight"),
                              emissive_root="Body", emission_energy=1.5),
-        alarm=AlarmSpec(Sound("sfx/fridge_alarm", position=(0.18, 1.63, 0.33), props={"volume_db": -22.0})))
+        alarm=AlarmSpec(Sound("sfx/fridge_alarm", position=(0.18, 1.63, 0.33), props={"volume_db": -22.0})),
+        hand_push=True)
     s.sound("Hum", "sfx/fridge_hum", position=(0, 0.15, -0.3), before="InteriorLight",
             volume_db=-30.0, autoplay=True, max_distance=8.0)
     return {"assets/props/fridge/fridge.tscn": s}

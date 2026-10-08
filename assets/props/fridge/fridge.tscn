@@ -15,6 +15,7 @@
 [ext_resource type="AudioStream" uid="uid://0io2m5bthts6" path="res://assets/audio/sfx/fridge_hum.wav" id="13_hum"]
 [ext_resource type="Script" path="res://core/interaction/open_alarm.gd" id="14_alarm"]
 [ext_resource type="AudioStream" uid="uid://cbikfpoe3jxnw" path="res://assets/audio/sfx/fridge_alarm.wav" id="15_alarm_sound"]
+[ext_resource type="Script" path="res://core/interaction/hinge_hand_push.gd" id="hand_push"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_door0"]
 size = Vector3(0.6, 1.755, 0.055)
@@ -193,6 +194,12 @@ leaf = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
 script = ExtResource("8_pass")
 body = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
 handles_root = NodePath("../HingeOrigin/InteractableHinge/Leaf")
+
+[node name="HandPush" type="Node" parent="." node_paths=PackedStringArray("hinge", "leaf", "swing")]
+script = ExtResource("hand_push")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+leaf = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+swing = NodePath("../Swing")
 
 [node name="AlarmSound" type="AudioStreamPlayer3D" parent="."]
 position = Vector3(0.18, 1.63, 0.33)

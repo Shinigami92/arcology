@@ -30,7 +30,7 @@ script = ExtResource("1_pickable")
 release_mode = 0
 ranged_grab_method = 2
 second_hand_grab = 1
-metadata/_doc = "Hand shower 0.108 x 0.274 x 0.033 m, 0.35 kg. Origin = holder seat; handle along +Y, spray along +Z. Pickable; it starts in (and dropped near) a holder (a Marker3D in the 'shower_hand_holder' group), it sits there frozen until grabbed."
+metadata/_doc = "Hand shower 0.108 x 0.274 x 0.033 m, 0.35 kg. Origin = holder seat; handle along +Y, spray along +Z. Pickable; it starts in (and dropped near) a holder (a Marker3D in the 'shower_hand_holder' group), it sits there frozen until grabbed. HoseEnd: where the shower's hose attaches; SprayFace: where water leaves."
 
 [node name="HandleCollision" type="CollisionShape3D" parent="."]
 position = Vector3(0, -0.02, 0)
@@ -62,3 +62,9 @@ snap_sound = NodePath("../SnapSound")
 [node name="SnapSound" type="AudioStreamPlayer3D" parent="."]
 stream = ExtResource("vent_latch")
 volume_db = -12.0
+
+[node name="HoseEnd" type="Marker3D" parent="."]
+position = Vector3(0, -0.105, 0)
+
+[node name="SprayFace" type="Marker3D" parent="."]
+position = Vector3(0, 0.115, 0.014)

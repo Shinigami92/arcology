@@ -427,9 +427,15 @@ func _eye_positions() -> PackedVector3Array:
 ## surface's shader writes the reflection to EMISSION and the main pass tone maps
 ## (and glows) once.
 func _reflection_environment() -> Environment:
+	return environment_for(get_world_3d())
+
+
+## The shared environment of [method _reflection_environment] (also the door
+## viewer's, D-058): one copy of `world`'s, kept in sync by [method sync_environment].
+static func environment_for(world: World3D) -> Environment:
 	if _reflection_env:
 		return _reflection_env
-	var env := get_world_3d().environment
+	var env := world.environment
 	env = env.duplicate() if env else Environment.new()
 	_reflection_env = env
 	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR

@@ -48,6 +48,15 @@ func get_velocity() -> float:
 	return _velocity
 
 
+## Lets it swing on at `velocity` (°/s, positive opens), e.g. after a shove
+## by a bare hand ([HingeHandPush]). Ignored while held.
+func coast(velocity: float) -> void:
+	if _held:
+		return
+	_velocity = clampf(velocity, -max_speed, max_speed)
+	set_process(true)
+
+
 func _on_grabbed(_hinge: XRToolsInteractableHinge) -> void:
 	_held = true
 	_velocity = 0.0

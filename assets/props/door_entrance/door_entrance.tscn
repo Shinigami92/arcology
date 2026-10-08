@@ -10,18 +10,38 @@
 [ext_resource type="Script" path="res://core/interaction/hinge_swing.gd" id="hinge_swing"]
 [ext_resource type="Script" uid="uid://c8otihf11a0u7" path="res://core/interaction/hinge_body_blocker.gd" id="blocker"]
 [ext_resource type="Script" uid="uid://dwnb8l1buro5f" path="res://core/interaction/grab_pass_through.gd" id="pass_through"]
+[ext_resource type="Script" path="res://core/interaction/hinge_hand_push.gd" id="hand_push"]
 [ext_resource type="PackedScene" path="res://assets/props/door_entrance/door_entrance_lever_apartment.glb" id="door_entrance_lever_apartment"]
 [ext_resource type="PackedScene" path="res://assets/props/door_entrance/door_entrance_lever_corridor.glb" id="door_entrance_lever_corridor"]
+[ext_resource type="Script" path="res://core/rendering/door_viewer.gd" id="door_viewer"]
 [ext_resource type="PackedScene" path="res://assets/props/door_entrance/door_entrance_thumbturn.glb" id="door_entrance_thumbturn"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/deadbolt.wav" id="deadbolt"]
+[ext_resource type="Script" path="res://core/interaction/hinge_detents.gd" id="hinge_detents"]
+[ext_resource type="Script" path="res://core/interaction/door_lock.gd" id="door_lock"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/lock_beep_locked.wav" id="lock_beep_locked"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/lock_beep_unlocked.wav" id="lock_beep_unlocked"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/door_rattle.wav" id="door_rattle"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_door0"]
 size = Vector3(0.843, 2.0595, 0.065)
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_edge"]
+size = Vector3(0.09, 0.16, 0.165)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_turn0"]
+size = Vector3(0.011, 0.042, 0.019)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_turn1"]
+size = Vector3(0.032, 0.032, 0.004)
+
 [sub_resource type="SphereShape3D" id="SphereShape3D_grab"]
 radius = 0.06
 
+[sub_resource type="SphereShape3D" id="SphereShape3D_turn"]
+radius = 0.03
+
 [node name="DoorEntrance" type="Node3D"]
-metadata/_doc = "Apartment entrance door: steel security frame and 65 mm leaf (0.84 x 2.06 m) for a 0.90 x 2.10 m opening in a 0.20 m wall. Origin = bottom center of the opening on the wall's center plane; +Z = apartment side, the leaf opens toward it (0..100 degrees), hinge on the -X jamb. Levers at 1.1 m on both faces, deadbolt thumb-turn and smart-lock LED (material door_entrance_lock_led) on the apartment face, unit plate 4417 outside. Heavy: it swings on less and the latch catches it within 3 degrees. Built by blender/props/door_entrance/ (D-026)."
+metadata/_doc = "Apartment entrance door: steel security frame and 65 mm leaf (0.84 x 2.06 m) for a 0.90 x 2.10 m opening in a 0.20 m wall. Origin = bottom center of the opening on the wall's center plane; +Z = apartment side, the leaf opens toward it (0..100 degrees), hinge on the -X jamb. Levers at 1.1 m on both faces, deadbolt thumb-turn and smart-lock LED (material door_entrance_lock_led: cyan open, red locked) on the apartment face, unit plate 4417 outside. Twist the thumb-turn (only while closed) to lock; locked, the lever only rattles the door. The peephole at 1.55 m shows the corridor (DoorViewer). Heavy: it swings on less and the latch catches it within 3 degrees. Open, bare hands push either face and grab the free edge. Built by blender/props/door_entrance/ (D-026)."
 
 [node name="Frame" parent="." instance=ExtResource("door_entrance_frame")]
 
@@ -72,6 +92,20 @@ picked_up_layer = 0
 [node name="CollisionShape3D" type="CollisionShape3D" parent="HingeOrigin/InteractableHinge/Leaf/HandleOriginFront/InteractableHandle"]
 shape = SubResource("SphereShape3D_grab")
 
+[node name="HandleOriginEdge" type="Node3D" parent="HingeOrigin/InteractableHinge/Leaf"]
+position = Vector3(0.815, 1.5, -0.0465)
+
+[node name="InteractableHandle" type="RigidBody3D" parent="HingeOrigin/InteractableHinge/Leaf/HandleOriginEdge"]
+collision_layer = 262144
+collision_mask = 0
+freeze = true
+script = ExtResource("handle")
+enabled = false
+picked_up_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HingeOrigin/InteractableHinge/Leaf/HandleOriginEdge/InteractableHandle"]
+shape = SubResource("BoxShape3D_edge")
+
 [node name="StopSound" type="AudioStreamPlayer3D" parent="HingeOrigin/InteractableHinge" node_paths=PackedStringArray("hinge")]
 position = Vector3(-1.1, 0.7095, 0.048)
 stream = ExtResource("door_bump")
@@ -98,11 +132,109 @@ script = ExtResource("pass_through")
 body = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
 handles_root = NodePath("../HingeOrigin/InteractableHinge/Leaf")
 
+[node name="HandPush" type="Node" parent="." node_paths=PackedStringArray("hinge", "leaf", "swing", "edge_handle")]
+script = ExtResource("hand_push")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+leaf = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+swing = NodePath("../Swing")
+edge_handle = NodePath("../HingeOrigin/InteractableHinge/Leaf/HandleOriginEdge/InteractableHandle")
+
 [node name="LeverApartment" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody" instance=ExtResource("door_entrance_lever_apartment")]
 position = Vector3(0.7845, 1.1, -0.014)
 
 [node name="LeverCorridor" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody" instance=ExtResource("door_entrance_lever_corridor")]
 position = Vector3(0.7845, 1.1, -0.079)
 
-[node name="ThumbTurn" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody" instance=ExtResource("door_entrance_thumbturn")]
+[node name="Peephole" type="Node3D" parent="HingeOrigin/InteractableHinge/Leaf"]
+position = Vector3(0.423, 1.55, -0.0027)
+script = ExtResource("door_viewer")
+depth = 0.0815
+
+[node name="ThumbTurnMount" type="RemoteTransform3D" parent="HingeOrigin/InteractableHinge/Leaf"]
 position = Vector3(0.7845, 1.3, 0.012)
+remote_path = NodePath("../../../../ThumbTurn")
+update_scale = false
+
+[node name="ThumbTurn" type="Node3D" parent="."]
+position = Vector3(0.361, 1.3, 0.136)
+
+[node name="HingeOrigin" type="Node3D" parent="ThumbTurn"]
+position = Vector3(0, 0, 0)
+rotation_degrees = Vector3(0, -90, 0)
+
+[node name="InteractableHinge" type="Node3D" parent="ThumbTurn/HingeOrigin"]
+script = ExtResource("hinge")
+hinge_limit_min = 0.0
+hinge_limit_max = 90.0
+
+[node name="Leaf" type="Node3D" parent="ThumbTurn/HingeOrigin/InteractableHinge"]
+rotation_degrees = Vector3(0, 90, 0)
+
+[node name="DoorBody" type="AnimatableBody3D" parent="ThumbTurn/HingeOrigin/InteractableHinge/Leaf"]
+script = ExtResource("follower")
+
+[node name="FinCollision" type="CollisionShape3D" parent="ThumbTurn/HingeOrigin/InteractableHinge/Leaf/DoorBody"]
+position = Vector3(0, 0, 0.012)
+shape = SubResource("BoxShape3D_turn0")
+
+[node name="DiscCollision" type="CollisionShape3D" parent="ThumbTurn/HingeOrigin/InteractableHinge/Leaf/DoorBody"]
+position = Vector3(0, 0, 0.0015)
+shape = SubResource("BoxShape3D_turn1")
+
+[node name="Model" parent="ThumbTurn/HingeOrigin/InteractableHinge/Leaf/DoorBody" instance=ExtResource("door_entrance_thumbturn")]
+
+[node name="HandleOrigin" type="Node3D" parent="ThumbTurn/HingeOrigin/InteractableHinge/Leaf"]
+position = Vector3(0, 0.016, 0.014)
+
+[node name="InteractableHandle" type="RigidBody3D" parent="ThumbTurn/HingeOrigin/InteractableHinge/Leaf/HandleOrigin"]
+collision_layer = 262144
+collision_mask = 0
+freeze = true
+script = ExtResource("handle")
+picked_up_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ThumbTurn/HingeOrigin/InteractableHinge/Leaf/HandleOrigin/InteractableHandle"]
+shape = SubResource("SphereShape3D_turn")
+
+[node name="BodyBlocker" type="Node" parent="ThumbTurn" node_paths=PackedStringArray("hinge", "leaf")]
+script = ExtResource("blocker")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+leaf = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+
+[node name="GrabPassThrough" type="Node" parent="ThumbTurn" node_paths=PackedStringArray("body", "handles_root")]
+script = ExtResource("pass_through")
+body = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+handles_root = NodePath("../HingeOrigin/InteractableHinge/Leaf")
+
+[node name="Deadbolt" type="AudioStreamPlayer3D" parent="ThumbTurn"]
+stream = ExtResource("deadbolt")
+volume_db = -6.0
+
+[node name="Detents" type="Node" parent="ThumbTurn" node_paths=PackedStringArray("hinge", "click")]
+script = ExtResource("hinge_detents")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+detents = PackedFloat32Array(0, 90)
+capture = 40.0
+click = NodePath("../Deadbolt")
+
+[node name="BeepLocked" type="AudioStreamPlayer3D" parent="ThumbTurn"]
+stream = ExtResource("lock_beep_locked")
+volume_db = -18.0
+
+[node name="BeepUnlocked" type="AudioStreamPlayer3D" parent="ThumbTurn"]
+stream = ExtResource("lock_beep_unlocked")
+volume_db = -18.0
+
+[node name="Rattle" type="AudioStreamPlayer3D" parent="HingeOrigin/InteractableHinge/Leaf"]
+position = Vector3(0.78, 1.1, -0.05)
+stream = ExtResource("door_rattle")
+volume_db = -4.0
+
+[node name="Lock" type="Node" parent="." node_paths=PackedStringArray("door", "turn", "led_root", "beep_locked", "beep_unlocked", "rattle")]
+script = ExtResource("door_lock")
+door = NodePath("../HingeOrigin/InteractableHinge")
+turn = NodePath("../ThumbTurn/HingeOrigin/InteractableHinge")
+led_root = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody/Model")
+beep_locked = NodePath("../ThumbTurn/BeepLocked")
+beep_unlocked = NodePath("../ThumbTurn/BeepUnlocked")
+rattle = NodePath("../HingeOrigin/InteractableHinge/Leaf/Rattle")

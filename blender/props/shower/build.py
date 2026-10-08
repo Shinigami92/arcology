@@ -414,19 +414,12 @@ def catmull_rom_dense(pts):
 
 
 def build_hose(coll, mats):
-    """Braided hose from the hand shower down in a loop and up into the wall outlet, with
-    conical ferrules at both ends and the outlet elbow."""
-    bottom, a, path = hose_path()
-    bm = bmesh.new()
-    curves.tube(bm, path, C.HOSE_R, segments=12, caps=True)
-    hose = new_object("Hose", bm, coll, material=mats["hose"])
-    L.split_planes(hose, ((2, 1.0), (0, -0.20)))
-    shade(hose, 60.0)
-
+    """Wall outlet of the hand shower's hose: rosette, elbow down, hex nut and the conical
+    ferrule pointing down out of the nut. The hose itself (and its ferrule at the hand shower)
+    is a simulated tube drawn by Godot (D-058) that starts inside this ferrule; hose_path()
+    and mat_hose() are the old static hose, kept for reference."""
     bm = bmesh.new()
     ferrule = [(0.0, 0.0), (0.0098, 0.0), (0.0098, 0.010), (0.0090, 0.026), (0.0080, 0.034), (0.0, 0.034)]
-    rot = Vector((0, 0, 1)).rotation_difference(-a).to_matrix().to_4x4()
-    L.lathe_at(bm, ferrule, Matrix.Translation(bottom) @ rot, 24)
     o = C.OUTLET
     yo = C.BACK_Y - 0.048
     L.lathe_at(bm, ferrule, Matrix.Translation((o.x, yo, o.z - 0.048)) @ Matrix.Rotation(math.pi, 4, "X"), 24)
@@ -444,7 +437,7 @@ def build_hose(coll, mats):
     bm = bmesh.new()
     bm_cyl(bm, 0.0128, 0.018, cyl_z((o.x, yo, o.z - 0.039)), 6)
     nut = mesh("OutletNut", bm, coll, mats["fx_z"], 0.0012, 2)
-    return [hose, ends, roses, elbow, nut]
+    return [ends, roses, elbow, nut]
 
 
 def build_shelf(coll, mats):
@@ -539,7 +532,7 @@ def build_materials():
     return {
         "glass": mat_glass(), "glass_edge": mat_glass_edge(),
         "fx_z": mat_fixture("fx_z", "Z"), "fx_y": mat_fixture("fx_y", "Y"),
-        "plate": mat_plate(), "rain": mat_rain(), "drain": mat_drain(), "hose": mat_hose(),
+        "plate": mat_plate(), "rain": mat_rain(), "drain": mat_drain(),
         "marble": mat_marble(), "lever": mat_lever(), "dial": mat_dial(), "handheld": mat_handheld(HEAD_Z),
     }
 

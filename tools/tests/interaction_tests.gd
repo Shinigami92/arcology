@@ -54,6 +54,14 @@ func _registry() -> Array[Array]:
 		["doors_fridge", "door_swing", _test_swing.bind("DoorLiving", 20.0, 120.0)],
 		["doors_fridge", "fridge_flick_shut", _test_flick_shut.bind("Fridge")],
 		["doors_fridge", "fridge_door_bin", _test_fridge_door_bin],
+		["doors_fridge", "door_hand_push", _test_hand_push.bind("DoorLiving")],
+		["doors_fridge", "entrance_hand_push", _test_hand_push.bind("DoorEntrance")],
+		["doors_fridge", "fridge_hand_push", _test_hand_push.bind("Fridge")],
+		["doors_fridge", "door_edge_grab", _test_edge_grab.bind("DoorBedroom")],
+		["doors_fridge", "entrance_edge_grab", _test_edge_grab.bind("DoorEntrance")],
+		["doors_fridge", "entrance_lock", _test_door_lock.bind("DoorEntrance")],
+		["doors_fridge", "bathroom_lock", _test_door_lock.bind("DoorBathroom")],
+		["rendering", "door_viewer", _test_door_viewer],
 		["furniture", "sofa", _test_sofa],
 		["variants", "spare_sofa", _test_spare_sofa],
 		["furniture", "bedroom", _test_bedrooms],
@@ -106,6 +114,8 @@ func _registry() -> Array[Array]:
 		["bathroom", "vanity_dispenser", _test_vanity_dispenser],
 		["bathroom", "shower_controls", _test_shower_controls],
 		["bathroom", "shower_hand", _test_shower_hand],
+		["bathroom", "shower_hose", _test_shower_hose],
+		["bathroom", "shower_water", _test_shower_water],
 		["bathroom", "shower_glass", _test_shower_glass],
 	]
 	return tests
@@ -509,6 +519,179 @@ func _test_flick_shut(door: String) -> void:
 	_set_hinge(door, 0.0)
 	await _frames(2)
 	_check(door + "_flick_shut", ended < 0.01, "flicked shut from 70° at 250°/s, ended at %.1f°" % ended)
+
+
+## Puts the left controller where its palm (HingeHandPush.palm_target) lands on `world`.
+func _place_palm(world: Vector3) -> void:
+	var controller: XRController3D = _main.get_node("Player/LeftHand")
+	var hand: XRToolsCollisionHand = controller.get_node("CollisionHand")
+	var offset := HingeHandPush.palm_target(hand) - controller.global_position
+	controller.global_position = world - offset
+
+
+## A bare palm pushes an open door: pressed into the face it opens toward,
+## the leaf turns away until the palm rests on it, and the shove swings on.
+## Closed, the same push from the other side does nothing (the latch holds).
+func _test_hand_push(door: String) -> void:
+	var hinge := _hinge(door)
+	var push: HingeHandPush = _main.get_node(PROPS + door + "/HandPush")
+	var leaf: Node3D = hinge.get_node("Leaf")
+	var controller: XRController3D = _main.get_node("Player/LeftHand")
+	var saved := controller.global_transform
+	var x := push._bounds.end.x * 0.7
+	var front := push._bounds.end.z + push.palm_radius
+	var back := push._bounds.position.z - push.palm_radius
+	_set_hinge(door, 45.0)
+	await _frames(3)
+	# 70 % out from the hinge at 1.2 m, from 12 cm off the open-side face to 15 cm past it, fixed in the world.
+	var from := leaf.to_global(Vector3(x, 1.2, front + 0.12))
+	var to := leaf.to_global(Vector3(x, 1.2, front - 0.15))
+	_place_palm(from)
+	await _frames(10)
+	for i in 30:
+		_place_palm(from.lerp(to, (i + 1) / 30.0))
+		await get_tree().physics_frame
+	var pushed_to := hinge.hinge_position
+	# No bone of the (wanted) hand sinks into the face it pushes.
+	var hand: XRToolsCollisionHand = controller.get_node("CollisionHand")
+	var points := PackedVector3Array()
+	var radii := PackedFloat32Array()
+	push.hand_points(hand, points, radii)
+	var sunk := 0.0
+	for k in points.size():
+		var b := leaf.to_local(points[k])
+		var on_face := b.x > push._bounds.position.x and b.x < push._bounds.end.x
+		on_face = on_face and b.y > push._bounds.position.y and b.y < push._bounds.end.y
+		if on_face and b.z > push._bounds.position.z - 0.1:
+			sunk = maxf(sunk, push._bounds.end.z + radii[k] - b.z)
+	_place_palm(from)
+	await _frames(60)
+	var coasted := hinge.hinge_position
+	# Closed: the palm pushes into the other face; the door stays shut.
+	_set_hinge(door, 0.0)
+	await _frames(3)
+	from = leaf.to_global(Vector3(x, 1.2, back - 0.12))
+	to = leaf.to_global(Vector3(x, 1.2, back + 0.15))
+	_place_palm(from)
+	await _frames(10)
+	for i in 20:
+		_place_palm(from.lerp(to, (i + 1) / 20.0))
+		await get_tree().physics_frame
+	var closed_push := hinge.hinge_position
+	controller.global_transform = saved
+	await _frames(10)
+	_set_hinge(door, 0.0)
+	await _frames(2)
+	_check(door + "_hand_push", pushed_to < 35.0 and points.size() > 10 and sunk < 0.01 and coasted <= pushed_to
+			and closed_push == 0.0,
+			"open 45°, palm pushed 27 cm into the face: door at %.1f°, %d hand bones, deepest %.3f m into the face; coasted to %.1f°; closed, pushed from the other side: %.1f°" % [
+				pushed_to, points.size(), sunk, coasted, closed_push])
+
+## A door's thumb-turn deadbolt: it locks the closed door (its lever only
+## rattles it; the entrance's LED turns red, the bathroom's knob turns with
+## it), unlocks it again, and doesn't move while the door is open; the turn
+## rides the leaf.
+func _test_door_lock(door_name: String) -> void:
+	var root: Node3D = _main.get_node(PROPS + door_name)
+	var door := _hinge(door_name)
+	var turn: XRToolsInteractableHinge = root.get_node("ThumbTurn/HingeOrigin/InteractableHinge")
+	var lock: DoorLock = root.get_node("Lock")
+	var rattle: AudioStreamPlayer3D = root.get_node("HingeOrigin/InteractableHinge/Leaf/Rattle")
+	var led: BaseMaterial3D = lock._leds[0] if not lock._leds.is_empty() else null
+	var has_led := door_name == "DoorEntrance"
+	var cyan := not has_led or (led != null and led.emission.b > 0.5 and led.emission.r < 0.2)
+	var knob := lock.turn_visual
+	var knob_rest := knob.global_basis if knob else Basis.IDENTITY
+	_move_hinge(turn, 90.0)
+	var locked := lock.is_locked()
+	var red := not has_led or (led != null and led.emission.r > 0.5 and led.emission.b < 0.2)
+	# The knob turned 90° about the leaf normal (its blade now horizontal).
+	var knob_turned := knob == null or absf(rad_to_deg(knob.global_basis.y.angle_to(knob_rest.y)) - 90.0) < 1.0
+	_set_hinge(door_name, 40.0)
+	var held_shut := door.hinge_position
+	door.grabbed.emit(door)
+	var rattled := rattle.playing
+	door.released.emit(door)
+	_move_hinge(turn, 0.0)
+	var unlocked := not lock.is_locked()
+	_set_hinge(door_name, 40.0)
+	var opens := door.hinge_position
+	await _frames(3)
+	var mount: Node3D = root.get_node("HingeOrigin/InteractableHinge/Leaf/ThumbTurnMount")
+	var rides := (root.get_node("ThumbTurn") as Node3D).global_position.distance_to(mount.global_position)
+	_move_hinge(turn, 90.0)
+	var turned_open := turn.hinge_position
+	_set_hinge(door_name, 0.0)
+	await _frames(3)
+	_check(door_name + "_lock", cyan and locked and red and knob_turned and held_shut == 0.0 and rattled
+			and unlocked and opens == 40.0 and rides < 0.001 and turned_open == 0.0,
+			"LED cyan %s; turned 90°: locked %s, LED red %s, knob turned %s, door pulled to 40° stays at %.1f°, rattles %s; turned back: unlocked %s, opens to %.1f°; turn %.4f m off its mount on the open leaf; turning it while open: %.1f°" % [
+				cyan, locked, red, knob_turned, held_shut, rattled, unlocked, opens, rides, turned_open])
+
+## The entrance door's peephole renders its corridor camera only while an eye
+## is at the lens on the apartment side, and keeps the image afterwards.
+func _test_door_viewer() -> void:
+	var viewer: DoorViewer = _main.get_node(PROPS + "DoorEntrance/HingeOrigin/InteractableHinge/Leaf/Peephole")
+	var cam := Camera3D.new()
+	_main.add_child(cam)
+	var saved := PlanarReflection.view_camera
+	PlanarReflection.view_camera = cam
+	var awake: Array[bool] = []
+	# Far, 4 cm in front, 4 cm behind (corridor side), far again.
+	for z: float in [1.5, 0.04, -0.12, 1.5]:
+		cam.global_position = viewer.to_global(Vector3(0, 0, z))
+		viewer.check_eye()
+		awake.append(viewer.is_awake())
+	PlanarReflection.view_camera = saved
+	cam.queue_free()
+	# The lens shader compiles (a parse error leaves no uniforms; the lens then isn't drawn).
+	var uniforms := DoorViewer.SHADER.get_shader_uniform_list().map(func(u: Dictionary) -> String: return u.name)
+	_check("door_viewer", str(awake) == "[false, true, false, false]" and uniforms.has("shown_view"),
+			"camera renders far %s, eye at the lens %s, behind the door %s, far again %s; lens shader uniforms %s" % (
+				awake + [uniforms]))
+	# One eye looks through: centered, the dominant (left) one; the right one when clearly nearer the axis.
+	var eyes: Array[int] = [DoorViewer.choose_eye(0.032, 0.032), DoorViewer.choose_eye(0.0, 0.063),
+			DoorViewer.choose_eye(0.063, 0.0), DoorViewer.choose_eye(0.03, 0.02)]
+	_check("door_viewer_one_eye", str(eyes) == "[0, 0, 1, 0]",
+			"eye looking through (0 left, 1 right): centered %d, left at the lens %d, right at the lens %d, right 1 cm nearer %d" % eyes)
+
+
+## The free edge of an open door can be grabbed at any height: its handle is
+## off while closed, follows the hand along the edge while open, and holding
+## it holds the hinge (XR Tools turns the hinge with it, as with the levers)
+## and lets the hand through the leaf.
+func _test_edge_grab(door: String) -> void:
+	var hinge := _hinge(door)
+	var leaf: Node3D = hinge.get_node("Leaf")
+	var origin: Node3D = leaf.get_node("HandleOriginEdge")
+	var handle: XRToolsInteractableHandle = origin.get_node("InteractableHandle")
+	var body: PhysicsBody3D = leaf.get_node("DoorBody")
+	var pickup: XRToolsFunctionPickup = _main.get_node("Player/LeftHand/CollisionHand/FunctionPickup")
+	var controller: XRController3D = _main.get_node("Player/LeftHand")
+	var hand: PhysicsBody3D = controller.get_node("CollisionHand")
+	var saved := controller.global_transform
+	var off_closed := not handle.enabled
+	_set_hinge(door, 40.0)
+	await _frames(3)
+	var on_open := handle.enabled
+	var edge := origin.position
+	# The hand 12 cm off the open-side face, near the edge (closer would push the leaf).
+	_place_palm(leaf.to_global(Vector3(edge.x, 1.75, edge.z + 0.12)))
+	await _frames(10)
+	var followed := origin.position.y
+	pickup.global_transform = Transform3D(Basis.IDENTITY, handle.global_position)
+	pickup._pick_up_object(handle)
+	await _frames(1)
+	var holds := hinge.grabbed_handles.has(handle) and hand.get_collision_exceptions().has(body)
+	pickup.drop_object()
+	controller.global_transform = saved
+	await _frames(10)
+	_set_hinge(door, 0.0)
+	await _frames(2)
+	var off_again := not handle.enabled
+	_check(door + "_edge_grab", off_closed and on_open and absf(followed - 1.75) < 0.03 and holds and off_again,
+			"edge handle off while closed %s, on while open %s; follows the hand to %.2f m (1.75); held, it holds the hinge and the hand passes the leaf %s; off again when closed %s" % [
+				off_closed, on_open, followed, holds, off_again])
 
 
 ## A can dropped into a door bin of the open fridge stays in the bin.
@@ -2137,6 +2320,73 @@ func _test_shower_hand() -> void:
 			"in the holder at start %s; carried out %.2f m; dropped away falls %s; put back clicks in %s" % [
 				in_holder, carried, fell, back])
 
+## The hand shower's hose: it runs from the wall outlet to the hand shower and
+## rests (sleeps) while the hand shower sits in its holder; carried, it
+## follows; pulled past its length, the hand lets go and the dropped hand
+## shower hangs within the hose's reach.
+func _test_shower_hose() -> void:
+	var sh: Node3D = _main.get_node(PROPS + "Shower")
+	var hose: ShowerHose = sh.get_node("Hose")
+	var hand: XRToolsPickable = sh.get_node("HandShower")
+	var outlet: Node3D = sh.get_node("HoseOutlet")
+	var hose_end: Node3D = hand.get_node("HoseEnd")
+	var holder: Node3D = sh.get_node("HandShowerHolder")
+	var settle := 0
+	while hose.is_awake() and settle < 600:
+		await get_tree().physics_frame
+		settle += 1
+	var points := hose.get_points()
+	var ends := points[0].distance_to(hose.to_local(outlet.global_position)) \
+			+ points[points.size() - 1].distance_to(hose.to_local(hose_end.global_position))
+	var lowest := INF
+	for p in points:
+		lowest = minf(lowest, p.y)
+	var resting := not hose.is_awake()
+	await _carry(hand, sh.global_basis.z * 0.4)
+	var awake := hose.is_awake()
+	points = hose.get_points()
+	var follows := points[points.size() - 1].distance_to(hose.to_local(hose_end.global_position))
+	# Pull it 2.5 m away from the outlet.
+	var pickup: XRToolsFunctionPickup = _main.get_node("Player/LeftHand/CollisionHand/FunctionPickup")
+	var from := pickup.global_position
+	var away := outlet.global_position + sh.global_basis.z * 2.5 + Vector3(0, 0.8, 0)
+	for i in 30:
+		pickup.global_transform = Transform3D(Basis.IDENTITY, from.lerp(away, (i + 1) / 30.0))
+		await get_tree().physics_frame
+	var let_go := not hand.is_picked_up()
+	await _frames(90)
+	var reach := outlet.global_position.distance_to(hose_end.global_position)
+	_drop_left()
+	hand.freeze = false
+	hand.global_transform = holder.global_transform.translated(Vector3(0, 0.04, 0.02))
+	hand.dropped.emit(hand)
+	await _frames(3)
+	_check("shower_hose", ends < 0.002 and lowest > 0.0 and resting and settle < 300 and awake and follows < 0.002 and let_go
+			and reach <= hose.length + 0.01,
+			"ends on outlet and hand shower %.4f m off, lowest point %.2f m, resting in the holder %s (after %d frames); carried: awake %s, end %.4f m off; pulled 2.5 m away: let go %s, hangs %.2f m from the outlet (hose %.1f m)" % [
+				ends, lowest, resting, settle, awake, follows, let_go, reach, hose.length])
+
+
+## The flow lever runs the water: hand shower at -90°, rain head at +90°,
+## nothing at 0 (spray and sound).
+func _test_shower_water() -> void:
+	var sh: Node3D = _main.get_node(PROPS + "Shower")
+	var flow: XRToolsInteractableHinge = sh.get_node("FlowLever/HingeOrigin/InteractableHinge")
+	var hand: GPUParticles3D = sh.get_node("HandShower/SprayFace/HandSpray")
+	var rain: GPUParticles3D = sh.get_node("RainNozzles/RainSpray")
+	var hand_sound: AudioStreamPlayer3D = sh.get_node("HandShower/SprayFace/HandSpraySound")
+	var rain_sound: AudioStreamPlayer3D = sh.get_node("RainNozzles/RainSpraySound")
+	var states: Array[String] = []
+	for angle: float in [0.0, -90.0, 90.0, -45.0, 0.0]:
+		_move_hinge(flow, angle)
+		await _frames(2)
+		states.append("%d°: hand %s/%s rain %s/%s" % [angle, hand.emitting, hand_sound.playing, rain.emitting,
+				rain_sound.playing])
+	var expected: Array[String] = ["0°: hand false/false rain false/false", "-90°: hand true/true rain false/false",
+			"90°: hand false/false rain true/true", "-45°: hand true/true rain false/false",
+			"0°: hand false/false rain false/false"]
+	_check("shower_water", states == expected and hand.amount_ratio < 1.0, ", ".join(states))
+
 
 ## The shower glass stops a body-sized capsule and the walking player; the
 ## entry at its south end lets both through.
@@ -2212,6 +2462,8 @@ func _test_world_clock() -> void:
 	var follows := world.follow_system_clock and world.is_processing() and minf(gap, 24.0 - gap) < 0.05
 	var followed := world.hours
 	world.set_time(22.0, 0.0)
+	# follow_clock() also took the PC's date.
+	world.set_date(10, 5, 2.0)
 	_check("world_clock_fixed_for_tests", fixed, "%.2f h, running %s" % [world.hours, world.is_processing()])
 	_check("world_clock_runs", ran, "%.1f game minutes in 0.5 s at 600x, %d announcements (1 + one per minute)" % [advanced, minutes.size()])
 	_check("world_clock_follows_pc", follows, "%.3f h, PC %.3f h" % [followed, pc])

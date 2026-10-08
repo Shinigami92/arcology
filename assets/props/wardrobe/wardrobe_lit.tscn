@@ -21,6 +21,7 @@
 [ext_resource type="PackedScene" path="res://assets/props/wardrobe/wardrobe_hanger_lit.tscn" id="p_hanger"]
 [ext_resource type="PackedScene" path="res://assets/props/wardrobe/wardrobe_hanger_shirt_a_lit.tscn" id="p_shirt_a"]
 [ext_resource type="PackedScene" path="res://assets/props/wardrobe/wardrobe_hanger_shirt_b_lit.tscn" id="p_shirt_b"]
+[ext_resource type="Script" path="res://core/interaction/hinge_hand_push.gd" id="hand_push"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_Left0"]
 size = Vector3(0.7485, 1.996, 0.02)
@@ -144,6 +145,12 @@ script = ExtResource("h_pass")
 body = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
 handles_root = NodePath("../HingeOrigin/InteractableHinge/Leaf")
 
+[node name="HandPush" type="Node" parent="DoorLeft" node_paths=PackedStringArray("hinge", "leaf", "swing")]
+script = ExtResource("hand_push")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+leaf = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+swing = NodePath("../Swing")
+
 [node name="DoorRight" type="Node3D" parent="."]
 
 [node name="HingeOrigin" type="Node3D" parent="DoorRight"]
@@ -209,6 +216,12 @@ leaf = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
 script = ExtResource("h_pass")
 body = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
 handles_root = NodePath("../HingeOrigin/InteractableHinge/Leaf")
+
+[node name="HandPush" type="Node" parent="DoorRight" node_paths=PackedStringArray("hinge", "leaf", "swing")]
+script = ExtResource("hand_push")
+hinge = NodePath("../HingeOrigin/InteractableHinge")
+leaf = NodePath("../HingeOrigin/InteractableHinge/Leaf/DoorBody")
+swing = NodePath("../Swing")
 
 [node name="DrawerLeft" type="Node3D" parent="."]
 
