@@ -35,6 +35,8 @@ TURN_GRIP = (0, 0.016, 0.014)      # the fin's upper end: twisting the hand carr
 # Door viewer (D-058): the apartment-side lens' dome (0.5 mm in front of it), and the depth to the corridor lens' dome.
 PEEPHOLE = (0.423, 1.55, -0.0027)
 PEEPHOLE_DEPTH = 0.0815
+# The unit number plate's face on the corridor side (leaf frame; blender: PLATE_Z, the leaf's corridor face).
+UNIT_PLATE = (0.423, 1.73, -0.083)
 
 
 def scenes() -> dict[str, Scene]:
@@ -51,6 +53,9 @@ def scenes() -> dict[str, Scene]:
 
     s.node("Peephole", "Node3D", parent=joint.leaf, position=PEEPHOLE, script=s.ext("door_viewer"),
            depth=PEEPHOLE_DEPTH)
+    # Another unit's number over the leaf's 4417 plate (metadata/unit_number on the instance, D-062).
+    s.node("UnitPlate", "Node3D", parent=joint.body, position=UNIT_PLATE, rotation_degrees=(0, 180, 0),
+           script=s.ext("res://core/signage/unit_plate.gd"))
 
     s.door_lock(joint, HINGE, LockSpec(
         THUMBTURN, TURN_BOXES, TURN_GRIP, glb=GLB.format("thumbturn"), led_root=f"{joint.body}/Model", beeps=True,

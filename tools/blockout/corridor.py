@@ -46,30 +46,17 @@ ELEVATOR_W, ELEVATOR_H = 1.1, 2.2
 DOORS = [
     ("Door4418", "z", EAST, 0.0, 90, "4418"),
     ("Door4419", "z", EAST, 4.6, 90, "4419"),
-    ("Door4420", "x", MAIN_S, 18.0, 0, "4420"),
-    ("Door4421", "x", MAIN_S, 5.0, 0, "4421"),
+    ("Door4420", "x", MAIN_S, 18.2, 0, "4420"),
+    ("Door4421", "x", MAIN_S, 6.2, 0, "4421"),
     ("Door4422", "x", MAIN_S, 1.0, 0, "4422"),
     ("Door4423", "x", MAIN_S, -4.0, 0, "4423"),
     ("DoorService", "x", MAIN_N, 4.6, 180, "SERVICE"),
     ("DoorStairs", "z", MAIN_W, MAIN_Z, -90, "STAIRS"),
 ]
 DOOR_HALF = 0.45
-# The leaf's unit plate (reads 4417, built into the leaf glb) in the door's frame (origin bottom center of
-# the opening on the wall's center plane, +Z = the unit): a cover over it and the door's own number in front.
-NUMBER_PLATE = (0.0, 1.73, 0.041)
-PLATE_COVER = (0.25, 0.115, 0.006)
-
-
-def door_point(pos, yaw, local):
-    """A point in a door's frame (yaw about Y, degrees) in world coordinates."""
-    c, s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
-    x, y, z = local
-    return (round(pos[0] + x * c + z * s, 4), round(pos[1] + y, 4), round(pos[2] - x * s + z * c, 4))
-
-
-def door_size(yaw, size):
-    """A box size in a door's frame turned by a multiple of 90 degrees."""
-    return size if round(yaw / 90) % 2 == 0 else (size[2], size[1], size[0])
+# Doors into units (zones in zones/zone_graph.json, D-062) work like ours (door_entrance: lever, lock,
+# peephole); service and stairs stay shut (door_neighbor). Each shows its number (UnitPlate).
+UNIT_DOORS = {"4418", "4419", "4420", "4421", "4422", "4423"}
 
 
 # Wall trim (D-060): the wainscot swept along these runs by blender/architecture/corridor/ into TRIM_GLB
@@ -182,12 +169,8 @@ def build() -> Zone:
     # --- Neighbor doors and their numbers ---------------------------------------------------------------
     for name, axis, line, at, yaw, label in DOORS:
         pos = (line, 0, at) if axis == "z" else (at, 0, line)
-        z.instance(name, "door_neighbor", pos, (0, yaw, 0))
-        px, py, pz = NUMBER_PLATE
-        z.box("Plates", f"{name}Plate", door_point(pos, yaw, (px, py, pz - PLATE_COVER[2] / 2 - 0.003)),
-              door_size(yaw, PLATE_COVER), "dark", False)
-        z.sign(f"{name}Number", door_point(pos, yaw, (px, py, pz - PLATE_COVER[2] - 0.0035)), (yaw + 180) % 360,
-               label, font_size=96 if len(label) <= 4 else 64, pixel_size=0.0006, col=(0.92, 0.9, 0.85), lit=False)
+        z.instance(name, "door_entrance" if label in UNIT_DOORS else "door_neighbor", pos, (0, yaw, 0),
+                   meta={"unit_number": label})
 
     # --- Kit (D-060, tools/blockout/corridor_kit.json): the artist's glbs once they exist, stand-ins until then ---
     trim = kit("corridor_trim")

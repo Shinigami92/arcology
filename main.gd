@@ -7,6 +7,7 @@ extends Node3D
 ##   --perf-duration=<s>  flythrough length in seconds (default 20)
 ##   --perf-hide=<a,b>    zone-relative node paths to hide (A/B cost tests)
 ##   --perf-reload=<zone> halfway through the flythrough, free that zone and stream it in again (a load's hitch)
+##   --zone=<id>          with --shots/--test: start with that zone as the player's (it streams in: units)
 ##   --load-depth=<n>     keep zones up to n connections from the player's loaded (ZoneStreamer; 0 = only it)
 ##   --reflections=<n>    live reflection planes at once (PlanarReflection.max_active; 0 = none)
 ##   --test=<suite>       run tools/tests/<suite>_tests.gd and quit with the failure count
@@ -72,7 +73,12 @@ func _ready() -> void:
 		($Zones as ZoneStreamer).set_load_depth(int(args["load-depth"]))
 	if args.has("perf") or args.has("test") or args.has("shots"):
 		# The zones next to the start stream in first (D-059).
+		# The zone to measure or look at becomes the player's, so it streams in (a unit loads only near its door).
+		if args.has("perf") or args.has("zone"):
+			($Zones as ZoneStreamer).set_current(StringName(args.get("zone", args.get("perf"))))
 		await ($Zones as ZoneStreamer).wait_settled()
+		if args.has("perf") or args.has("zone"):
+			_enter_zone(StringName(args.get("zone", args.get("perf"))))
 	if args.has("perf"):
 		_start_perf(args)
 	elif args.has("test"):
@@ -129,6 +135,14 @@ func _set_time(args: Dictionary) -> void:
 		world.set_time(FIXED_TIME, maxf(run_speed, 0.0))
 	elif run_speed >= 0.0:
 		world.set_time(world.hours, run_speed)
+
+
+## Stands the player at the zone's first entry, so the zones' bounds agree (perf, stills of a unit).
+func _enter_zone(id: StringName) -> void:
+	var zone := ($Zones as ZoneStreamer).get_zone(id)
+	var entries := zone.get_node_or_null("Entries") if zone else null
+	if entries and entries.get_child_count() > 0:
+		(_player.get_node("PlayerBody") as XRToolsPlayerBody).teleport((entries.get_child(0) as Node3D).global_transform)
 
 
 func _start_perf(args: Dictionary) -> void:

@@ -1,0 +1,695 @@
+[gd_scene format=3]
+
+[ext_resource type="Material" path="res://assets/materials/polished_concrete.tres" id="1_concrete"]
+[ext_resource type="Material" path="res://assets/materials/vinyl_plank.tres" id="2_vinyl"]
+[ext_resource type="Material" path="res://assets/materials/carpet.tres" id="3_carpet"]
+[ext_resource type="Material" path="res://assets/materials/ceiling_plaster.tres" id="4_ceiling"]
+[ext_resource type="Material" path="res://assets/materials/wall_plaster.tres" id="5_wall"]
+[ext_resource type="Material" path="res://assets/materials/furniture_dark.tres" id="6_dark"]
+[ext_resource type="Material" path="res://assets/materials/brushed_steel.tres" id="7_steel"]
+[ext_resource type="Material" path="res://assets/materials/neon_cyan.tres" id="8_cyan"]
+[ext_resource type="Material" path="res://assets/materials/ceiling_lamp.tres" id="9_lamp"]
+[ext_resource type="PackedScene" path="res://assets/props/door_interior/door_interior_bath.tscn" id="10_door_bath"]
+[ext_resource type="PackedScene" path="res://assets/props/toilet/toilet.tscn" id="11_toilet"]
+[ext_resource type="PackedScene" path="res://assets/props/vanity/vanity.tscn" id="12_vanity"]
+[ext_resource type="PackedScene" path="res://assets/props/bath_mirror/bath_mirror.tscn" id="13_bath_mirror"]
+[ext_resource type="PackedScene" path="res://assets/props/fridge/fridge.tscn" id="14_fridge"]
+[ext_resource type="PackedScene" path="res://assets/props/beverage_can/beverage_can.tscn" id="15_can"]
+[ext_resource type="PackedScene" path="res://assets/props/trash_can/trash_can.tscn" id="16_trash"]
+[ext_resource type="PackedScene" path="res://assets/props/wardrobe/wardrobe.tscn" id="17_wardrobe"]
+[ext_resource type="PackedScene" path="res://assets/props/sofa/sofa_boucle.tscn" id="18_sofa_boucle"]
+[ext_resource type="PackedScene" path="res://assets/props/bed/bed.tscn" id="19_bed"]
+[ext_resource type="PackedScene" path="res://assets/props/nightstand/nightstand.tscn" id="20_nightstand"]
+[ext_resource type="PackedScene" path="res://assets/architecture/windows/apartment_living/apartment_living.tscn" id="21_apartment_living"]
+[ext_resource type="PackedScene" path="res://assets/architecture/windows/apartment_bedroom/apartment_bedroom.tscn" id="22_apartment_bedroom"]
+[ext_resource type="Script" path="res://core/world_state/interior_daylight.gd" id="23_interior_daylight"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_s0"]
+size = Vector3(2.4, 0.2, 2.6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s0"]
+size = Vector3(2.4, 0.2, 2.6)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s1"]
+size = Vector3(3.7, 0.2, 2.6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s1"]
+size = Vector3(3.7, 0.2, 2.6)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s2"]
+size = Vector3(6.1, 0.2, 4.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s2"]
+size = Vector3(6.1, 0.2, 4.5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s3"]
+size = Vector3(6.1, 0.2, 7.1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s3"]
+size = Vector3(6.1, 0.2, 7.1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s4"]
+size = Vector3(2.75, 2.6, 0.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s4"]
+size = Vector3(2.75, 2.6, 0.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s5"]
+size = Vector3(0.9, 0.5, 0.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s5"]
+size = Vector3(0.9, 0.5, 0.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s6"]
+size = Vector3(2.65, 2.6, 0.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s6"]
+size = Vector3(2.65, 2.6, 0.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s7"]
+size = Vector3(0.65, 2.6, 0.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s7"]
+size = Vector3(0.65, 2.6, 0.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s8"]
+size = Vector3(5, 0.15, 0.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s8"]
+size = Vector3(5, 0.15, 0.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s9"]
+size = Vector3(0.2, 2.6, 6.9)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s9"]
+size = Vector3(0.2, 2.6, 6.9)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s10"]
+size = Vector3(0.2, 2.6, 3.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s10"]
+size = Vector3(0.2, 2.6, 3.5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s11"]
+size = Vector3(0.2, 0.37, 2.6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s11"]
+size = Vector3(0.2, 0.37, 2.6)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s12"]
+size = Vector3(0.2, 0.2, 2.6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s12"]
+size = Vector3(0.2, 0.2, 2.6)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s13"]
+size = Vector3(0.2, 2.6, 0.8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s13"]
+size = Vector3(0.2, 2.6, 0.8)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s14"]
+size = Vector3(2.4, 2.6, 0.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s14"]
+size = Vector3(2.4, 2.6, 0.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s15"]
+size = Vector3(0.2, 2.6, 0.95)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s15"]
+size = Vector3(0.2, 2.6, 0.95)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s16"]
+size = Vector3(0.2, 0.5, 0.9)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s16"]
+size = Vector3(0.2, 0.5, 0.9)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s17"]
+size = Vector3(0.2, 2.6, 0.55)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s17"]
+size = Vector3(0.2, 2.6, 0.55)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s18"]
+size = Vector3(0.6, 0.88, 2.3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s18"]
+size = Vector3(0.6, 0.88, 2.3)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s19"]
+size = Vector3(0.64, 0.04, 2.34)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s19"]
+size = Vector3(0.64, 0.04, 2.34)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s20"]
+size = Vector3(0.02, 0.02, 2.1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s20"]
+size = Vector3(0.02, 0.02, 2.1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s21"]
+size = Vector3(1, 0.4, 0.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s21"]
+size = Vector3(1, 0.4, 0.5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s22"]
+size = Vector3(0.45, 0.03, 0.45)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s22"]
+size = Vector3(0.45, 0.03, 0.45)
+
+[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o0"]
+size = Vector3(2.4, 0.16, 2.6)
+
+[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o1"]
+size = Vector3(3.7, 0.16, 2.6)
+
+[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o2"]
+size = Vector3(6.1, 0.16, 4.5)
+
+[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o3"]
+size = Vector3(6.1, 0.16, 7.1)
+
+[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o4"]
+size = Vector3(2.75, 2.6, 0.16)
+
+[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o5"]
+size = Vector3(0.9, 0.5, 0.16)
+
+[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o6"]
+size = Vector3(2.65, 2.6, 0.16)
+
+[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o7"]
+size = Vector3(0.65, 2.6, 0.16)
+
+[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o8"]
+size = Vector3(5, 0.11, 0.2)
+
+[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o9"]
+size = Vector3(0.16, 2.6, 6.9)
+
+[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o10"]
+size = Vector3(0.16, 2.6, 3.5)
+
+[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o11"]
+size = Vector3(0.16, 0.37, 2.6)
+
+[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o12"]
+size = Vector3(0.16, 0.2, 2.6)
+
+[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o13"]
+size = Vector3(0.16, 2.6, 0.8)
+
+[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o14"]
+size = Vector3(2.4, 2.6, 0.16)
+
+[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o15"]
+size = Vector3(0.16, 2.6, 0.95)
+
+[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o16"]
+size = Vector3(0.16, 0.5, 0.9)
+
+[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o17"]
+size = Vector3(0.16, 2.6, 0.55)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_b0"]
+size = Vector3(2.4, 2.6, 2.6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_b1"]
+size = Vector3(3.7, 2.6, 2.6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_b2"]
+size = Vector3(6.1, 2.6, 4.5)
+
+[node name="Unit4420" type="Node3D"]
+metadata/_doc = "Zone: unit 4420, floor 44 (D-062). GENERATED by tools/blockout/units.py; edit that, not this file. Floor y 0, ceiling 2.6 m. Its front door is the corridor's Props/Door4420; streamed in by ZoneStreamer when the player nears it (zones/zone_graph.json)."
+
+[node name="Shell" type="StaticBody3D" parent="."]
+
+[node name="BathFloor" type="MeshInstance3D" parent="Shell"]
+position = Vector3(16.3, -0.1, 10.8)
+mesh = SubResource("BoxMesh_s0")
+surface_material_override/0 = ExtResource("1_concrete")
+
+[node name="BathFloorCollision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(16.3, -0.1, 10.8)
+shape = SubResource("BoxShape3D_s0")
+
+[node name="EntryFloor" type="MeshInstance3D" parent="Shell"]
+position = Vector3(19.35, -0.1, 10.8)
+mesh = SubResource("BoxMesh_s1")
+surface_material_override/0 = ExtResource("2_vinyl")
+
+[node name="EntryFloorCollision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(19.35, -0.1, 10.8)
+shape = SubResource("BoxShape3D_s1")
+
+[node name="Floor" type="MeshInstance3D" parent="Shell"]
+position = Vector3(18.15, -0.1, 14.35)
+mesh = SubResource("BoxMesh_s2")
+surface_material_override/0 = ExtResource("3_carpet")
+
+[node name="FloorCollision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(18.15, -0.1, 14.35)
+shape = SubResource("BoxShape3D_s2")
+
+[node name="Ceiling" type="MeshInstance3D" parent="Shell"]
+position = Vector3(18.15, 2.7, 13.05)
+mesh = SubResource("BoxMesh_s3")
+surface_material_override/0 = ExtResource("4_ceiling")
+
+[node name="CeilingCollision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(18.15, 2.7, 13.05)
+shape = SubResource("BoxShape3D_s3")
+
+[node name="Corridor0" type="MeshInstance3D" parent="Shell"]
+position = Vector3(16.375, 1.3, 9.5)
+mesh = SubResource("BoxMesh_s4")
+surface_material_override/0 = ExtResource("5_wall")
+
+[node name="Corridor0Collision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(16.375, 1.3, 9.5)
+shape = SubResource("BoxShape3D_s4")
+
+[node name="Corridor0Above" type="MeshInstance3D" parent="Shell"]
+position = Vector3(18.2, 2.35, 9.5)
+mesh = SubResource("BoxMesh_s5")
+surface_material_override/0 = ExtResource("5_wall")
+
+[node name="Corridor0AboveCollision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(18.2, 2.35, 9.5)
+shape = SubResource("BoxShape3D_s5")
+
+[node name="Corridor1" type="MeshInstance3D" parent="Shell"]
+position = Vector3(19.975, 1.3, 9.5)
+mesh = SubResource("BoxMesh_s6")
+surface_material_override/0 = ExtResource("5_wall")
+
+[node name="Corridor1Collision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(19.975, 1.3, 9.5)
+shape = SubResource("BoxShape3D_s6")
+
+[node name="Facade0" type="MeshInstance3D" parent="Shell"]
+position = Vector3(15.325, 1.3, 16.6)
+mesh = SubResource("BoxMesh_s7")
+surface_material_override/0 = ExtResource("5_wall")
+
+[node name="Facade0Collision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(15.325, 1.3, 16.6)
+shape = SubResource("BoxShape3D_s7")
+
+[node name="Facade0Above" type="MeshInstance3D" parent="Shell"]
+position = Vector3(18.15, 2.525, 16.6)
+mesh = SubResource("BoxMesh_s8")
+surface_material_override/0 = ExtResource("5_wall")
+
+[node name="Facade0AboveCollision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(18.15, 2.525, 16.6)
+shape = SubResource("BoxShape3D_s8")
+
+[node name="Facade1" type="MeshInstance3D" parent="Shell"]
+position = Vector3(20.975, 1.3, 16.6)
+mesh = SubResource("BoxMesh_s7")
+surface_material_override/0 = ExtResource("5_wall")
+
+[node name="Facade1Collision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(20.975, 1.3, 16.6)
+shape = SubResource("BoxShape3D_s7")
+
+[node name="SideLow0" type="MeshInstance3D" parent="Shell"]
+position = Vector3(15.1, 1.3, 13.05)
+mesh = SubResource("BoxMesh_s9")
+surface_material_override/0 = ExtResource("5_wall")
+
+[node name="SideLow0Collision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(15.1, 1.3, 13.05)
+shape = SubResource("BoxShape3D_s9")
+
+[node name="SideHigh0" type="MeshInstance3D" parent="Shell"]
+position = Vector3(21.2, 1.3, 11.35)
+mesh = SubResource("BoxMesh_s10")
+surface_material_override/0 = ExtResource("5_wall")
+
+[node name="SideHigh0Collision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(21.2, 1.3, 11.35)
+shape = SubResource("BoxShape3D_s10")
+
+[node name="SideHigh0Below" type="MeshInstance3D" parent="Shell"]
+position = Vector3(21.2, 0.185, 14.4)
+mesh = SubResource("BoxMesh_s11")
+surface_material_override/0 = ExtResource("5_wall")
+
+[node name="SideHigh0BelowCollision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(21.2, 0.185, 14.4)
+shape = SubResource("BoxShape3D_s11")
+
+[node name="SideHigh0Above" type="MeshInstance3D" parent="Shell"]
+position = Vector3(21.2, 2.5, 14.4)
+mesh = SubResource("BoxMesh_s12")
+surface_material_override/0 = ExtResource("5_wall")
+
+[node name="SideHigh0AboveCollision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(21.2, 2.5, 14.4)
+shape = SubResource("BoxShape3D_s12")
+
+[node name="SideHigh1" type="MeshInstance3D" parent="Shell"]
+position = Vector3(21.2, 1.3, 16.1)
+mesh = SubResource("BoxMesh_s13")
+surface_material_override/0 = ExtResource("5_wall")
+
+[node name="SideHigh1Collision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(21.2, 1.3, 16.1)
+shape = SubResource("BoxShape3D_s13")
+
+[node name="BathEnd0" type="MeshInstance3D" parent="Shell"]
+position = Vector3(16.4, 1.3, 12.1)
+mesh = SubResource("BoxMesh_s14")
+surface_material_override/0 = ExtResource("5_wall")
+
+[node name="BathEnd0Collision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(16.4, 1.3, 12.1)
+shape = SubResource("BoxShape3D_s14")
+
+[node name="BathSide0" type="MeshInstance3D" parent="Shell"]
+position = Vector3(17.5, 1.3, 10.075)
+mesh = SubResource("BoxMesh_s15")
+surface_material_override/0 = ExtResource("5_wall")
+
+[node name="BathSide0Collision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(17.5, 1.3, 10.075)
+shape = SubResource("BoxShape3D_s15")
+
+[node name="BathSide0Above" type="MeshInstance3D" parent="Shell"]
+position = Vector3(17.5, 2.35, 11)
+mesh = SubResource("BoxMesh_s16")
+surface_material_override/0 = ExtResource("5_wall")
+
+[node name="BathSide0AboveCollision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(17.5, 2.35, 11)
+shape = SubResource("BoxShape3D_s16")
+
+[node name="BathSide1" type="MeshInstance3D" parent="Shell"]
+position = Vector3(17.5, 1.3, 11.725)
+mesh = SubResource("BoxMesh_s17")
+surface_material_override/0 = ExtResource("5_wall")
+
+[node name="BathSide1Collision" type="CollisionShape3D" parent="Shell"]
+position = Vector3(17.5, 1.3, 11.725)
+shape = SubResource("BoxShape3D_s17")
+
+[node name="Kitchen" type="StaticBody3D" parent="."]
+
+[node name="CounterBody" type="MeshInstance3D" parent="Kitchen"]
+position = Vector3(20.8, 0.44, 10.95)
+mesh = SubResource("BoxMesh_s18")
+surface_material_override/0 = ExtResource("6_dark")
+
+[node name="CounterBodyCollision" type="CollisionShape3D" parent="Kitchen"]
+position = Vector3(20.8, 0.44, 10.95)
+shape = SubResource("BoxShape3D_s18")
+
+[node name="CounterTop" type="MeshInstance3D" parent="Kitchen"]
+position = Vector3(20.78, 0.9, 10.95)
+mesh = SubResource("BoxMesh_s19")
+surface_material_override/0 = ExtResource("7_steel")
+
+[node name="CounterTopCollision" type="CollisionShape3D" parent="Kitchen"]
+position = Vector3(20.78, 0.9, 10.95)
+shape = SubResource("BoxShape3D_s19")
+
+[node name="CounterNeon" type="MeshInstance3D" parent="Kitchen"]
+position = Vector3(21.09, 1.56, 10.95)
+cast_shadow = 0
+mesh = SubResource("BoxMesh_s20")
+surface_material_override/0 = ExtResource("8_cyan")
+
+[node name="Living" type="StaticBody3D" parent="."]
+
+[node name="CoffeeTable" type="MeshInstance3D" parent="Living"]
+position = Vector3(19.7, 0.2, 15)
+mesh = SubResource("BoxMesh_s21")
+surface_material_override/0 = ExtResource("6_dark")
+
+[node name="CoffeeTableCollision" type="CollisionShape3D" parent="Living"]
+position = Vector3(19.7, 0.2, 15)
+shape = SubResource("BoxShape3D_s21")
+
+[node name="Fixtures" type="StaticBody3D" parent="."]
+
+[node name="LivingCeilingDisc" type="MeshInstance3D" parent="Fixtures"]
+position = Vector3(18.15, 2.585, 14.5)
+cast_shadow = 0
+mesh = SubResource("BoxMesh_s22")
+surface_material_override/0 = ExtResource("9_lamp")
+
+[node name="EntryCeilingDisc" type="MeshInstance3D" parent="Fixtures"]
+position = Vector3(20, 2.585, 10.9)
+cast_shadow = 0
+mesh = SubResource("BoxMesh_s22")
+surface_material_override/0 = ExtResource("9_lamp")
+
+[node name="BathCeilingDisc" type="MeshInstance3D" parent="Fixtures"]
+position = Vector3(16.3, 2.585, 10.8)
+cast_shadow = 0
+mesh = SubResource("BoxMesh_s22")
+surface_material_override/0 = ExtResource("9_lamp")
+
+[node name="Occluders" type="Node3D" parent="."]
+metadata/_doc = "Occlusion culling: one box per wall, floor and ceiling box, inset on its thin axis; openings stay holes. <Window>View: the window openings, for OutsideView (D-048). GENERATED."
+
+[node name="BathFloor" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(16.3, -0.1, 10.8)
+occluder = SubResource("BoxOccluder3D_o0")
+
+[node name="EntryFloor" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(19.35, -0.1, 10.8)
+occluder = SubResource("BoxOccluder3D_o1")
+
+[node name="Floor" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(18.15, -0.1, 14.35)
+occluder = SubResource("BoxOccluder3D_o2")
+
+[node name="Ceiling" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(18.15, 2.7, 13.05)
+occluder = SubResource("BoxOccluder3D_o3")
+
+[node name="Corridor0" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(16.375, 1.3, 9.5)
+occluder = SubResource("BoxOccluder3D_o4")
+
+[node name="Corridor0Above" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(18.2, 2.35, 9.5)
+occluder = SubResource("BoxOccluder3D_o5")
+
+[node name="Corridor1" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(19.975, 1.3, 9.5)
+occluder = SubResource("BoxOccluder3D_o6")
+
+[node name="Facade0" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(15.325, 1.3, 16.6)
+occluder = SubResource("BoxOccluder3D_o7")
+
+[node name="Facade0Above" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(18.15, 2.525, 16.6)
+occluder = SubResource("BoxOccluder3D_o8")
+
+[node name="Facade1" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(20.975, 1.3, 16.6)
+occluder = SubResource("BoxOccluder3D_o7")
+
+[node name="SideLow0" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(15.1, 1.3, 13.05)
+occluder = SubResource("BoxOccluder3D_o9")
+
+[node name="SideHigh0" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(21.2, 1.3, 11.35)
+occluder = SubResource("BoxOccluder3D_o10")
+
+[node name="SideHigh0Below" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(21.2, 0.185, 14.4)
+occluder = SubResource("BoxOccluder3D_o11")
+
+[node name="SideHigh0Above" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(21.2, 2.5, 14.4)
+occluder = SubResource("BoxOccluder3D_o12")
+
+[node name="SideHigh1" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(21.2, 1.3, 16.1)
+occluder = SubResource("BoxOccluder3D_o13")
+
+[node name="BathEnd0" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(16.4, 1.3, 12.1)
+occluder = SubResource("BoxOccluder3D_o14")
+
+[node name="BathSide0" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(17.5, 1.3, 10.075)
+occluder = SubResource("BoxOccluder3D_o15")
+
+[node name="BathSide0Above" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(17.5, 2.35, 11)
+occluder = SubResource("BoxOccluder3D_o16")
+
+[node name="BathSide1" type="OccluderInstance3D" parent="Occluders"]
+position = Vector3(17.5, 1.3, 11.725)
+occluder = SubResource("BoxOccluder3D_o17")
+
+[node name="WindowView" type="VisibleOnScreenNotifier3D" parent="Occluders" groups=["outside_view"]]
+position = Vector3(18.15, 0, 16.6)
+rotation_degrees = Vector3(0, 180, 0)
+aabb = AABB(-2.8, -0.3, -0.1, 5.6, 3.05, 1.1)
+metadata/outside_facing = Vector3(0, 0, 1)
+
+[node name="EastWindowView" type="VisibleOnScreenNotifier3D" parent="Occluders" groups=["outside_view"]]
+position = Vector3(21.2, 0, 14.4)
+rotation_degrees = Vector3(0, 270, 0)
+aabb = AABB(-1.6, 0.07, -0.1, 3.2, 2.63, 1.1)
+metadata/outside_facing = Vector3(1, 0, 0)
+
+[node name="Bounds" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 524288
+monitorable = false
+metadata/_doc = "Where the player is in this zone (Player Body, floor to ceiling over every floor), for ZoneStreamer (D-059). GENERATED."
+
+[node name="Box0" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(16.3, 1.3, 10.8)
+shape = SubResource("BoxShape3D_b0")
+
+[node name="Box1" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(19.35, 1.3, 10.8)
+shape = SubResource("BoxShape3D_b1")
+
+[node name="Box2" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(18.15, 1.3, 14.35)
+shape = SubResource("BoxShape3D_b2")
+
+[node name="Windows" type="Node3D" parent="."]
+metadata/_doc = "Generated window scenes (tools/props/window.py) in their wall openings."
+
+[node name="Window" parent="Windows" instance=ExtResource("21_apartment_living")]
+position = Vector3(18.15, 0, 16.6)
+rotation_degrees = Vector3(0, 180, 0)
+
+[node name="EastWindow" parent="Windows" instance=ExtResource("22_apartment_bedroom")]
+position = Vector3(21.2, 0, 14.4)
+rotation_degrees = Vector3(0, 270, 0)
+
+[node name="Props" type="Node3D" parent="."]
+
+[node name="DoorBathroom" parent="Props" instance=ExtResource("10_door_bath")]
+position = Vector3(17.5, 0, 11)
+rotation_degrees = Vector3(0, 270, 0)
+
+[node name="Toilet" parent="Props" instance=ExtResource("11_toilet")]
+position = Vector3(16, 0, 9.6)
+
+[node name="Vanity" parent="Props" instance=ExtResource("12_vanity")]
+position = Vector3(15.2, 0, 11.25)
+rotation_degrees = Vector3(0, 90, 0)
+
+[node name="BathMirror" parent="Props" instance=ExtResource("13_bath_mirror")]
+position = Vector3(15.2, 1.18, 11.25)
+rotation_degrees = Vector3(0, 90, 0)
+
+[node name="Fridge" parent="Props" instance=ExtResource("14_fridge")]
+position = Vector3(20.77, 0, 12.5)
+rotation_degrees = Vector3(0, 270, 0)
+
+[node name="CanCounter" parent="Props" instance=ExtResource("15_can")]
+position = Vector3(20.85, 0.922, 10.5)
+
+[node name="TrashCan" parent="Props" instance=ExtResource("16_trash")]
+position = Vector3(20.9, 0, 13.1)
+
+[node name="Wardrobe" parent="Props" instance=ExtResource("17_wardrobe")]
+position = Vector3(16.3, 0, 12.5)
+
+[node name="Sofa" parent="Props" instance=ExtResource("18_sofa_boucle")]
+position = Vector3(19.7, 0, 13.8)
+
+[node name="CanTable" parent="Props" instance=ExtResource("15_can")]
+position = Vector3(19.8, 0.412, 15)
+
+[node name="Bed" parent="Props" instance=ExtResource("19_bed")]
+position = Vector3(16.27, 0, 15.55)
+rotation_degrees = Vector3(0, 90, 0)
+
+[node name="Nightstand" parent="Props" instance=ExtResource("20_nightstand")]
+position = Vector3(15.43, 0, 14.35)
+rotation_degrees = Vector3(0, 90, 0)
+
+[node name="Lighting" type="Node3D" parent="."]
+
+[node name="LivingCeiling" type="OmniLight3D" parent="Lighting"]
+position = Vector3(18.15, 2.45, 14.5)
+light_color = Color(1, 0.8, 0.6, 1)
+light_energy = 1.2
+shadow_enabled = true
+omni_range = 6.5
+
+[node name="EntryCeiling" type="OmniLight3D" parent="Lighting"]
+position = Vector3(20, 2.45, 10.9)
+light_color = Color(1, 0.8, 0.6, 1)
+light_energy = 0.6
+omni_range = 3.5
+
+[node name="BathCeiling" type="OmniLight3D" parent="Lighting"]
+position = Vector3(16.3, 2.4, 10.8)
+light_color = Color(0.85, 0.93, 1, 1)
+light_energy = 0.8
+omni_range = 3
+
+[node name="RoomProbe" type="ReflectionProbe" parent="Lighting"]
+position = Vector3(18.15, 1.3, 14.95)
+size = Vector3(5.9, 2.7, 5.5)
+box_projection = true
+interior = true
+ambient_mode = 0
+
+[node name="EntryProbe" type="ReflectionProbe" parent="Lighting"]
+position = Vector3(19.35, 1.3, 10.8)
+size = Vector3(3.5, 2.7, 2.4)
+box_projection = true
+interior = true
+ambient_mode = 0
+
+[node name="BathProbe" type="ReflectionProbe" parent="Lighting"]
+position = Vector3(16.3, 1.3, 10.8)
+size = Vector3(2.4, 2.8, 2.6)
+blend_distance = 0.1
+box_projection = true
+interior = true
+ambient_mode = 0
+
+[node name="Daylight" type="Node" parent="Lighting" node_paths=PackedStringArray("probes")]
+script = ExtResource("23_interior_daylight")
+probes = [NodePath("../RoomProbe")]
+metadata/_doc = "Re-captures the probes that see a window as the daylight changes (D-051)."
+
+[node name="Entries" type="Node3D" parent="."]
+
+[node name="Door" type="Marker3D" parent="Entries"]
+position = Vector3(18.2, 0, 10.3)
+rotation_degrees = Vector3(0, 180, 0)
+
+[node name="PerfPath" type="Node3D" parent="."]
+metadata/_doc = "Perf flythrough waypoints at eye height, visited in order; -Z is the view direction. See tools/perf."
+
+[node name="P0" type="Marker3D" parent="PerfPath"]
+position = Vector3(18.2, 1.7, 10.1)
+rotation_degrees = Vector3(0, 180, 0)
+
+[node name="P1" type="Marker3D" parent="PerfPath"]
+position = Vector3(18.15, 1.7, 12.695)
+rotation_degrees = Vector3(0, 180, 0)
+
+[node name="P2" type="Marker3D" parent="PerfPath"]
+position = Vector3(18.15, 1.7, 15.4)
+
+[node name="P3" type="Marker3D" parent="PerfPath"]
+position = Vector3(16.3, 1.7, 10.7)
+rotation_degrees = Vector3(0, 270, 0)

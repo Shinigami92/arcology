@@ -15,7 +15,7 @@ uniform float emission_energy = 4.0;
 void vertex() {
 	float time = TIME * time_scale;
 	float t = lane_t(INSTANCE_CUSTOM, time);
-	VERTEX = VERTEX * lane_scale(t) + lane_offset(INSTANCE_CUSTOM, t, time);
+	VERTEX = VERTEX * lane_scale(t, INSTANCE_CUSTOM.z) + lane_offset(INSTANCE_CUSTOM, t, time);
 }
 
 void fragment() {

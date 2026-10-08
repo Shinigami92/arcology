@@ -10,9 +10,9 @@ extends Node3D
 ## children of this node, named after their id in PascalCase (zone "corridor"
 ## is Zones/Corridor), at their world position (D-008: never offset).
 ##
-## Loading doesn't stall a frame: the scene loads on ResourceLoader's threads,
-## is instantiated on a WorkerThreadPool thread, and only adding it to the tree
-## (its _ready calls) runs on the main thread. A connection's door is held shut
+## The scene loads on ResourceLoader's threads; instantiating it and adding it
+## to the tree (its _ready calls) run on the main thread, in the frame it's ready
+## ([member threaded_instantiate] would move the first off it, unsafely). A connection's door is held shut
 ## by a [ZoneGate] until the zones on both sides are in, so nobody opens a door
 ## onto nothing. Zones already under this node at start (main.tscn's apartment)
 ## count as loaded. Processing runs only while something loads.
@@ -23,8 +23,13 @@ extends Node3D
 ## connection doors, which the other side sees too), it costs nothing to
 ## draw, its lights' shadow maps included (occlusion culling doesn't cover
 ## those, nor objects reaching behind the camera). A zone that just loaded
-## stays drawn for [constant REVEAL_FRAMES] frames, so its pipelines compile
-## and the reflections' and the peephole's warm-ups see it.
+## stays drawn for [constant REVEAL_FRAMES] frames (or one more than it has
+## reflection probes, which show and capture one per frame), so its pipelines
+## compile and the reflections' and the peephole's warm-ups see it.
+##
+## A connection can have an approach range (the units, D-062): its zone loads
+## from the other side only while the player is within that many meters of
+## the door, checked 4 times a second.
 
 ## A wanted zone was added to the tree.
 signal zone_loaded(id: StringName, root: Node3D)
@@ -42,6 +47,10 @@ const BOUNDS := "Bounds"
 const GATE := "ZoneGate"
 ## Frames a newly loaded zone is drawn before it may hide.
 const REVEAL_FRAMES := 3
+## Seconds between checks of the player's distance to approach-range doors (D-062).
+const APPROACH_CHECK := 0.25
+## Meters past a connection's approach range before a zone it brought in is freed again.
+const APPROACH_HYSTERESIS := 2.0
 ## The point above the player body's origin (its feet) that says which zone it's in.
 const BODY_PROBE_HEIGHT := 0.5
 ## While the body touches two zones' bounds, its zone is checked every this many physics frames.
@@ -52,8 +61,10 @@ const BODY_CHECK_FRAMES := 9
 @export_range(0, 4) var load_depth := 1
 ## The zone the player starts in; empty: the first zone already under this node.
 @export var start_zone: StringName = &""
-## Instantiate loaded scenes on a worker thread (off: on the main thread, for comparisons).
-@export var threaded_instantiate := true
+## Instantiate loaded scenes on a worker thread. Off by default: a zone's nodes create rendering
+## resources as they're built, and the RenderingServer isn't safe to call from another thread in the
+## default thread model (units crashed Godot now and then, D-062). Loading stays threaded.
+@export var threaded_instantiate := false
 
 ## The zone the player is in.
 var current: StringName = &""
@@ -71,6 +82,7 @@ var _instanced_lock := Mutex.new()
 # Times the player body is inside each zone's bounds (overlapping bounds at doorways).
 var _inside: Dictionary[StringName, int] = {}
 var _body: Node3D
+var _approach_timer: Timer
 var _load_ms: Dictionary[StringName, float] = {}
 # Zones drawn for their first frames after loading.
 var _revealing: Dictionary[StringName, bool] = {}
@@ -245,10 +257,12 @@ func _read_graph() -> void:
 		_links[StringName(id)] = []
 	for c: Dictionary in data.get("connections", []):
 		var pair: Array = c["zones"]
-		_connect(StringName(pair[0]), StringName(pair[1]), c.get("door", ""))
+		var approach: Dictionary = c.get("approach", {})
+		_connect(StringName(pair[0]), StringName(pair[1]), c.get("door", ""),
+				StringName(approach.get("zone", "")), float(approach.get("within", 0.0)))
 
 
-func _connect(a: StringName, b: StringName, door: String) -> void:
+func _connect(a: StringName, b: StringName, door: String, approach_zone := &"", within := 0.0) -> void:
 	if not _scenes.has(a) or not _scenes.has(b):
 		push_error("ZoneStreamer: connection %s-%s names an unknown zone" % [a, b])
 		return
@@ -258,7 +272,15 @@ func _connect(a: StringName, b: StringName, door: String) -> void:
 	if not door.is_empty():
 		var parts := door.split(":", true, 1)
 		door_ref = [StringName(parts[0]), parts[1]]
-	_connections.append({"zones": [a, b], "door": door_ref})
+	# approach: [zone, meters]: that zone loads from the other side only while the player is near the door.
+	var approach: Array = [approach_zone, within] if not approach_zone.is_empty() and not door_ref.is_empty() else []
+	_connections.append({"zones": [a, b], "door": door_ref, "approach": approach})
+	if not approach.is_empty() and not _approach_timer:
+		_approach_timer = Timer.new()
+		_approach_timer.wait_time = APPROACH_CHECK
+		_approach_timer.autostart = true
+		_approach_timer.timeout.connect(_refresh)
+		add_child.call_deferred(_approach_timer)
 
 
 # Breadth-first connection counts from the player's zone.
@@ -278,12 +300,43 @@ func _distances() -> Dictionary[StringName, int]:
 
 
 func _wanted() -> Dictionary[StringName, int]:
+	# Breadth-first like _distances(), but a connection with an approach range only leads into its
+	# zone while the player is near the door (the player's own zone is always wanted).
 	var out: Dictionary[StringName, int] = {}
-	var dist := _distances()
-	for id in dist:
-		if dist[id] <= load_depth:
-			out[id] = dist[id]
+	if current.is_empty():
+		return out
+	out[current] = 0
+	var queue: Array[StringName] = [current]
+	while not queue.is_empty():
+		var id: StringName = queue.pop_front()
+		if out[id] >= load_depth:
+			continue
+		for c in _connections:
+			var pair: Array = c["zones"]
+			if id not in pair:
+				continue
+			var next: StringName = pair[1] if pair[0] == id else pair[0]
+			if out.has(next) or not _approached(c, next):
+				continue
+			out[next] = out[id] + 1
+			queue.append(next)
 	return out
+
+
+# False while [param zone] is behind an approach-range connection and the player is farther from its door.
+func _approached(connection: Dictionary, zone: StringName) -> bool:
+	var approach: Array = connection["approach"]
+	if approach.is_empty() or approach[0] != zone or zone == current:
+		return true
+	var door_ref: Array = connection["door"]
+	var owner_zone: Node3D = _loaded.get(door_ref[0])
+	var door := owner_zone.get_node_or_null(NodePath(door_ref[1])) as Node3D if owner_zone else null
+	if not door or not is_instance_valid(_body):
+		return false
+	# Hysteresis: a zone that's in (or coming) stays until the player is a bit farther away.
+	var reach: float = approach[1] + (APPROACH_HYSTERESIS if _loaded.has(zone) or _requests.has(zone) else 0.0)
+	var to_door := door.global_position - _body.global_position
+	return Vector2(to_door.x, to_door.z).length() < reach
 
 
 func _refresh() -> void:
@@ -345,6 +398,11 @@ func _process(_delta: float) -> void:
 # Worker thread: builds the zone's nodes outside the tree.
 func _instantiate(id: StringName, scene: PackedScene) -> void:
 	var root := scene.instantiate() as Node3D
+	# Probes capture (six scene passes each) when they first show: _finish shows them one per frame.
+	for probe in root.find_children("*", "ReflectionProbe", true, false):
+		if (probe as ReflectionProbe).visible:
+			(probe as ReflectionProbe).visible = false
+			probe.set_meta(&"zone_streamer_probe", true)
 	_instanced_lock.lock()
 	_instanced[id] = root
 	_instanced_lock.unlock()
@@ -367,8 +425,15 @@ func _finish(id: StringName, root: Node3D) -> void:
 	_adopt(id, root)
 	print("ZoneStreamer: %s loaded in %.0f ms" % [id, _load_ms[id]])
 	zone_loaded.emit(id, root)
-	for i in REVEAL_FRAMES:
+	var probes := root.find_children("*", "ReflectionProbe", true, false).filter(
+			func(n: Node) -> bool: return n.has_meta(&"zone_streamer_probe"))
+	for i in maxi(REVEAL_FRAMES, probes.size() + 1):
 		await RenderingServer.frame_post_draw
+		if not is_instance_valid(root):
+			return
+		if i < probes.size():
+			(probes[i] as ReflectionProbe).visible = true
+			probes[i].remove_meta(&"zone_streamer_probe")
 	_revealing.erase(id)
 	_update_visibility()
 

@@ -518,7 +518,9 @@ def main():
         nodes.append(f'[node name="{name}View" type="VisibleOnScreenNotifier3D" parent="Occluders" groups=["outside_view"]]\n'
                      f"position = {v3((x, 0, NORTH))}\n"
                      f"aabb = AABB({x0 - m:g}, {y0 - m:g}, {-T / 2:g}, {x1 - x0 + 2 * m:g}, {y1 - y0 + 2 * m:g}, "
-                     f"{T / 2 + WINDOW_VIEW_DEPTH:g})\n")
+                     f"{T / 2 + WINDOW_VIEW_DEPTH:g})\n"
+                     # Which way the window looks out (OutsideView draws the city on that side, D-061).
+                     "metadata/outside_facing = Vector3(0, 0, -1)\n")
 
     nodes.append('[node name="Bounds" type="Area3D" parent="."]\n'
                  f"collision_layer = 0\ncollision_mask = {PLAYER_BODY_MASK}\nmonitorable = false\n"

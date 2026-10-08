@@ -14,6 +14,48 @@
       "cpu_ms_p95": 6.0,
       "draw_calls_max": 600,
       "primitives_max": 1000000
+    },
+    "unit_4418": {
+      "frames_dropped_pct": 0.5,
+      "gpu_ms_p95": 8.0,
+      "cpu_ms_p95": 6.0,
+      "draw_calls_max": 900,
+      "primitives_max": 1300000
+    },
+    "unit_4419": {
+      "frames_dropped_pct": 0.5,
+      "gpu_ms_p95": 8.0,
+      "cpu_ms_p95": 6.0,
+      "draw_calls_max": 900,
+      "primitives_max": 1300000
+    },
+    "unit_4420": {
+      "frames_dropped_pct": 0.5,
+      "gpu_ms_p95": 8.0,
+      "cpu_ms_p95": 6.0,
+      "draw_calls_max": 1400,
+      "primitives_max": 1800000
+    },
+    "unit_4421": {
+      "frames_dropped_pct": 0.5,
+      "gpu_ms_p95": 8.0,
+      "cpu_ms_p95": 6.0,
+      "draw_calls_max": 900,
+      "primitives_max": 1300000
+    },
+    "unit_4422": {
+      "frames_dropped_pct": 0.5,
+      "gpu_ms_p95": 8.0,
+      "cpu_ms_p95": 6.0,
+      "draw_calls_max": 900,
+      "primitives_max": 1300000
+    },
+    "unit_4423": {
+      "frames_dropped_pct": 0.5,
+      "gpu_ms_p95": 8.0,
+      "cpu_ms_p95": 6.0,
+      "draw_calls_max": 900,
+      "primitives_max": 1300000
     }
   }
 }

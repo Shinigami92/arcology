@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" path="res://assets/props/door_entrance/door_entrance_frame.glb" id="door_entrance_frame"]
 [ext_resource type="PackedScene" path="res://assets/props/door_entrance/door_entrance_leaf.glb" id="door_entrance_leaf"]
 [ext_resource type="PackedScene" path="res://assets/props/door_entrance/door_entrance_lever_corridor.glb" id="door_entrance_lever_corridor"]
+[ext_resource type="Script" path="res://core/signage/unit_plate.gd" id="unit_plate"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_leaf0"]
 size = Vector3(0.843, 2.0595, 0.065)
@@ -23,3 +24,8 @@ shape = SubResource("BoxShape3D_leaf0")
 
 [node name="LeverCorridor" parent="Leaf" instance=ExtResource("door_entrance_lever_corridor")]
 position = Vector3(0.7845, 1.1, -0.079)
+
+[node name="UnitPlate" type="Node3D" parent="Leaf"]
+position = Vector3(0.423, 1.73, -0.083)
+rotation_degrees = Vector3(0, 180, 0)
+script = ExtResource("unit_plate")

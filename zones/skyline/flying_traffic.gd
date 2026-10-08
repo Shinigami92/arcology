@@ -1,40 +1,80 @@
 @tool
 class_name FlyingTraffic
 extends Node3D
-## Flying traffic in straight lanes between the towers (The Fifth Element).
+## Flying traffic in straight lanes between the towers (The Fifth Element),
+## all around our building (D-061).
 ##
 ## [constant CORRIDORS] holds the routes: a line on the map, the altitudes of
 ## its lane pairs (one each way, [constant LANE_GAP] apart, right-hand
-## traffic), the lane speeds and the mean gap between vehicles. Vehicles move
-## on the GPU (assets/shaders/traffic_lane.gdshaderinc): this builds one
-## MultiMesh of bodies per vehicle type plus one of light glows, all static,
-## so traffic costs no CPU per frame. Corridors with meshes = false are far
-## enough to be lights only. FarTowers keeps its roofs below every corridor
-## ([method roof_limit]); the near towers are placed by hand, and the skyline
-## test checks the lanes clear them ([method blocked_lanes]). Deterministic,
-## rebuilt on load, never saved.
+## traffic), the lane speeds, the mean gap between vehicles and its group.
+## Vehicles move on the GPU (assets/shaders/traffic_lane.gdshaderinc): this
+## builds, per group, one MultiMesh of bodies per vehicle type plus one of
+## light glows for all of them, all static, so traffic costs no CPU per frame.
+## Corridors with meshes = false are far enough to be lights only. FarTowers
+## keeps its roofs below every corridor ([method roof_limit]); the near towers
+## are placed by hand, and the skyline test checks the lanes clear them
+## ([method blocked_lanes]). Deterministic, rebuilt on load, never saved.
+##
+## Groups and sides: OutsideView draws a group's MultiMeshes while a window
+## onto one of its sides is in view (metadata/outside_sides: the sides its
+## lanes' ends lie on, [method OutsideView.sides_of], or [constant
+## GROUP_SIDES]). "north" runs east-west in front of the apartment (the view
+## D-047 built), "south" the same behind the building, "east" and "west" are
+## the short north-south stretches between them. A north-south line ends at
+## the east-west corridors and goes on in the next group, so a view out of one
+## side never draws the traffic behind the building, and every group's bounds
+## stay outside the building, so occlusion culls them behind its walls.
 
 const CORRIDORS: Array[Dictionary] = [
-	# Crosses the whole view 70 m in front of the windows, around eye level and
-	# deep below it: the deep lanes fade into the haze and show how far down
-	# the city goes.
-	{"from": Vector2(-1500, -70), "to": Vector2(1500, -70), "levels": [-130.0, -95.0, -60.0, -30.0, -8.0, 14.0, 40.0],
+	# North of the building (the apartment's view, D-047). Crosses the whole
+	# view 70 m in front of the windows, around eye level and deep below it:
+	# the deep lanes fade into the haze and show how far down the city goes.
+	{"group": "north", "from": Vector2(-1500, -70), "to": Vector2(1500, -70), "levels": [-130.0, -95.0, -60.0, -30.0, -8.0, 14.0, 40.0],
 		"speed": Vector2(28, 45), "spacing": 150.0, "meshes": true},
 	# Between the near ring's spires, higher up.
-	{"from": Vector2(-1500, -420), "to": Vector2(1500, -420), "levels": [70.0, 110.0, 150.0],
+	{"group": "north", "from": Vector2(-1500, -420), "to": Vector2(1500, -420), "levels": [70.0, 110.0, 150.0],
 		"speed": Vector2(40, 60), "spacing": 170.0, "meshes": true},
 	# Far express lanes: lights only.
-	{"from": Vector2(-1500, -850), "to": Vector2(1500, -850), "levels": [200.0, 260.0],
+	{"group": "north", "from": Vector2(-1500, -850), "to": Vector2(1500, -850), "levels": [200.0, 260.0],
 		"speed": Vector2(60, 80), "spacing": 120.0, "meshes": false},
-	# Two avenues running away from the apartment, left and right; they start
-	# behind the window wall, so vehicles appear at the edge of the view.
-	{"from": Vector2(-500, 500), "to": Vector2(-500, -1500), "levels": [20.0, 60.0],
+	# Two avenues running away from the apartment, left and right, from the
+	# near corridor on (south of it they go on as "cross", then "south").
+	{"group": "north", "from": Vector2(-500, -70), "to": Vector2(-500, -1500), "levels": [20.0, 60.0],
 		"speed": Vector2(35, 50), "spacing": 150.0, "meshes": true},
-	{"from": Vector2(450, 500), "to": Vector2(450, -1500), "levels": [-20.0, 30.0],
+	{"group": "north", "from": Vector2(450, -70), "to": Vector2(450, -1500), "levels": [-20.0, 30.0],
+		"speed": Vector2(35, 50), "spacing": 150.0, "meshes": true},
+	# South of the building, the same pattern 83 m off its south facade.
+	{"group": "south", "from": Vector2(-1500, 100), "to": Vector2(1500, 100), "levels": [-122.0, -88.0, -54.0, -26.0, -4.0, 18.0, 44.0],
+		"speed": Vector2(28, 45), "spacing": 150.0, "meshes": true},
+	{"group": "south", "from": Vector2(1500, 480), "to": Vector2(-1500, 480), "levels": [80.0, 120.0, 160.0],
+		"speed": Vector2(40, 60), "spacing": 170.0, "meshes": true},
+	{"group": "south", "from": Vector2(1500, 900), "to": Vector2(-1500, 900), "levels": [210.0, 270.0],
+		"speed": Vector2(60, 80), "spacing": 120.0, "meshes": false},
+	{"group": "south", "from": Vector2(-500, 100), "to": Vector2(-500, 1500), "levels": [20.0, 60.0],
+		"speed": Vector2(35, 50), "spacing": 150.0, "meshes": true},
+	{"group": "south", "from": Vector2(450, 100), "to": Vector2(450, 1500), "levels": [-20.0, 30.0],
+		"speed": Vector2(35, 50), "spacing": 150.0, "meshes": true},
+	# East and west of the building, between the two: the near corridors
+	# crossing the east and west views (levels between the east-west ones, so
+	# no two lanes meet at a height) and the avenues' middle stretches.
+	{"group": "east", "from": Vector2(95, -70), "to": Vector2(95, 100), "levels": [-112.0, -77.0, -43.0, -18.0, 4.0, 28.0],
+		"speed": Vector2(25, 40), "spacing": 85.0, "meshes": true},
+	{"group": "west", "from": Vector2(-85, 100), "to": Vector2(-85, -70), "levels": [-108.0, -74.0, -40.0, -16.0, 6.0, 30.0],
+		"speed": Vector2(25, 40), "spacing": 85.0, "meshes": true},
+	{"group": "east", "from": Vector2(450, -70), "to": Vector2(450, 100), "levels": [-20.0, 30.0],
+		"speed": Vector2(35, 50), "spacing": 150.0, "meshes": true},
+	{"group": "west", "from": Vector2(-500, -70), "to": Vector2(-500, 100), "levels": [20.0, 60.0],
 		"speed": Vector2(35, 50), "spacing": 150.0, "meshes": true},
 ]
 ## Distance between a lane pair's two directions (m).
 const LANE_GAP := 8.0
+## Groups drawn for fewer sides than their lanes reach: the east and west
+## stretches start at the north corridor and end at the south one, so from a
+## north or south window they'd only be a stub at the very edge of the view
+## (north views draw exactly what they did before D-061).
+const GROUP_SIDES := {"east": OutsideView.EAST, "west": OutsideView.WEST}
+## Vehicle types the glow shader knows lamps for (traffic_lights.gdshader).
+const MAX_TYPES := 8
 ## Room kept around lanes: sideways (m) and below the lowest lane (m).
 const CLEARANCE := 20.0
 const CLEARANCE_BELOW := 15.0
@@ -57,11 +97,6 @@ const LIGHTS_SHADER := preload("res://assets/shaders/traffic_lights.gdshader")
 @export var light_energy := 8.0
 ## Its fog settings are mirrored into the light glows (unshaded, additive).
 @export var world_environment: WorldEnvironment
-## The apartment's window plane (world z, the north wall's outer face): from
-## inside, nothing behind it can be seen, so the MultiMeshes' bounds end there.
-## Bounds around the apartment would contain the camera, and occlusion culling
-## could then never hide the traffic behind the apartment's walls.
-@export_custom(PROPERTY_HINT_NONE, "suffix:m") var view_max_z := -3.2
 @export_tool_button("Regenerate") var regenerate_action := generate
 
 # The light glows' material and the share of light_energy shown now (DayNight
@@ -136,17 +171,31 @@ func generate() -> void:
 	var types := _vehicle_types()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
-	var bodies: Array[Array] = []  # per type: [Transform3D, Color]
-	var glows: Array[Array] = []
-	for t in types.size():
-		bodies.append([])
-		glows.append([])
-	var bounds := AABB()
 	var total := 0.0
 	for w: float in _weights(types.size()):
 		total += w
+	# Per group (in table order): bodies per type and glows, each [Transform3D,
+	# Color]; the lanes' bounds and the sides they reach.
+	var groups: Array[String] = []
+	var group_bodies: Array[Array] = []
+	var group_glows: Array[Array] = []
+	var group_bounds: Array[AABB] = []
+	var group_sides: PackedInt32Array = []
 
 	for c: Dictionary in CORRIDORS:
+		var group: String = c.get("group", "north")
+		var g := groups.find(group)
+		if g < 0:
+			g = groups.size()
+			groups.append(group)
+			var per_type: Array[Array] = []
+			for t in types.size():
+				per_type.append([])
+			group_bodies.append(per_type)
+			group_glows.append([])
+			group_bounds.append(AABB())
+			group_sides.append(0)
+		group_sides[g] = GROUP_SIDES.get(group, group_sides[g] | OutsideView.sides_of(c["from"]) | OutsideView.sides_of(c["to"]))
 		var speed: Vector2 = c["speed"]
 		for level: float in c["levels"]:
 			for lane: Array in _lanes(c, level):
@@ -154,21 +203,20 @@ func generate() -> void:
 				var dir: Vector3 = lane[1]
 				var length: float = lane[2]
 				var lane_box := AABB(start, Vector3.ZERO).expand(start + dir * length)
-				bounds = lane_box if bounds.size == Vector3.ZERO else bounds.merge(lane_box)
+				group_bounds[g] = lane_box if group_bounds[g].size == Vector3.ZERO else group_bounds[g].merge(lane_box)
 				var frame := Transform3D(Basis.looking_at(dir), start)
 				var lane_speed := rng.randf_range(speed.x, speed.y)
 				var count := maxi(1, int(length / float(c["spacing"])))
 				for i in count:
 					var phase := (i + rng.randf_range(-0.35, 0.35)) / count
-					var custom := Color(fposmod(phase, 1.0), lane_speed / length, length, rng.randf())
+					var seed_frac := minf(rng.randf(), 0.999)
 					var t := _pick(types.size(), total, rng.randf())
-					glows[t].append([frame, custom])
+					# w: the type (its lamps in the glow shader) plus the bob's seed.
+					var custom := Color(fposmod(phase, 1.0), lane_speed / length, length, t + seed_frac)
+					(group_glows[g] as Array).append([frame, custom])
 					if c["meshes"]:
-						bodies[t].append([frame, custom])
+						(group_bodies[g][t] as Array).append([frame, custom])
 
-	bounds = bounds.grow(10.0)
-	if bounds.end.z > view_max_z:
-		bounds.size.z = view_max_z - bounds.position.z
 	var body_material := ShaderMaterial.new()
 	body_material.shader = VEHICLE_SHADER
 	for key: String in ["albedo", "orm", "normal", "emission"]:
@@ -187,21 +235,28 @@ func generate() -> void:
 		glow_material.set_shader_parameter(&"fog_density", env.fog_density if env.fog_enabled else 0.0)
 		glow_material.set_shader_parameter(&"fog_height", env.fog_height)
 		glow_material.set_shader_parameter(&"fog_height_density", env.fog_height_density if env.fog_enabled else 0.0)
+	# Each type's lamp pair (head z, tail z, height) for the glows.
+	var lamps := PackedVector3Array()
+	lamps.resize(MAX_TYPES)
+	for t in mini(types.size(), MAX_TYPES):
+		var aabb := (types[t]["mesh"] as Mesh).get_aabb()
+		lamps[t] = Vector3(aabb.position.z, aabb.end.z, aabb.get_center().y)
+	glow_material.set_shader_parameter(&"lamps", lamps)
 	var quad := QuadMesh.new()
 
-	for t in types.size():
-		var mesh: Mesh = types[t]["mesh"]
-		var aabb := mesh.get_aabb()
-		if not bodies[t].is_empty():
-			_add_multimesh("Bodies%d" % t, mesh, bodies[t], bounds, body_material)
-		if not glows[t].is_empty():
-			var mmi := _add_multimesh("Lights%d" % t, quad, glows[t], bounds, glow_material)
-			mmi.set_instance_shader_parameter(&"head_z", aabb.position.z)
-			mmi.set_instance_shader_parameter(&"tail_z", aabb.end.z)
-			mmi.set_instance_shader_parameter(&"lamp_y", aabb.get_center().y)
+	for g in groups.size():
+		var prefix := groups[g].capitalize()
+		var bounds := group_bounds[g].grow(10.0)
+		for t in types.size():
+			var bodies: Array = group_bodies[g][t]
+			if not bodies.is_empty():
+				_add_multimesh("%sBodies%d" % [prefix, t], types[t]["mesh"], bodies, bounds, body_material, group_sides[g])
+		if not (group_glows[g] as Array).is_empty():
+			_add_multimesh("%sLights" % prefix, quad, group_glows[g], bounds, glow_material, group_sides[g])
 
 
-func _add_multimesh(node_name: String, mesh: Mesh, instances: Array, bounds: AABB, material: Material) -> MultiMeshInstance3D:
+func _add_multimesh(node_name: String, mesh: Mesh, instances: Array, bounds: AABB, material: Material,
+		sides: int) -> MultiMeshInstance3D:
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_custom_data = true
@@ -219,6 +274,7 @@ func _add_multimesh(node_name: String, mesh: Mesh, instances: Array, bounds: AAB
 	mmi.multimesh = mm
 	mmi.material_override = material
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mmi.set_meta(OutsideView.META_SIDES, sides)
 	add_child(mmi)
 	return mmi
 

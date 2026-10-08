@@ -14,6 +14,7 @@
 [ext_resource type="PackedScene" path="res://assets/props/door_entrance/door_entrance_lever_apartment.glb" id="door_entrance_lever_apartment"]
 [ext_resource type="PackedScene" path="res://assets/props/door_entrance/door_entrance_lever_corridor.glb" id="door_entrance_lever_corridor"]
 [ext_resource type="Script" path="res://core/rendering/door_viewer.gd" id="door_viewer"]
+[ext_resource type="Script" path="res://core/signage/unit_plate.gd" id="unit_plate"]
 [ext_resource type="PackedScene" path="res://assets/props/door_entrance/door_entrance_thumbturn.glb" id="door_entrance_thumbturn"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/deadbolt.wav" id="deadbolt"]
 [ext_resource type="Script" path="res://core/interaction/hinge_detents.gd" id="hinge_detents"]
@@ -149,6 +150,11 @@ position = Vector3(0.7845, 1.1, -0.079)
 position = Vector3(0.423, 1.55, -0.0027)
 script = ExtResource("door_viewer")
 depth = 0.0815
+
+[node name="UnitPlate" type="Node3D" parent="HingeOrigin/InteractableHinge/Leaf/DoorBody"]
+position = Vector3(0.423, 1.73, -0.083)
+rotation_degrees = Vector3(0, 180, 0)
+script = ExtResource("unit_plate")
 
 [node name="ThumbTurnMount" type="RemoteTransform3D" parent="HingeOrigin/InteractableHinge/Leaf"]
 position = Vector3(0.7845, 1.3, 0.012)

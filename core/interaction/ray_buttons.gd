@@ -29,7 +29,13 @@ static func targets(tree: SceneTree) -> Array[Area3D]:
 		for node in tree.root.find_children("*", "Area3D", true, false):
 			_consider(node)
 		tree.node_added.connect(_consider)
-	_targets = _targets.filter(func(a: Area3D) -> bool: return is_instance_valid(a))
+	# Buttons in a zone that streamed out are freed (D-059): drop them. Untyped on purpose: a typed
+	# Area3D parameter can't take a freed object (that broke the ray when a unit unloaded, D-062).
+	var alive: Array[Area3D] = []
+	for a: Variant in _targets:
+		if is_instance_valid(a):
+			alive.append(a)
+	_targets = alive
 	return _targets
 
 

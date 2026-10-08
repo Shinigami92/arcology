@@ -221,6 +221,10 @@ static func _update_all(eyes: PackedVector3Array, forward: Vector3, space: Physi
 		var pending := g.any(func(r: PlanarReflection) -> bool: return r._warm_pending)
 		if pending and not g.any(func(r: PlanarReflection) -> bool: return r._rendering):
 			cold.append(g)
+	# After the first frame (everything at once, unseen), surfaces added later (a streamed zone) warm
+	# one plane per frame, so a zone with a mirror and windows doesn't stall the frame it appears in.
+	if cold.size() < groups.size() and cold.size() > 1:
+		cold.resize(1)
 	for g in cold:
 		var lead: PlanarReflection = g[0]
 		var at: PlanarReflection = g[g.find_custom(func(r: PlanarReflection) -> bool: return r._warm_pending)]

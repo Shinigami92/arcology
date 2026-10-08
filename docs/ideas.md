@@ -81,6 +81,9 @@ The user's long-term direction (2026-10-04). Too big for one session: each phase
 - [M3] Visibility tiers for everything outside: near ring, far city and traffic per window cluster, and per-node `visibility_range` fades instead of hard cuts. The city layers already switch off when no window is in view (D-048).
 - [M3] Zone streaming (`core/zones/`): done for doors (D-059): `ZoneStreamer` loads the zones next to the player's from `zones/zone_graph.json` in the background, frees those two connections away, holds a connection's door shut until both sides are in (amber "ID scan"), and draws a zone the player isn't in only through an open door or the peephole. Still to do: tiers per zone (full interior, exterior shell only, impostor) with a budget per tier; connections other than doors (elevator, station); loading on approach for zones too big to keep loaded next door.
 - [M3] Spread a big zone's load over frames: streaming the apartment back in costs two ~100 ms frames (its `_ready` work, five probe captures, the first draw; D-059). Before the elevator makes that happen in play: stagger probe captures, defer heavy `_ready` work, or add the zone in parts.
+- [M3] Corner views cost the most: unit 4420 sees the south and east city at once (1357 draw calls, GPU p95 7.3 ms desktop). Measure in XR; if tight, share the corner towers between sides, thin the side views' traffic, or give 4420 a smaller east window.
+- [later] Neighbor units: skirting (Blender sweep like the apartment's), showers in the bigger units, seats on their sofas and beds, more layouts and furniture variety, lived-in clutter; a unit's scene can be swapped by its number in the zone graph.
+- [later] Spread a unit's load (~16 ms CPU in one frame, D-062): measure again on a quiet machine; the part-by-part attach looked slow only while another Godot ran.
 - [later] Port `tools/blockout/apartment.py` onto the shared writer `tools/blockout/blockout.py` (it still has its own copy).
 - [M3] Perf flythrough per zone and per transition (the hitch of loading a zone counts), in XR before a phase is done.
 
@@ -138,6 +141,7 @@ New subagents when a phase starts (the user agreed to add or update agents whene
 
 ## Done
 
+- Floor 44's neighbor units (2026-10-08, D-062): six furnished units (studios and lofts, existing props and variants) behind working doors with their own numbers, each a zone that streams in as you near its door; the city on all sides (D-061).
 - Corridor dressing (2026-10-08, D-060): hotel carpet tiles, anthracite wainscot with a cyan LED reveal, slim ceiling fixtures and vents, a back-lit exit sign, holographic wayfinding signs with running chevrons, floor guide lights pulsing toward the elevators.
 - Zone streaming and the corridor (2026-10-08, D-059): floor 44's corridor streams in behind the entrance door (the vestibule is gone); the door waits for it with an amber LED; a zone the player isn't in is only drawn through an open door or the peephole (from the corridor: 846 → 186 draw calls); tests `zones`, `--perf-reload`, `--load-depth`.
 - Ambient occlusion (2026-10-06, D-055): SSAO in the world environment, blind headset A/B won clearly; radius 0.6 m after halos at 1.0 m by day. `ABEnvironment` A/Bs Environment settings with the same panel.

@@ -59,6 +59,23 @@ WINDOW_VIEW_DEPTH = 1.0
 SCENES = {
     "door_entrance": "res://assets/props/door_entrance/door_entrance.tscn",
     "door_neighbor": "res://assets/props/door_entrance/door_neighbor.tscn",
+    "door": "res://assets/props/door_interior/door_interior.tscn",
+    "door_bath": "res://assets/props/door_interior/door_interior_bath.tscn",
+    "sofa": "res://assets/props/sofa/sofa.tscn",
+    "sofa_boucle": "res://assets/props/sofa/sofa_boucle.tscn",
+    "bed": "res://assets/props/bed/bed.tscn",
+    "bed_padded": "res://assets/props/bed/bed_padded.tscn",
+    "wardrobe": "res://assets/props/wardrobe/wardrobe.tscn",
+    "wardrobe_lit": "res://assets/props/wardrobe/wardrobe_lit.tscn",
+    "nightstand": "res://assets/props/nightstand/nightstand.tscn",
+    "nightstand_square": "res://assets/props/nightstand/nightstand_square.tscn",
+    "fridge": "res://assets/props/fridge/fridge.tscn",
+    "toilet": "res://assets/props/toilet/toilet.tscn",
+    "vanity": "res://assets/props/vanity/vanity.tscn",
+    "bath_mirror": "res://assets/props/bath_mirror/bath_mirror.tscn",
+    "trash": "res://assets/props/trash_can/trash_can.tscn",
+    "can": "res://assets/props/beverage_can/beverage_can.tscn",
+    "ball": "res://assets/props/ball/ball.tscn",
 }
 WINDOW_LIGHT_SCRIPT = "res://core/interaction/window_light.gd"
 INTERIOR_DAYLIGHT_SCRIPT = "res://core/world_state/interior_daylight.gd"
@@ -78,6 +95,13 @@ def quote(text: str) -> str:
     return '"' + text.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
 
 
+def outward(yaw: float) -> tuple:
+    """A window's outward direction (its local -Z) after a yaw about Y (degrees), rounded."""
+    import math
+    r = math.radians(yaw)
+    return (round(-math.sin(r), 4) + 0.0, 0, round(-math.cos(r), 4) + 0.0)
+
+
 def door_gap(s: float, e: float) -> tuple:
     return (s, e, 0.0, DOOR_H)
 
@@ -87,7 +111,7 @@ class Zone:
         self.root, self.out, self.height, self.doc = root, ROOT / out, height, doc
         self.boxes = []      # (group, name, center, size, material, collide)
         self.windows = []    # (spec, node name, position, yaw)
-        self.instances = []  # (name, scene key, position, rotation)
+        self.instances = []  # (name, scene key, position, rotation, metadata)
         self.signs = []      # (name, position, yaw, text, font_size, pixel_size, color)
         self.holos = []      # (name, position, yaw, text, size, tint, arrow, line_height, align)
         self.strips = []     # (name, start, end, flow)
@@ -153,8 +177,9 @@ class Zone:
         """A floor guide light from start to end (x, z; axis-aligned), pulses running along flow (x, z)."""
         self.strips.append((name, tuple(start), tuple(end), tuple(flow)))
 
-    def instance(self, name, key, position, rotation=(0, 0, 0)):
-        self.instances.append((name, key, tuple(position), tuple(rotation)))
+    def instance(self, name, key, position, rotation=(0, 0, 0), meta=None):
+        """A scene or glb (SCENES key or res:// path); meta: {name: value} written as metadata/<name>."""
+        self.instances.append((name, key, tuple(position), tuple(rotation), dict(meta or {})))
 
     def sign(self, name, position, yaw, text, *, font_size=64, pixel_size=0.002, col=(0.85, 0.93, 1.0),
              lit=True, align="center"):
@@ -267,7 +292,9 @@ class Zone:
             nodes.append(f'[node name="{name}View" type="VisibleOnScreenNotifier3D" parent="Occluders" groups=["outside_view"]]\n'
                          f"position = {v3(pos)}\n{rot}"
                          f"aabb = AABB({x0 - m:g}, {y0 - m:g}, {-T / 2:g}, {x1 - x0 + 2 * m:g}, {y1 - y0 + 2 * m:g}, "
-                         f"{T / 2 + WINDOW_VIEW_DEPTH:g})\n")
+                         f"{T / 2 + WINDOW_VIEW_DEPTH:g})\n"
+                         # Which way the window looks out: the window's -Z (OutsideView, D-061).
+                         f"metadata/outside_facing = {v3(outward(yaw))}\n")
 
         nodes.append('[node name="Bounds" type="Area3D" parent="."]\n'
                      f"collision_layer = 0\ncollision_mask = {PLAYER_BODY_MASK}\nmonitorable = false\n"
@@ -287,10 +314,11 @@ class Zone:
                              f"position = {v3(pos)}\n{rot}")
 
         nodes.append('[node name="Props" type="Node3D" parent="."]\n')
-        for name, key, pos, rot in self.instances:
+        for name, key, pos, rot, meta in self.instances:
             rot_line = f"rotation_degrees = {v3(rot)}\n" if any(rot) else ""
+            meta_lines = "".join(f"metadata/{k} = {quote(str(v))}\n" for k, v in meta.items())
             nodes.append(f'[node name="{name}" parent="Props" instance=ExtResource("{ids[key]}")]\n'
-                         f"position = {v3(pos)}\n{rot_line}")
+                         f"position = {v3(pos)}\n{rot_line}{meta_lines}")
 
         if self.signs or self.holos:
             nodes.append('[node name="Signs" type="Node3D" parent="."]\n'

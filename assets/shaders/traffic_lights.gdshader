@@ -10,10 +10,10 @@ render_mode unshaded, blend_add, depth_draw_never, cull_disabled, fog_disabled, 
 
 #include "res://assets/shaders/traffic_lane.gdshaderinc"
 
-// Lamp pair centers in the vehicle's frame (nose = -Z), per vehicle type.
-instance uniform float head_z = -2.4;
-instance uniform float tail_z = 2.4;
-instance uniform float lamp_y = 0.0;
+// Lamp pair centers in the vehicle's frame (nose = -Z) per vehicle type: x
+// head z, y tail z, z height. The type is INSTANCE_CUSTOM.w's whole part, so
+// one MultiMesh holds every type's glows (FlyingTraffic).
+uniform vec3 lamps[8];
 
 uniform vec3 head_color : source_color = vec3(1.0, 0.93, 0.82);
 uniform vec3 tail_color : source_color = vec3(1.0, 0.07, 0.04);
@@ -32,8 +32,11 @@ varying vec3 glow;
 void vertex() {
 	float time = TIME * time_scale;
 	float t = lane_t(INSTANCE_CUSTOM, time);
+	vec3 type_lamps = lamps[clamp(int(INSTANCE_CUSTOM.w), 0, 7)];
+	float head_z = type_lamps.x;
+	float tail_z = type_lamps.y;
 	vec3 travel = normalize(-MODEL_MATRIX[2].xyz);
-	vec3 center = (MODEL_MATRIX * vec4(lane_offset(INSTANCE_CUSTOM, t, time) + vec3(0.0, lamp_y, 0.0), 1.0)).xyz;
+	vec3 center = (MODEL_MATRIX * vec4(lane_offset(INSTANCE_CUSTOM, t, time) + vec3(0.0, type_lamps.z, 0.0), 1.0)).xyz;
 	vec3 to_cam = CAMERA_POSITION_WORLD - center;
 	float dist = length(to_cam);
 	float facing = smoothstep(-0.15, 0.15, dot(travel, to_cam / dist));
@@ -42,7 +45,7 @@ void vertex() {
 	float size = max(base_size, dist * pixel_angle * min_pixels);
 	float fog = 1.0 - exp(-dist * fog_density);
 	fog = max(fog, 1.0 - exp(min(0.0, (lamp.y - fog_height) * fog_height_density)));
-	float strength = energy * pow(base_size / size, 2.0) * lane_scale(t)
+	float strength = energy * pow(base_size / size, 2.0) * lane_scale(t, INSTANCE_CUSTOM.z)
 			* smoothstep(near_start, near_end, dist) * (1.0 - fog);
 	glow = mix(tail_color, head_color, facing) * strength;
 

@@ -6,8 +6,8 @@
 [ext_resource type="Material" path="res://assets/materials/brushed_steel.tres" id="4_steel"]
 [ext_resource type="Material" path="res://assets/materials/gunmetal.tres" id="5_gunmetal"]
 [ext_resource type="Material" path="res://assets/materials/neon_cyan.tres" id="6_cyan"]
-[ext_resource type="Material" path="res://assets/materials/furniture_dark.tres" id="7_dark"]
-[ext_resource type="Material" path="res://assets/materials/neon_magenta.tres" id="8_magenta"]
+[ext_resource type="Material" path="res://assets/materials/neon_magenta.tres" id="7_magenta"]
+[ext_resource type="PackedScene" path="res://assets/props/door_entrance/door_entrance.tscn" id="8_door_entrance"]
 [ext_resource type="PackedScene" path="res://assets/props/door_entrance/door_neighbor.tscn" id="9_door_neighbor"]
 [ext_resource type="PackedScene" path="res://assets/architecture/corridor/corridor_trim.glb" id="10_res://assets/architecture/corridor/corridor_trim.glb"]
 [ext_resource type="PackedScene" path="res://assets/architecture/corridor/corridor_light.glb" id="11_res://assets/architecture/corridor/corridor_light.glb"]
@@ -146,16 +146,16 @@ size = Vector3(0.9, 0.7, 0.2)
 size = Vector3(0.9, 0.7, 0.2)
 
 [sub_resource type="BoxMesh" id="BoxMesh_s21"]
-size = Vector3(3.1, 2.8, 0.2)
+size = Vector3(4.3, 2.8, 0.2)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_s21"]
-size = Vector3(3.1, 2.8, 0.2)
+size = Vector3(4.3, 2.8, 0.2)
 
 [sub_resource type="BoxMesh" id="BoxMesh_s22"]
-size = Vector3(5.55, 2.8, 0.2)
+size = Vector3(4.35, 2.8, 0.2)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_s22"]
-size = Vector3(5.55, 2.8, 0.2)
+size = Vector3(4.35, 2.8, 0.2)
 
 [sub_resource type="BoxMesh" id="BoxMesh_s23"]
 size = Vector3(4, 0.4, 0.2)
@@ -164,10 +164,10 @@ size = Vector3(4, 0.4, 0.2)
 size = Vector3(4, 0.4, 0.2)
 
 [sub_resource type="BoxMesh" id="BoxMesh_s24"]
-size = Vector3(2.55, 2.8, 0.2)
+size = Vector3(2.75, 2.8, 0.2)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_s24"]
-size = Vector3(2.55, 2.8, 0.2)
+size = Vector3(2.75, 2.8, 0.2)
 
 [sub_resource type="BoxMesh" id="BoxMesh_s25"]
 size = Vector3(0.9, 0.7, 0.2)
@@ -176,10 +176,10 @@ size = Vector3(0.9, 0.7, 0.2)
 size = Vector3(0.9, 0.7, 0.2)
 
 [sub_resource type="BoxMesh" id="BoxMesh_s26"]
-size = Vector3(2.75, 2.8, 0.2)
+size = Vector3(2.55, 2.8, 0.2)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_s26"]
-size = Vector3(2.75, 2.8, 0.2)
+size = Vector3(2.55, 2.8, 0.2)
 
 [sub_resource type="BoxMesh" id="BoxMesh_s27"]
 size = Vector3(0.2, 2.8, 0.95)
@@ -260,21 +260,9 @@ size = Vector3(0.03, 0.03, 0.006)
 size = Vector3(0.03, 0.03, 0.006)
 
 [sub_resource type="BoxMesh" id="BoxMesh_s40"]
-size = Vector3(0.006, 0.115, 0.25)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_s40"]
-size = Vector3(0.006, 0.115, 0.25)
-
-[sub_resource type="BoxMesh" id="BoxMesh_s41"]
-size = Vector3(0.25, 0.115, 0.006)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_s41"]
-size = Vector3(0.25, 0.115, 0.006)
-
-[sub_resource type="BoxMesh" id="BoxMesh_s42"]
 size = Vector3(4, 0.025, 0.02)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_s42"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_s40"]
 size = Vector3(4, 0.025, 0.02)
 
 [sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o0"]
@@ -341,22 +329,22 @@ size = Vector3(4.1, 2.8, 0.16)
 size = Vector3(0.9, 0.7, 0.16)
 
 [sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o21"]
-size = Vector3(3.1, 2.8, 0.16)
+size = Vector3(4.3, 2.8, 0.16)
 
 [sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o22"]
-size = Vector3(5.55, 2.8, 0.16)
+size = Vector3(4.35, 2.8, 0.16)
 
 [sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o23"]
 size = Vector3(4, 0.4, 0.16)
 
 [sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o24"]
-size = Vector3(2.55, 2.8, 0.16)
+size = Vector3(2.75, 2.8, 0.16)
 
 [sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o25"]
 size = Vector3(0.9, 0.7, 0.16)
 
 [sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o26"]
-size = Vector3(2.75, 2.8, 0.16)
+size = Vector3(2.55, 2.8, 0.16)
 
 [sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o27"]
 size = Vector3(0.16, 2.8, 0.95)
@@ -650,30 +638,30 @@ position = Vector3(1, 2.45, 9.5)
 shape = SubResource("BoxShape3D_s20")
 
 [node name="MainSouth2" type="MeshInstance3D" parent="Shell"]
-position = Vector3(3, 1.4, 9.5)
+position = Vector3(3.6, 1.4, 9.5)
 mesh = SubResource("BoxMesh_s21")
 surface_material_override/0 = ExtResource("3_wall")
 
 [node name="MainSouth2Collision" type="CollisionShape3D" parent="Shell"]
-position = Vector3(3, 1.4, 9.5)
+position = Vector3(3.6, 1.4, 9.5)
 shape = SubResource("BoxShape3D_s21")
 
 [node name="MainSouth2Above" type="MeshInstance3D" parent="Shell"]
-position = Vector3(5, 2.45, 9.5)
+position = Vector3(6.2, 2.45, 9.5)
 mesh = SubResource("BoxMesh_s15")
 surface_material_override/0 = ExtResource("3_wall")
 
 [node name="MainSouth2AboveCollision" type="CollisionShape3D" parent="Shell"]
-position = Vector3(5, 2.45, 9.5)
+position = Vector3(6.2, 2.45, 9.5)
 shape = SubResource("BoxShape3D_s15")
 
 [node name="MainSouth3" type="MeshInstance3D" parent="Shell"]
-position = Vector3(8.225, 1.4, 9.5)
+position = Vector3(8.825, 1.4, 9.5)
 mesh = SubResource("BoxMesh_s22")
 surface_material_override/0 = ExtResource("3_wall")
 
 [node name="MainSouth3Collision" type="CollisionShape3D" parent="Shell"]
-position = Vector3(8.225, 1.4, 9.5)
+position = Vector3(8.825, 1.4, 9.5)
 shape = SubResource("BoxShape3D_s22")
 
 [node name="MainSouth3Above" type="MeshInstance3D" parent="Shell"]
@@ -686,30 +674,30 @@ position = Vector3(13, 2.6, 9.5)
 shape = SubResource("BoxShape3D_s23")
 
 [node name="MainSouth4" type="MeshInstance3D" parent="Shell"]
-position = Vector3(16.275, 1.4, 9.5)
+position = Vector3(16.375, 1.4, 9.5)
 mesh = SubResource("BoxMesh_s24")
 surface_material_override/0 = ExtResource("3_wall")
 
 [node name="MainSouth4Collision" type="CollisionShape3D" parent="Shell"]
-position = Vector3(16.275, 1.4, 9.5)
+position = Vector3(16.375, 1.4, 9.5)
 shape = SubResource("BoxShape3D_s24")
 
 [node name="MainSouth4Above" type="MeshInstance3D" parent="Shell"]
-position = Vector3(18, 2.45, 9.5)
+position = Vector3(18.2, 2.45, 9.5)
 mesh = SubResource("BoxMesh_s25")
 surface_material_override/0 = ExtResource("3_wall")
 
 [node name="MainSouth4AboveCollision" type="CollisionShape3D" parent="Shell"]
-position = Vector3(18, 2.45, 9.5)
+position = Vector3(18.2, 2.45, 9.5)
 shape = SubResource("BoxShape3D_s25")
 
 [node name="MainSouth5" type="MeshInstance3D" parent="Shell"]
-position = Vector3(19.825, 1.4, 9.5)
+position = Vector3(19.925, 1.4, 9.5)
 mesh = SubResource("BoxMesh_s26")
 surface_material_override/0 = ExtResource("3_wall")
 
 [node name="MainSouth5Collision" type="CollisionShape3D" parent="Shell"]
-position = Vector3(19.825, 1.4, 9.5)
+position = Vector3(19.925, 1.4, 9.5)
 shape = SubResource("BoxShape3D_s26")
 
 [node name="MainWestEnd0" type="MeshInstance3D" parent="Shell"]
@@ -896,55 +884,13 @@ cast_shadow = 0
 mesh = SubResource("BoxMesh_s39")
 surface_material_override/0 = ExtResource("6_cyan")
 
-[node name="Plates" type="StaticBody3D" parent="."]
-
-[node name="Door4418Plate" type="MeshInstance3D" parent="Plates"]
-position = Vector3(8.935, 1.73, 0)
-mesh = SubResource("BoxMesh_s40")
-surface_material_override/0 = ExtResource("7_dark")
-
-[node name="Door4419Plate" type="MeshInstance3D" parent="Plates"]
-position = Vector3(8.935, 1.73, 4.6)
-mesh = SubResource("BoxMesh_s40")
-surface_material_override/0 = ExtResource("7_dark")
-
-[node name="Door4420Plate" type="MeshInstance3D" parent="Plates"]
-position = Vector3(18, 1.73, 9.535)
-mesh = SubResource("BoxMesh_s41")
-surface_material_override/0 = ExtResource("7_dark")
-
-[node name="Door4421Plate" type="MeshInstance3D" parent="Plates"]
-position = Vector3(5, 1.73, 9.535)
-mesh = SubResource("BoxMesh_s41")
-surface_material_override/0 = ExtResource("7_dark")
-
-[node name="Door4422Plate" type="MeshInstance3D" parent="Plates"]
-position = Vector3(1, 1.73, 9.535)
-mesh = SubResource("BoxMesh_s41")
-surface_material_override/0 = ExtResource("7_dark")
-
-[node name="Door4423Plate" type="MeshInstance3D" parent="Plates"]
-position = Vector3(-4, 1.73, 9.535)
-mesh = SubResource("BoxMesh_s41")
-surface_material_override/0 = ExtResource("7_dark")
-
-[node name="DoorServicePlate" type="MeshInstance3D" parent="Plates"]
-position = Vector3(4.6, 1.73, 6.865)
-mesh = SubResource("BoxMesh_s41")
-surface_material_override/0 = ExtResource("7_dark")
-
-[node name="DoorStairsPlate" type="MeshInstance3D" parent="Plates"]
-position = Vector3(-7.135, 1.73, 8.2)
-mesh = SubResource("BoxMesh_s40")
-surface_material_override/0 = ExtResource("7_dark")
-
 [node name="Fixtures" type="StaticBody3D" parent="."]
 
 [node name="LobbyBand" type="MeshInstance3D" parent="Fixtures"]
 position = Vector3(13, 2.42, 9.39)
 cast_shadow = 0
-mesh = SubResource("BoxMesh_s42")
-surface_material_override/0 = ExtResource("8_magenta")
+mesh = SubResource("BoxMesh_s40")
+surface_material_override/0 = ExtResource("7_magenta")
 
 [node name="Occluders" type="Node3D" parent="."]
 metadata/_doc = "Occlusion culling: one box per wall, floor and ceiling box, inset on its thin axis; openings stay holes. <Window>View: the window openings, for OutsideView (D-048). GENERATED."
@@ -1050,15 +996,15 @@ position = Vector3(1, 2.45, 9.5)
 occluder = SubResource("BoxOccluder3D_o20")
 
 [node name="MainSouth2" type="OccluderInstance3D" parent="Occluders"]
-position = Vector3(3, 1.4, 9.5)
+position = Vector3(3.6, 1.4, 9.5)
 occluder = SubResource("BoxOccluder3D_o21")
 
 [node name="MainSouth2Above" type="OccluderInstance3D" parent="Occluders"]
-position = Vector3(5, 2.45, 9.5)
+position = Vector3(6.2, 2.45, 9.5)
 occluder = SubResource("BoxOccluder3D_o15")
 
 [node name="MainSouth3" type="OccluderInstance3D" parent="Occluders"]
-position = Vector3(8.225, 1.4, 9.5)
+position = Vector3(8.825, 1.4, 9.5)
 occluder = SubResource("BoxOccluder3D_o22")
 
 [node name="MainSouth3Above" type="OccluderInstance3D" parent="Occluders"]
@@ -1066,15 +1012,15 @@ position = Vector3(13, 2.6, 9.5)
 occluder = SubResource("BoxOccluder3D_o23")
 
 [node name="MainSouth4" type="OccluderInstance3D" parent="Occluders"]
-position = Vector3(16.275, 1.4, 9.5)
+position = Vector3(16.375, 1.4, 9.5)
 occluder = SubResource("BoxOccluder3D_o24")
 
 [node name="MainSouth4Above" type="OccluderInstance3D" parent="Occluders"]
-position = Vector3(18, 2.45, 9.5)
+position = Vector3(18.2, 2.45, 9.5)
 occluder = SubResource("BoxOccluder3D_o25")
 
 [node name="MainSouth5" type="OccluderInstance3D" parent="Occluders"]
-position = Vector3(19.825, 1.4, 9.5)
+position = Vector3(19.925, 1.4, 9.5)
 occluder = SubResource("BoxOccluder3D_o26")
 
 [node name="MainWestEnd0" type="OccluderInstance3D" parent="Occluders"]
@@ -1124,6 +1070,7 @@ occluder = SubResource("BoxOccluder3D_o32")
 [node name="EndWindowView" type="VisibleOnScreenNotifier3D" parent="Occluders" groups=["outside_view"]]
 position = Vector3(7.7, 0, -3.1)
 aabb = AABB(-1.2, -0.3, -0.1, 2.4, 3.05, 1.1)
+metadata/outside_facing = Vector3(0, 0, -1)
 
 [node name="Bounds" type="Area3D" parent="."]
 collision_layer = 0
@@ -1151,33 +1098,41 @@ position = Vector3(7.7, 0, -3.1)
 
 [node name="Props" type="Node3D" parent="."]
 
-[node name="Door4418" parent="Props" instance=ExtResource("9_door_neighbor")]
+[node name="Door4418" parent="Props" instance=ExtResource("8_door_entrance")]
 position = Vector3(8.9, 0, 0)
 rotation_degrees = Vector3(0, 90, 0)
+metadata/unit_number = "4418"
 
-[node name="Door4419" parent="Props" instance=ExtResource("9_door_neighbor")]
+[node name="Door4419" parent="Props" instance=ExtResource("8_door_entrance")]
 position = Vector3(8.9, 0, 4.6)
 rotation_degrees = Vector3(0, 90, 0)
+metadata/unit_number = "4419"
 
-[node name="Door4420" parent="Props" instance=ExtResource("9_door_neighbor")]
-position = Vector3(18, 0, 9.5)
+[node name="Door4420" parent="Props" instance=ExtResource("8_door_entrance")]
+position = Vector3(18.2, 0, 9.5)
+metadata/unit_number = "4420"
 
-[node name="Door4421" parent="Props" instance=ExtResource("9_door_neighbor")]
-position = Vector3(5, 0, 9.5)
+[node name="Door4421" parent="Props" instance=ExtResource("8_door_entrance")]
+position = Vector3(6.2, 0, 9.5)
+metadata/unit_number = "4421"
 
-[node name="Door4422" parent="Props" instance=ExtResource("9_door_neighbor")]
+[node name="Door4422" parent="Props" instance=ExtResource("8_door_entrance")]
 position = Vector3(1, 0, 9.5)
+metadata/unit_number = "4422"
 
-[node name="Door4423" parent="Props" instance=ExtResource("9_door_neighbor")]
+[node name="Door4423" parent="Props" instance=ExtResource("8_door_entrance")]
 position = Vector3(-4, 0, 9.5)
+metadata/unit_number = "4423"
 
 [node name="DoorService" parent="Props" instance=ExtResource("9_door_neighbor")]
 position = Vector3(4.6, 0, 6.9)
 rotation_degrees = Vector3(0, 180, 0)
+metadata/unit_number = "SERVICE"
 
 [node name="DoorStairs" parent="Props" instance=ExtResource("9_door_neighbor")]
 position = Vector3(-7.1, 0, 8.2)
 rotation_degrees = Vector3(0, -90, 0)
+metadata/unit_number = "STAIRS"
 
 [node name="Trim" parent="Props" instance=ExtResource("10_res://assets/architecture/corridor/corridor_trim.glb")]
 position = Vector3(0, 0, 0)
@@ -1373,93 +1328,6 @@ modulate = Color(0.3, 0.95, 1, 1)
 outline_size = 0
 font_size = 96
 text = "44"
-
-[node name="Door4418Number" type="Label3D" parent="Signs"]
-position = Vector3(8.9315, 1.73, 0)
-rotation_degrees = Vector3(0, 270, 0)
-pixel_size = 0.0006
-shaded = true
-double_sided = false
-modulate = Color(0.92, 0.9, 0.85, 1)
-outline_size = 0
-font_size = 96
-text = "4418"
-
-[node name="Door4419Number" type="Label3D" parent="Signs"]
-position = Vector3(8.9315, 1.73, 4.6)
-rotation_degrees = Vector3(0, 270, 0)
-pixel_size = 0.0006
-shaded = true
-double_sided = false
-modulate = Color(0.92, 0.9, 0.85, 1)
-outline_size = 0
-font_size = 96
-text = "4419"
-
-[node name="Door4420Number" type="Label3D" parent="Signs"]
-position = Vector3(18, 1.73, 9.5315)
-rotation_degrees = Vector3(0, 180, 0)
-pixel_size = 0.0006
-shaded = true
-double_sided = false
-modulate = Color(0.92, 0.9, 0.85, 1)
-outline_size = 0
-font_size = 96
-text = "4420"
-
-[node name="Door4421Number" type="Label3D" parent="Signs"]
-position = Vector3(5, 1.73, 9.5315)
-rotation_degrees = Vector3(0, 180, 0)
-pixel_size = 0.0006
-shaded = true
-double_sided = false
-modulate = Color(0.92, 0.9, 0.85, 1)
-outline_size = 0
-font_size = 96
-text = "4421"
-
-[node name="Door4422Number" type="Label3D" parent="Signs"]
-position = Vector3(1, 1.73, 9.5315)
-rotation_degrees = Vector3(0, 180, 0)
-pixel_size = 0.0006
-shaded = true
-double_sided = false
-modulate = Color(0.92, 0.9, 0.85, 1)
-outline_size = 0
-font_size = 96
-text = "4422"
-
-[node name="Door4423Number" type="Label3D" parent="Signs"]
-position = Vector3(-4, 1.73, 9.5315)
-rotation_degrees = Vector3(0, 180, 0)
-pixel_size = 0.0006
-shaded = true
-double_sided = false
-modulate = Color(0.92, 0.9, 0.85, 1)
-outline_size = 0
-font_size = 96
-text = "4423"
-
-[node name="DoorServiceNumber" type="Label3D" parent="Signs"]
-position = Vector3(4.6, 1.73, 6.8685)
-pixel_size = 0.0006
-shaded = true
-double_sided = false
-modulate = Color(0.92, 0.9, 0.85, 1)
-outline_size = 0
-font_size = 64
-text = "SERVICE"
-
-[node name="DoorStairsNumber" type="Label3D" parent="Signs"]
-position = Vector3(-7.1315, 1.73, 8.2)
-rotation_degrees = Vector3(0, 90, 0)
-pixel_size = 0.0006
-shaded = true
-double_sided = false
-modulate = Color(0.92, 0.9, 0.85, 1)
-outline_size = 0
-font_size = 64
-text = "STAIRS"
 
 [node name="Guidance" type="Node3D" parent="."]
 metadata/_doc = "Floor guide lights (assets/shaders/guide_light.gdshader): pulses run toward the elevators. GENERATED."

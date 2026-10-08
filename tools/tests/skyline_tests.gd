@@ -9,8 +9,10 @@ extends Node
 ## above [constant MAX_SHIMMER_PCT] (docs/decisions.md D-020). Traffic is frozen
 ## while measuring (moving vehicles aren't shimmer). Also checks that no traffic
 ## lane runs through a near tower (D-047), and that the city is hidden while no
-## window is in view and drawn again through a doorway (OutsideView, D-048), and
-## that the live reflection in view renders, one at a time (D-049).
+## window is in view and drawn again through a doorway (OutsideView, D-048), that
+## each side of the city is drawn only while a window facing it is on screen and
+## its bounds stay outside the building (D-061), and that the live reflection in
+## view renders, one at a time (D-049).
 
 const MAX_SHIMMER_PCT := 7.0
 const TRIALS := 4
@@ -21,6 +23,14 @@ const OUTSIDE_VIEWS: Array[Array] = [
 	[Vector3(0.55, 1.7, 2.9), 180.0, true],   # hallway, facing the bathroom door
 	[Vector3(2.05, 1.7, 3.3), 10.0, false],   # hallway, through the living room door to the window
 	[Vector3(0.0, 1.7, -2.0), 0.0, false],    # living room, facing the window
+]
+## Stand-in windows facing east, south and west (until those units exist): a
+## notifier outside the building (position, facing) and a camera in front of
+## it looking out (position, yaw), with nothing else onto the city in view.
+const SIDE_VIEWS: Array[Array] = [
+	[Vector3(60, 1.7, 7), Vector3(1, 0, 0), Vector3(56, 1.7, 7), -90.0],
+	[Vector3(5, 1.7, 60), Vector3(0, 0, 1), Vector3(5, 1.7, 56), 180.0],
+	[Vector3(-50, 1.7, 7), Vector3(-1, 0, 0), Vector3(-46, 1.7, 7), 90.0],
 ]
 ## Camera views (position, yaw) and the PlanarReflections that must show live ([] = none at all).
 const REFLECTION_VIEWS: Array[Array] = [
@@ -47,6 +57,8 @@ func _ready() -> void:
 	var blocked := traffic.blocked_lanes(_main.get_node("Skyline/NearTowers"))
 	print("TEST %s traffic_lanes_clear: %s" % ["PASS" if blocked.is_empty() else "FAIL", ", ".join(blocked) if blocked else "no lane hits a near tower"])
 	var outside_ok := await _check_outside_view()
+	outside_ok = await _check_sides() and outside_ok
+	outside_ok = _check_side_bounds() and outside_ok
 	var reflections_ok := await _check_reflections()
 	traffic.set_frozen(true)
 
@@ -95,6 +107,97 @@ func _check_outside_view() -> bool:
 			wrong.append("%s yaw %d: %s" % [v[0], v[1], "hidden" if view.is_outside_hidden() else "drawn"])
 	var ok := wrong.is_empty()
 	print("TEST %s outside_view: %s" % ["PASS" if ok else "FAIL", ", ".join(wrong) if wrong else "city hidden without a window in view"])
+	return ok
+
+
+## Each side is hidden until a window facing it is on screen, and then drawn
+## alone; the apartment's windows draw the north only.
+func _check_sides() -> bool:
+	var camera: Camera3D = _main.get_node("Player/XRCamera3D")
+	var view: OutsideView = _main.get_node("Skyline/OutsideView")
+	var wrong: Array[String] = []
+	var notifiers: Array[VisibleOnScreenNotifier3D] = []
+	for v: Array in SIDE_VIEWS:
+		var notifier := VisibleOnScreenNotifier3D.new()
+		notifier.aabb = AABB(Vector3(-0.5, -1.0, -1.0), Vector3(1.0, 2.0, 2.0))
+		notifier.set_meta(OutsideView.META_FACING, v[1])
+		notifier.add_to_group(OutsideView.GROUP)
+		_main.add_child(notifier)
+		notifier.global_position = v[0]
+		notifiers.append(notifier)
+	# Added off screen (the camera faces the bathroom wall): nothing drawn.
+	var steps: Array[Array] = [[Vector3(0.5, 1.7, 5.0), 0.0, 0]]
+	for i in SIDE_VIEWS.size():
+		steps.append([SIDE_VIEWS[i][2], SIDE_VIEWS[i][3], OutsideView.facing_sides(SIDE_VIEWS[i][1])])
+	steps.append([Vector3(0.0, 1.7, -2.0), 0.0, OutsideView.NORTH])
+	for step: Array in steps:
+		camera.transform = Transform3D(Basis(Vector3.UP, deg_to_rad(step[1])), step[0])
+		var want: int = step[2]
+		var frames := 0
+		while (view.shown_sides() != want or not _parts_match(view)) and frames < 30:
+			await RenderingServer.frame_post_draw
+			frames += 1
+		if view.shown_sides() != want or not _parts_match(view):
+			wrong.append("%s yaw %d: sides %d (want %d)%s" % [step[0], step[1], view.shown_sides(), want,
+					"" if _parts_match(view) else ", parts don't match"])
+	for notifier in notifiers:
+		notifier.queue_free()
+	var counts := _side_counts()
+	var ok := wrong.is_empty()
+	print("TEST %s outside_sides: %s; %s" % ["PASS" if ok else "FAIL",
+			", ".join(wrong) if wrong else "each side drawn only while a window facing it is in view", counts])
+	return ok
+
+
+## Every part's visibility follows the sides shown (none hidden by anything else).
+func _parts_match(view: OutsideView) -> bool:
+	for target: Node3D in view.targets:
+		for part: Node in target.get_children():
+			var node := part as Node3D
+			var sides := int(node.get_meta(OutsideView.META_SIDES,
+					OutsideView.sides_of(Vector2(node.global_position.x, node.global_position.z))))
+			if node.visible != bool(sides & view.shown_sides()):
+				return false
+	return true
+
+
+## Near towers, far tower instances and vehicles per side, for the report.
+func _side_counts() -> String:
+	var view: OutsideView = _main.get_node("Skyline/OutsideView")
+	var out: PackedStringArray = []
+	for s in 4:
+		var bit := 1 << s
+		var near := 0
+		var far := 0
+		var vehicles := 0
+		for tower: Node3D in _main.get_node("Skyline/NearTowers").get_children():
+			if OutsideView.sides_of(Vector2(tower.position.x, tower.position.z)) & bit:
+				near += 1
+		for part: Node in view.targets[1].get_children():
+			if part.name.ends_with("Part0") and int(part.get_meta(OutsideView.META_SIDES, 0)) & bit:
+				far += (part as MultiMeshInstance3D).multimesh.instance_count
+		for part: Node in view.targets[2].get_children():
+			if part.name.contains("Bodies") and int(part.get_meta(OutsideView.META_SIDES, 0)) & bit:
+				vehicles += (part as MultiMeshInstance3D).multimesh.instance_count
+		out.append("%s: %d near, %d far, %d vehicles" % [OutsideView.SIDE_NAMES[s], near, far, vehicles])
+	return "; ".join(out)
+
+
+## Every side's far towers and traffic have bounds outside the building, so
+## occlusion can cull them behind its walls (D-048).
+func _check_side_bounds() -> bool:
+	var wrong: Array[String] = []
+	var building := OutsideView.BUILDING.grow(-0.01)  # bounds end on the facade line
+	for path: String in ["Skyline/FarTowers", "Skyline/Traffic"]:
+		for part: Node in _main.get_node(path).get_children():
+			var sides := int(part.get_meta(OutsideView.META_SIDES, OutsideView.ALL_SIDES))
+			if sides == OutsideView.ALL_SIDES:
+				continue  # drawn whenever a window is in view: its bounds may hold the building
+			var box := (part as MultiMeshInstance3D).multimesh.custom_aabb
+			if Rect2(box.position.x, box.position.z, box.size.x, box.size.z).intersects(building):
+				wrong.append("%s/%s" % [path.get_file(), part.name])
+	var ok := wrong.is_empty()
+	print("TEST %s outside_side_bounds: %s" % ["PASS" if ok else "FAIL", ", ".join(wrong) if wrong else "every side's bounds end at its facade"])
 	return ok
 
 

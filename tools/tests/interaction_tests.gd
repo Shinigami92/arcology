@@ -125,6 +125,10 @@ func _registry() -> Array[Array]:
 		["zones", "zone_rain", _test_zone_rain],
 		["zones", "zone_drawn_when_seen", _test_zone_drawn_when_seen],
 		["zones", "corridor_wayfinding", _test_corridor_wayfinding],
+		["zones", "unit_approach", _test_unit_approach],
+		["zones", "unit_plates", _test_unit_plates],
+		["zones", "unit_scenes", _test_unit_scenes],
+		["zones", "unit_unload_ray", _test_unit_unload_ray],
 	]
 	return tests
 
@@ -2697,6 +2701,106 @@ func _test_corridor_wayfinding() -> void:
 			and toward == strips.size() and guide_ok,
 			"%d holo signs (broken: %s), %d with chevrons; %d guide strips, %d pulse toward the elevators, shader ok %s" % [
 				signs.size(), broken, arrows, strips.size(), toward, guide_ok])
+
+
+## A unit streams in only while the player is near its door (D-062): far down
+## the corridor it isn't loaded; at the door it loads while the door shows the
+## ID scan, then opens onto it; walking away frees it again.
+func _test_unit_approach() -> void:
+	var streamer := ZoneStreamer.find(get_tree())
+	var body: XRToolsPlayerBody = _main.get_node("Player/PlayerBody")
+	var door_root: Node3D = streamer.get_zone(&"corridor").get_node("Props/Door4421")
+	var hinge: XRToolsInteractableHinge = door_root.get_node("HingeOrigin/InteractableHinge")
+	body.teleport(Transform3D(Basis.IDENTITY, Vector3(-5.0, 0, 8.2)))
+	await _frames(40)
+	var far := not streamer.is_ready(&"unit_4421") and not streamer.is_loading(&"unit_4421")
+	body.teleport(Transform3D(Basis.IDENTITY, Vector3(6.2, 0, 8.4)))
+	await _frames(25)
+	var asked := streamer.is_loading(&"unit_4421") or streamer.is_ready(&"unit_4421")
+	var gate: ZoneGate = door_root.get_node("ZoneGate")
+	var held_while_loading := streamer.is_ready(&"unit_4421") or gate.is_holding()
+	await streamer.wait_settled()
+	await get_tree().process_frame
+	var loaded := streamer.is_ready(&"unit_4421") and not gate.is_holding()
+	# As a hand does: move_hinge() emits hinge_moved, which the ZoneGate listens to (the setter doesn't).
+	hinge.hinge_position = 40.0
+	hinge.hinge_moved.emit(hinge.hinge_position)
+	var opens := hinge.hinge_position
+	# Past the unit's reveal frames, so only the open door can keep it drawn.
+	for i in 6:
+		await RenderingServer.frame_post_draw
+	var seen := streamer.is_shown(&"unit_4421")
+	hinge.hinge_position = 0.0
+	hinge.hinge_moved.emit(0.0)
+	body.teleport(Transform3D(Basis.IDENTITY, Vector3(-5.0, 0, 8.2)))
+	await _frames(40)
+	var freed := not streamer.is_ready(&"unit_4421")
+	body.teleport(HOME)
+	await _frames(30)
+	_check("unit_approach", far and asked and held_while_loading and loaded and opens == 40.0 and seen and freed,
+			"11 m away: not loaded %s; at the door: asked %s, held until in %s, loaded %s (%.0f ms); door opens to %.0f°, unit drawn %s; walked away: freed %s" % [
+				far, asked, held_while_loading, loaded, streamer.get_load_ms(&"unit_4421"), opens, seen, freed])
+
+
+## Every unit door shows its own number over the leaf's 4417 plate; ours keeps 4417.
+func _test_unit_plates() -> void:
+	var corridor := ZoneStreamer.find(get_tree()).get_zone(&"corridor")
+	var wrong: Array[String] = []
+	for n: String in ["4418", "4419", "4420", "4421", "4422", "4423", "SERVICE", "STAIRS"]:
+		var door := corridor.get_node("Props/Door%s" % (n if n.is_valid_int() else n.capitalize()))
+		var plates := door.find_children("UnitPlate", "", true, false)
+		var label := plates[0].get_node_or_null("Number") as Label3D if not plates.is_empty() else null
+		if not label or label.text != n:
+			wrong.append(n)
+	var ours := _main.get_node(PROPS + "DoorEntrance").find_children("UnitPlate", "", true, false)
+	var ours_bare := not ours.is_empty() and ours[0].get_child_count() == 0
+	_check("unit_plates", wrong.is_empty() and ours_bare, "wrong or missing: %s; our door keeps its own plate %s" % [wrong, ours_bare])
+
+
+## The controller ray's button list drops a unit's buttons when the unit
+## streams out (headset bug 2026-10-08: a freed button broke the ray's
+## _process with a script error, which paused the game).
+func _test_unit_unload_ray() -> void:
+	var streamer := ZoneStreamer.find(get_tree())
+	var body: XRToolsPlayerBody = _main.get_node("Player/PlayerBody")
+	body.teleport(Transform3D(Basis.IDENTITY, Vector3(6.2, 0, 8.4)))
+	await _frames(25)
+	await streamer.wait_settled()
+	var unit := streamer.get_zone(&"unit_4421")
+	var in_unit := 0
+	for area: Area3D in unit.find_children("*", "Area3D", true, false) if unit else []:
+		if area.collision_mask & RayButtons.FINGERTIP_LAYER:
+			in_unit += 1
+	var before := RayButtons.targets(get_tree()).size()
+	body.teleport(HOME)
+	await _frames(40)
+	var after: Array[Area3D] = RayButtons.targets(get_tree())
+	var all_valid := after.all(func(a: Variant) -> bool: return is_instance_valid(a))
+	# At least the unit's buttons are gone (other units near the corridor may stream out with it).
+	_check("unit_unload_ray", in_unit > 0 and not streamer.is_ready(&"unit_4421") and after.size() <= before - in_unit
+			and all_valid, "unit 4421 had %d ray buttons; %d targets before, %d after it streamed out, all valid %s" % [
+				in_unit, before, after.size(), all_valid])
+
+
+## Every unit in the zone graph builds: its Bounds, a window looking out, the
+## bathroom and the furniture, the front door's opening clear (D-062).
+func _test_unit_scenes() -> void:
+	var problems: Array[String] = []
+	for n: String in ["4418", "4419", "4420", "4421", "4422", "4423"]:
+		var scene := load("res://zones/units/unit_%s.tscn" % n) as PackedScene
+		var unit := scene.instantiate() if scene else null
+		if not unit:
+			problems.append("%s: no scene" % n)
+			continue
+		for path: String in ["Bounds", "Props/Toilet", "Props/Vanity", "Props/Bed", "Props/Sofa", "Props/Fridge",
+				"Props/Wardrobe", "Props/DoorBathroom", "Entries/Door", "Lighting/LivingCeiling"]:
+			if not unit.has_node(path):
+				problems.append("%s: no %s" % [n, path])
+		var notifiers := unit.find_children("*", "VisibleOnScreenNotifier3D", true, false)
+		if notifiers.is_empty() or not notifiers[0].has_meta(&"outside_facing"):
+			problems.append("%s: no window notifier with outside_facing" % n)
+		unit.free()
+	_check("unit_scenes", problems.is_empty(), "%s" % [problems] if problems else "6 units: bounds, windows, bathroom, furniture, entry")
 
 
 ## A window that streams in while it rains gets the rain (RainOnGlass follows

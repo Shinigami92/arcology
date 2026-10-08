@@ -1,5 +1,5 @@
 {
-	"_doc": "The zone graph (roadmap phase 0, D-059): every zone's scene and the connections between zones. Read by ZoneStreamer (core/zones/zone_streamer.gd), which keeps the zones within load_depth connections of the player's zone loaded and frees the rest. A zone's node under Main/Zones is its id in PascalCase. A connection's door is '<zone>:<node path in that zone>'; ZoneStreamer gives it a ZoneGate, which holds it shut until the zones on both sides are loaded.",
+	"_doc": "The zone graph (roadmap phase 0, D-059, D-062): every zone's scene and the connections between zones. Read by ZoneStreamer (core/zones/zone_streamer.gd), which keeps the zones within load_depth connections of the player's zone loaded and frees the rest. A zone's node under Main/Zones is its id in PascalCase (unit_4418 is Unit4418). A connection's door is '<zone>:<node path in that zone>'; ZoneStreamer gives it a ZoneGate, which holds it shut until the zones on both sides are loaded. 'approach': {zone, within}: that zone loads from the other side only while the player is within that many meters of the door (the units: six of them next to the corridor). Swap a unit by pointing its scene somewhere else.",
 	"zones": {
 		"apartment": {
 			"scene": "res://zones/apartment/apartment.tscn",
@@ -8,13 +8,112 @@
 		"corridor": {
 			"scene": "res://zones/corridor/corridor.tscn",
 			"_doc": "Floor 44's corridors: the side corridor from the facade window past our entrance, the main corridor behind the units, the elevator lobby."
+		},
+		"unit_4418": {
+			"scene": "res://zones/units/unit_4418.tscn",
+			"_doc": "Unit 4418, floor 44: Loft facing north and east (living room along the north facade)."
+		},
+		"unit_4419": {
+			"scene": "res://zones/units/unit_4419.tscn",
+			"_doc": "Unit 4419, floor 44: Loft facing east (deep, one east window)."
+		},
+		"unit_4420": {
+			"scene": "res://zones/units/unit_4420.tscn",
+			"_doc": "Unit 4420, floor 44: Corner studio facing south and east."
+		},
+		"unit_4421": {
+			"scene": "res://zones/units/unit_4421.tscn",
+			"_doc": "Unit 4421, floor 44: Studio facing south."
+		},
+		"unit_4422": {
+			"scene": "res://zones/units/unit_4422.tscn",
+			"_doc": "Unit 4422, floor 44: Small studio facing south."
+		},
+		"unit_4423": {
+			"scene": "res://zones/units/unit_4423.tscn",
+			"_doc": "Unit 4423, floor 44: Studio facing south."
 		}
 	},
 	"connections": [
 		{
 			"name": "entrance",
-			"zones": ["apartment", "corridor"],
+			"zones": [
+				"apartment",
+				"corridor"
+			],
 			"door": "apartment:Props/DoorEntrance"
+		},
+		{
+			"name": "door_4418",
+			"zones": [
+				"corridor",
+				"unit_4418"
+			],
+			"door": "corridor:Props/Door4418",
+			"approach": {
+				"zone": "unit_4418",
+				"within": 5.0
+			}
+		},
+		{
+			"name": "door_4419",
+			"zones": [
+				"corridor",
+				"unit_4419"
+			],
+			"door": "corridor:Props/Door4419",
+			"approach": {
+				"zone": "unit_4419",
+				"within": 5.0
+			}
+		},
+		{
+			"name": "door_4420",
+			"zones": [
+				"corridor",
+				"unit_4420"
+			],
+			"door": "corridor:Props/Door4420",
+			"approach": {
+				"zone": "unit_4420",
+				"within": 5.0
+			}
+		},
+		{
+			"name": "door_4421",
+			"zones": [
+				"corridor",
+				"unit_4421"
+			],
+			"door": "corridor:Props/Door4421",
+			"approach": {
+				"zone": "unit_4421",
+				"within": 5.0
+			}
+		},
+		{
+			"name": "door_4422",
+			"zones": [
+				"corridor",
+				"unit_4422"
+			],
+			"door": "corridor:Props/Door4422",
+			"approach": {
+				"zone": "unit_4422",
+				"within": 5.0
+			}
+		},
+		{
+			"name": "door_4423",
+			"zones": [
+				"corridor",
+				"unit_4423"
+			],
+			"door": "corridor:Props/Door4423",
+			"approach": {
+				"zone": "unit_4423",
+				"within": 5.0
+			}
 		}
 	]
 }

@@ -169,6 +169,8 @@ func _handle_press() -> void:
 
 func _set_button(area: Area3D, point: Vector3) -> void:
 	button_point = point
+	if not is_instance_valid(button):
+		button = null  # freed with a zone that streamed out (D-062)
 	if area == button:
 		return
 	_hover(button, false)

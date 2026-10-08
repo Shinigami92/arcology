@@ -64,7 +64,7 @@ fog_height_density = 0.025
 fog_sky_affect = 0.0
 
 [node name="Skyline" type="Node3D"]
-metadata/_doc = "World backdrop outside every zone: sky, environment, sky light (sun by day, moon by night), near towers (tools/props/city.py), the far city repeating them (FarTowers), flying traffic (Traffic). The environment, sky and moon as authored are the night; DayNight changes them from the WorldState clock (D-051). Coordinates: D-008."
+metadata/_doc = "World backdrop outside every zone: sky, environment, sky light (sun by day, moon by night), near towers (tools/props/city.py), the far city repeating them (FarTowers), flying traffic (Traffic), all around our building, each side drawn by OutsideView only while a window onto it is in view (D-061). The environment, sky and moon as authored are the night; DayNight changes them from the WorldState clock (D-051). Coordinates: D-008."
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_night")
@@ -99,7 +99,7 @@ world_environment = NodePath("../WorldEnvironment")
 [node name="OutsideView" type="Node" parent="." node_paths=PackedStringArray("targets")]
 script = ExtResource("5_outside")
 targets = [NodePath("../NearTowers"), NodePath("../FarTowers"), NodePath("../Traffic")]
-metadata/_doc = "Hides the city while no window is on screen (window notifiers in the outside_view group, D-048)."
+metadata/_doc = "Draws each side of the city only while a window facing it is on screen (window notifiers in the outside_view group with metadata/outside_facing; parts: the targets' children, D-048, D-061)."
 
 [node name="DayNight" type="Node" parent="." node_paths=PackedStringArray("world_environment", "sky_light", "outside", "traffic", "far_towers")]
 script = ExtResource("6_day_night")

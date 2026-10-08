@@ -2,6 +2,7 @@
 	"_doc": "Near ring of the city view: hero towers built in Blender (blender/architecture/city/<style>/), placed by the Godot skyline generator. Godot coordinates, meters: x east, z south, y up; the apartment windows face -Z from z = -3.1 with the eye at about y = 1.6; the street is y = -180 (D-008). pos = base center on the street (x, z); footprint = [width along local X, depth along local Z] at the base; top_y = world height of the roof slab (crowns, antennas and masts may rise above it); yaw = degrees about +Y; local +Z is the tower's front and faces the apartment at yaw 0. The far city (FarTowers) repeats these towers further out and keeps its cells clear of these footprints.",
 	"street_y": -180.0,
 	"eye": [0.0, 1.6, -3.0],
+	"building": {"_doc": "Our building's footprint on floor 44 (x0, z0, x1, z1): the facades north z0 (the apartment), east x1, south z1, west x0. The city surrounds it (D-061); OutsideView.BUILDING in core/zones/outside_view.gd must match. Placements keep min_gap between a tower's footprint circle and the footprint.", "rect": [-10.5, -3.2, 21.2, 16.7], "min_gap": 90.0},
 	"styles": {
 		"brutalist": "Fifth Element megablocks: huge stacked concrete slabs with setbacks, deep window bays, balconies, external walkways and sky bridges, landing pads, rooftop plant and clutter, warm residential windows, small neon signs.",
 		"spire": "Coruscant / Area18 corporate spires: slender glass and dark metal towers, tapering or faceted, vertical light strips, horizontal office bands, giant holo ad panels, crowns with antennas and aircraft warning lights, cool office light."
@@ -17,5 +18,25 @@
 		{"name": "city_spire_twin", "style": "spire", "pos": [-250.0, -330.0], "footprint": [38.0, 38.0], "top_y": 200.0, "yaw": 22.0, "_doc": "Faceted tower with a lit crown."},
 		{"name": "city_spire_crown", "style": "spire", "pos": [300.0, -320.0], "footprint": [56.0, 56.0], "top_y": 400.0, "yaw": -25.0, "_doc": "The landmark: tallest tower, antenna crown with blinking aircraft warning lights (separate emissive part), sky lobby band."},
 		{"name": "city_spire_adtower", "style": "spire", "pos": [240.0, -500.0], "footprint": [36.0, 36.0], "top_y": 230.0, "yaw": -10.0, "_doc": "Slim tower wrapped in stacked ad screens on two faces."}
+	],
+	"_placements_doc": "More near towers around the rest of the building (D-061), reusing the glbs above (Godot only: the Blender builds read 'towers'). tower = the glb's name; pos, yaw as above (yaw 0 faces north, -90 west, 180 north from the south side: the front faces the building); sink = meters the base goes below the street, lowering the roof by as much (the root reaches down into the haze anyway). Keep them clear of every traffic lane (the skyline test checks it) and of the building (building.min_gap); towers east or west of it stay at z >= 0 so north views don't draw them.",
+	"placements": [
+		{"name": "east_terrace", "tower": "city_brutal_terrace", "pos": [172.0, 14.0], "yaw": -84.0, "sink": 45.0, "_doc": "Straight out of the east windows past the near corridor: planted terraces just below eye level."},
+		{"name": "east_twin", "tower": "city_spire_twin", "pos": [262.0, 4.0], "yaw": -100.0, "sink": 0.0, "_doc": "A lit crown behind the terraces."},
+		{"name": "east_stacked", "tower": "city_brutal_stacked", "pos": [350.0, 24.0], "yaw": -95.0, "sink": 20.0, "_doc": "Slab wall with walkway decks closing the east view before the avenue."},
+		{"name": "east_taper", "tower": "city_spire_taper", "pos": [575.0, 8.0], "yaw": -80.0, "sink": 30.0, "_doc": "Beyond the east avenue."},
+		{"name": "se_blade", "tower": "city_spire_blade", "pos": [140.0, 195.0], "yaw": -150.0, "sink": 50.0, "_doc": "South-east corner: the closest spire, its ad panel turned toward the building."},
+		{"name": "se_ziggurat", "tower": "city_brutal_ziggurat", "pos": [255.0, 245.0], "yaw": -128.0, "sink": 30.0, "_doc": "South-east corner, the stepped profile seen at an angle."},
+		{"name": "se_adtower", "tower": "city_spire_adtower", "pos": [380.0, 330.0], "yaw": -125.0, "sink": 0.0, "_doc": "South-east, ad screens toward the building."},
+		{"name": "south_stacked", "tower": "city_brutal_stacked", "pos": [25.0, 180.0], "yaw": 176.0, "sink": 100.0, "_doc": "Straight out of the south windows: a slab block whose roof decks sit about 30 m below the window."},
+		{"name": "south_taper", "tower": "city_spire_taper", "pos": [-45.0, 300.0], "yaw": 170.0, "sink": 0.0, "_doc": "Behind it, slightly to the right (seen from the south windows)."},
+		{"name": "south_bridge", "tower": "city_brutal_bridge", "pos": [75.0, 395.0], "yaw": 186.0, "sink": 15.0, "_doc": "The south's wide silhouette, its sky bridge just below eye level."},
+		{"name": "south_twin", "tower": "city_spire_twin", "pos": [-110.0, 590.0], "yaw": 160.0, "sink": 0.0, "_doc": "Beyond the high south corridor."},
+		{"name": "sw_deck", "tower": "city_brutal_deck", "pos": [-155.0, 205.0], "yaw": 140.0, "sink": 0.0, "_doc": "South-west corner: a landing pad roof below the window."},
+		{"name": "sw_crown", "tower": "city_spire_crown", "pos": [-320.0, 400.0], "yaw": 145.0, "sink": 150.0, "_doc": "South-west landmark, lower than the northern crown; no window sees both."},
+		{"name": "west_ziggurat", "tower": "city_brutal_ziggurat", "pos": [-190.0, 22.0], "yaw": 96.0, "sink": 70.0, "_doc": "Straight out of the west facade: a stepped block topping out just above eye level."},
+		{"name": "west_blade", "tower": "city_spire_blade", "pos": [-292.0, 8.0], "yaw": 80.0, "sink": 0.0, "_doc": "Glass blade behind it."},
+		{"name": "west_terrace", "tower": "city_brutal_terrace", "pos": [-385.0, 30.0], "yaw": 100.0, "sink": 10.0, "_doc": "Terraced block before the west avenue."},
+		{"name": "west_adtower", "tower": "city_spire_adtower", "pos": [-620.0, 12.0], "yaw": 85.0, "sink": 40.0, "_doc": "Beyond the west avenue."}
 	]
 }
