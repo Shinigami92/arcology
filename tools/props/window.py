@@ -155,7 +155,8 @@ def window(profile: dict, w: dict) -> Scene:
     vent = w.get("vent")
     vent_bay = vent["bay"] if vent else -1
     hud = w.get("hud") or None
-    panel_x = (1 if w["panel"]["side"] == "east" else -1) * (W / 2 + PANEL_GAP)
+    panel = w.get("panel")
+    panel_x = (1 if panel["side"] == "east" else -1) * (W / 2 + PANEL_GAP) if panel else 0.0
 
     s = Scene(pascal(w["name"]) + "Window", doc(w, g))
     glass_mat = s.sub("ShaderMaterial", "ShaderMaterial_glass", {
@@ -295,7 +296,35 @@ def window(profile: dict, w: dict) -> Scene:
                 groups=["rain_ambience"], volume_db=-80.0, unit_size=2.5, max_distance=25.0,
                 script=s.ext("hinge_ambience"), hinge=ref(hinge), open_db=0.0, gain=0.0)
 
-    # Wall panel: top button runs the shades, bottom one steps the tint.
+    # Wall panel: top button runs the shades, bottom one steps the tint. None without shades and tint.
+    if panel:
+        panel_controls(s, w, p, panel_x, D)
+    # Rain on the glass; RainOnGlass plays it and scales it by the rain (this volume = full rain).
+    s.sound("RainPatter", "sfx/rain_patter", position=rv(0, cy, g["gz"]), groups=["rain_patter"], volume_db=-16.0,
+            unit_size=2.0, max_distance=15.0)
+    if panel:
+        s.sound("PanelClick", "sfx/button_click", position=rv(panel_x, panel["y"], D / 2 + 0.02), volume_db=-8.0)
+
+    if w.get("shade"):
+        s.sound("ShadeMotor", "sfx/shade_motor", position=rv(0, T - 0.1, 0), volume_db=-14.0, unit_size=2.0,
+                max_distance=15.0)
+        s.node("Shade", "Node", props={
+            "script": s.ext("motorized_shade"), "button": ref("Panel/ShadeButton"),
+            "shades": [ref(x) for x in shade_nodes],
+            "drops": raw("PackedFloat32Array(%s)" % ", ".join(f"{d:g}" for d in drops)),
+            "motor": ref("ShadeMotor"), "click": ref("PanelClick")})
+    if w.get("tint"):
+        s.sound("TintTone", "sfx/tint_tone", position=rv(panel_x, panel["y"], D / 2 + 0.02), volume_db=-12.0)
+        s.node("SmartGlass", "Node", props={
+            "script": s.ext("smart_glass"), "button": ref("Panel/TintButton"), "panes": [ref(x) for x in panes],
+            "tone": ref("TintTone"), "click": ref("PanelClick")})
+    if hud:
+        s.node("Hud", "Node", props={"script": s.ext("window_hud"), "panes": [ref(f"Glass{hud['bay']}")]})
+    return s
+
+
+def panel_controls(s: Scene, w: dict, p: dict, panel_x: float, D: float) -> None:
+    """The wall panel beside the opening: model (or a placeholder plate) and its two buttons."""
     s.node("Panel", "Node3D", position=rv(panel_x, w["panel"]["y"], D / 2))
     kit = exists(p["panel"])
     if kit:
@@ -320,27 +349,6 @@ def window(profile: dict, w: dict) -> Scene:
             s.node(f"{name}Label", "Label3D", parent="Panel", props={
                 "position": rv(0, at[1] - 0.021, PANEL[2] + 0.001), "pixel_size": 0.0003,
                 "modulate": raw("Color(0.75, 0.78, 0.8, 1)"), "font_size": 32, "outline_size": 0, "text": label})
-    # Rain on the glass; RainOnGlass plays it and scales it by the rain (this volume = full rain).
-    s.sound("RainPatter", "sfx/rain_patter", position=rv(0, cy, g["gz"]), groups=["rain_patter"], volume_db=-16.0,
-            unit_size=2.0, max_distance=15.0)
-    s.sound("PanelClick", "sfx/button_click", position=rv(panel_x, w["panel"]["y"], D / 2 + 0.02), volume_db=-8.0)
-
-    if w.get("shade"):
-        s.sound("ShadeMotor", "sfx/shade_motor", position=rv(0, T - 0.1, 0), volume_db=-14.0, unit_size=2.0,
-                max_distance=15.0)
-        s.node("Shade", "Node", props={
-            "script": s.ext("motorized_shade"), "button": ref("Panel/ShadeButton"),
-            "shades": [ref(x) for x in shade_nodes],
-            "drops": raw("PackedFloat32Array(%s)" % ", ".join(f"{d:g}" for d in drops)),
-            "motor": ref("ShadeMotor"), "click": ref("PanelClick")})
-    if w.get("tint"):
-        s.sound("TintTone", "sfx/tint_tone", position=rv(panel_x, w["panel"]["y"], D / 2 + 0.02), volume_db=-12.0)
-        s.node("SmartGlass", "Node", props={
-            "script": s.ext("smart_glass"), "button": ref("Panel/TintButton"), "panes": [ref(x) for x in panes],
-            "tone": ref("TintTone"), "click": ref("PanelClick")})
-    if hud:
-        s.node("Hud", "Node", props={"script": s.ext("window_hud"), "panes": [ref(f"Glass{hud['bay']}")]})
-    return s
 
 
 def hud_props(bay_w: float, clear_y: float) -> dict:
@@ -356,8 +364,9 @@ def doc(w: dict, g: dict) -> str:
     if w.get("vent"):
         parts.append(f"Bay {w['vent']['bay']} is a tilt vent (grab its handle, 0..{w['vent']['open_max_deg']:g} degrees, "
                      "latches shut near closed; city noise while open).")
-    parts.append(f"Panel on the {w['panel']['side']} side: top button runs the shades (press again to stop, again to "
-                 "reverse), bottom button steps the smart glass tint (clear, half, dark).")
+    if w.get("panel"):
+        parts.append(f"Panel on the {w['panel']['side']} side: top button runs the shades (press again to stop, again "
+                     "to reverse), bottom button steps the smart glass tint (clear, half, dark).")
     if w.get("hud"):
         parts.append(f"HUD readout (time, temperature, weather) in the lower east corner of bay {w['hud']['bay']}.")
     return " ".join(parts)

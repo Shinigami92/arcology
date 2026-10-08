@@ -238,93 +238,78 @@ size = Vector3(4.6, 2.6, 0.2)
 size = Vector3(4.6, 2.6, 0.2)
 
 [sub_resource type="BoxMesh" id="BoxMesh_s33"]
-size = Vector3(1.8, 0.2, 1.6)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_s33"]
-size = Vector3(1.8, 0.2, 1.6)
-
-[sub_resource type="BoxMesh" id="BoxMesh_s34"]
-size = Vector3(1.8, 2.6, 0.2)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_s34"]
-size = Vector3(1.8, 2.6, 0.2)
-
-[sub_resource type="BoxMesh" id="BoxMesh_s35"]
-size = Vector3(0.02, 0.12, 0.6)
-
-[sub_resource type="BoxMesh" id="BoxMesh_s36"]
 size = Vector3(1, 0.04, 0.6)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_s54"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_s51"]
 size = Vector3(1, 0.75, 0.6)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s37"]
+[sub_resource type="BoxMesh" id="BoxMesh_s34"]
 size = Vector3(0.1, 0.7, 0.1)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s38"]
+[sub_resource type="BoxMesh" id="BoxMesh_s35"]
 size = Vector3(0.5, 0.02, 0.4)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s39"]
+[sub_resource type="BoxMesh" id="BoxMesh_s36"]
 size = Vector3(0.28, 0.03, 1.2)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_s39"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_s36"]
 size = Vector3(0.28, 0.03, 1.2)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s40"]
+[sub_resource type="BoxMesh" id="BoxMesh_s37"]
 size = Vector3(0.02, 0.05, 1.2)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_s40"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_s37"]
 size = Vector3(0.02, 0.05, 1.2)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s41"]
+[sub_resource type="BoxMesh" id="BoxMesh_s38"]
 size = Vector3(0.02, 0.03, 1.6)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s42"]
+[sub_resource type="BoxMesh" id="BoxMesh_s39"]
 size = Vector3(0.6, 0.03, 0.6)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s43"]
+[sub_resource type="BoxMesh" id="BoxMesh_s40"]
 size = Vector3(0.6, 0.88, 3.4)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_s43"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_s40"]
 size = Vector3(0.6, 0.88, 3.4)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s44"]
+[sub_resource type="BoxMesh" id="BoxMesh_s41"]
 size = Vector3(0.64, 0.04, 3.44)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_s44"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_s41"]
 size = Vector3(0.64, 0.04, 3.44)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s45"]
+[sub_resource type="BoxMesh" id="BoxMesh_s42"]
 size = Vector3(0.02, 0.6, 3.4)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s46"]
+[sub_resource type="BoxMesh" id="BoxMesh_s43"]
 size = Vector3(0.02, 0.02, 3.2)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s47"]
+[sub_resource type="BoxMesh" id="BoxMesh_s44"]
 size = Vector3(0.9, 0.04, 0.9)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_s55"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_s52"]
 size = Vector3(0.9, 0.75, 0.9)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s48"]
+[sub_resource type="BoxMesh" id="BoxMesh_s45"]
 size = Vector3(0.5, 0.02, 0.5)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s49"]
+[sub_resource type="BoxMesh" id="BoxMesh_s46"]
 size = Vector3(0.5, 0.03, 0.5)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s50"]
+[sub_resource type="BoxMesh" id="BoxMesh_s47"]
 size = Vector3(0.02, 0.03, 1.4)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s51"]
+[sub_resource type="BoxMesh" id="BoxMesh_s48"]
 size = Vector3(0.4, 0.03, 0.4)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s52"]
+[sub_resource type="BoxMesh" id="BoxMesh_s49"]
 size = Vector3(0.9, 0.45, 0.35)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_s52"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_s49"]
 size = Vector3(0.9, 0.45, 0.35)
 
-[sub_resource type="BoxMesh" id="BoxMesh_s53"]
+[sub_resource type="BoxMesh" id="BoxMesh_s50"]
 size = Vector3(0.3, 0.03, 0.3)
 
 [sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o0"]
@@ -426,11 +411,17 @@ size = Vector3(0.16, 2.6, 2.8)
 [sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o32"]
 size = Vector3(4.6, 2.6, 0.16)
 
-[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o33"]
-size = Vector3(1.8, 0.16, 1.6)
+[sub_resource type="BoxShape3D" id="BoxShape3D_b0"]
+size = Vector3(9.7, 2.6, 7)
 
-[sub_resource type="BoxOccluder3D" id="BoxOccluder3D_o34"]
-size = Vector3(1.8, 2.6, 0.16)
+[sub_resource type="BoxShape3D" id="BoxShape3D_b1"]
+size = Vector3(3.9, 2.6, 1.7)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_b2"]
+size = Vector3(3.9, 2.6, 5.3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_b3"]
+size = Vector3(4.6, 2.6, 2.9)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_seat0"]
 size = Vector3(2.2, 2, 1.2)
@@ -770,164 +761,111 @@ surface_material_override/0 = ExtResource("4_wall")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1.3, 6.7)
 shape = SubResource("BoxShape3D_s32")
 
-[node name="Vestibule" type="StaticBody3D" parent="." unique_id=441323284]
-
-[node name="VestFloor" type="MeshInstance3D" parent="Vestibule" unique_id=1413033620]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, -0.1, 2.9)
-mesh = SubResource("BoxMesh_s33")
-surface_material_override/0 = ExtResource("1_vinyl")
-
-[node name="VestFloorCollision" type="CollisionShape3D" parent="Vestibule" unique_id=721228468]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, -0.1, 2.9)
-shape = SubResource("BoxShape3D_s33")
-
-[node name="VestCeiling" type="MeshInstance3D" parent="Vestibule" unique_id=1898750356]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, 2.7, 2.9)
-mesh = SubResource("BoxMesh_s33")
-surface_material_override/0 = ExtResource("5_ceiling")
-
-[node name="VestCeilingCollision" type="CollisionShape3D" parent="Vestibule" unique_id=1735852047]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, 2.7, 2.9)
-shape = SubResource("BoxShape3D_s33")
-
-[node name="VestNorth0" type="MeshInstance3D" parent="Vestibule" unique_id=601002685]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.5, 1.3, 2.1)
-mesh = SubResource("BoxMesh_s34")
-surface_material_override/0 = ExtResource("4_wall")
-
-[node name="VestNorth0Collision" type="CollisionShape3D" parent="Vestibule" unique_id=1642350490]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.5, 1.3, 2.1)
-shape = SubResource("BoxShape3D_s34")
-
-[node name="VestSouth0" type="MeshInstance3D" parent="Vestibule" unique_id=1196481413]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.5, 1.3, 3.7)
-mesh = SubResource("BoxMesh_s34")
-surface_material_override/0 = ExtResource("4_wall")
-
-[node name="VestSouth0Collision" type="CollisionShape3D" parent="Vestibule" unique_id=1884602723]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.5, 1.3, 3.7)
-shape = SubResource("BoxShape3D_s34")
-
-[node name="VestEnd0" type="MeshInstance3D" parent="Vestibule" unique_id=1652272784]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.3, 1.3, 2.9)
-mesh = SubResource("BoxMesh_s20")
-surface_material_override/0 = ExtResource("4_wall")
-
-[node name="VestEnd0Collision" type="CollisionShape3D" parent="Vestibule" unique_id=257013715]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.3, 1.3, 2.9)
-shape = SubResource("BoxShape3D_s20")
-
-[node name="VestSign" type="MeshInstance3D" parent="Vestibule" unique_id=816426458]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.19, 2.2, 2.9)
-cast_shadow = 0
-mesh = SubResource("BoxMesh_s35")
-surface_material_override/0 = ExtResource("11_cyan")
-
 [node name="Living" type="StaticBody3D" parent="." unique_id=154571801]
 
 [node name="TableTop" type="MeshInstance3D" parent="Living" unique_id=1602120800]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1, 0.73, -1.3)
-mesh = SubResource("BoxMesh_s36")
+mesh = SubResource("BoxMesh_s33")
 surface_material_override/0 = ExtResource("8_dark")
 
 [node name="TableTopCollision" type="CollisionShape3D" parent="Living" unique_id=2103913978]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1, 0.375, -1.3)
-shape = SubResource("BoxShape3D_s54")
+shape = SubResource("BoxShape3D_s51")
 
 [node name="TablePedestal" type="MeshInstance3D" parent="Living" unique_id=1455053201]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1, 0.36, -1.3)
-mesh = SubResource("BoxMesh_s37")
+mesh = SubResource("BoxMesh_s34")
 surface_material_override/0 = ExtResource("7_steel")
 
 [node name="TableBase" type="MeshInstance3D" parent="Living" unique_id=1952197544]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1, 0.01, -1.3)
-mesh = SubResource("BoxMesh_s38")
+mesh = SubResource("BoxMesh_s35")
 surface_material_override/0 = ExtResource("7_steel")
 
 [node name="Shelf" type="MeshInstance3D" parent="Living" unique_id=1623378104]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.86, 1.1, -1.5)
-mesh = SubResource("BoxMesh_s39")
+mesh = SubResource("BoxMesh_s36")
 surface_material_override/0 = ExtResource("6_gunmetal")
 
 [node name="ShelfCollision" type="CollisionShape3D" parent="Living" unique_id=578800981]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.86, 1.1, -1.5)
-shape = SubResource("BoxShape3D_s39")
+shape = SubResource("BoxShape3D_s36")
 
 [node name="ShelfLip" type="MeshInstance3D" parent="Living" unique_id=272408952]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.73, 1.14, -1.5)
-mesh = SubResource("BoxMesh_s40")
+mesh = SubResource("BoxMesh_s37")
 surface_material_override/0 = ExtResource("6_gunmetal")
 
 [node name="ShelfLipCollision" type="CollisionShape3D" parent="Living" unique_id=1364071012]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.73, 1.14, -1.5)
-shape = SubResource("BoxShape3D_s40")
+shape = SubResource("BoxShape3D_s37")
 
 [node name="NeonStrip" type="MeshInstance3D" parent="Living" unique_id=1808957475]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.99, 2.2, -0.2)
 cast_shadow = 0
-mesh = SubResource("BoxMesh_s41")
+mesh = SubResource("BoxMesh_s38")
 surface_material_override/0 = ExtResource("10_magenta")
 
 [node name="LampDisc" type="MeshInstance3D" parent="Living" unique_id=1866799573]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.585, -0.5)
 cast_shadow = 0
-mesh = SubResource("BoxMesh_s42")
+mesh = SubResource("BoxMesh_s39")
 surface_material_override/0 = ExtResource("12_lamp")
 
 [node name="Kitchen" type="StaticBody3D" parent="." unique_id=1556415403]
 
 [node name="CounterBody" type="MeshInstance3D" parent="Kitchen" unique_id=1588117145]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.1, 0.44, -0.5)
-mesh = SubResource("BoxMesh_s43")
+mesh = SubResource("BoxMesh_s40")
 surface_material_override/0 = ExtResource("8_dark")
 
 [node name="CounterBodyCollision" type="CollisionShape3D" parent="Kitchen" unique_id=2097682655]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.1, 0.44, -0.5)
-shape = SubResource("BoxShape3D_s43")
+shape = SubResource("BoxShape3D_s40")
 
 [node name="CounterTop" type="MeshInstance3D" parent="Kitchen" unique_id=1166279114]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.08, 0.9, -0.5)
-mesh = SubResource("BoxMesh_s44")
+mesh = SubResource("BoxMesh_s41")
 surface_material_override/0 = ExtResource("7_steel")
 
 [node name="CounterTopCollision" type="CollisionShape3D" parent="Kitchen" unique_id=992686749]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.08, 0.9, -0.5)
-shape = SubResource("BoxShape3D_s44")
+shape = SubResource("BoxShape3D_s41")
 
 [node name="Backsplash" type="MeshInstance3D" parent="Kitchen" unique_id=393028826]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.39, 1.25, -0.5)
-mesh = SubResource("BoxMesh_s45")
+mesh = SubResource("BoxMesh_s42")
 surface_material_override/0 = ExtResource("16_ceramic")
 
 [node name="CounterNeon" type="MeshInstance3D" parent="Kitchen" unique_id=1545259204]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.37, 1.56, -0.5)
 cast_shadow = 0
-mesh = SubResource("BoxMesh_s46")
+mesh = SubResource("BoxMesh_s43")
 surface_material_override/0 = ExtResource("11_cyan")
 
 [node name="TableTop" type="MeshInstance3D" parent="Kitchen" unique_id=1190335372]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.4, 0.73, -1)
-mesh = SubResource("BoxMesh_s47")
+mesh = SubResource("BoxMesh_s44")
 surface_material_override/0 = ExtResource("15_wood")
 
 [node name="TableTopCollision" type="CollisionShape3D" parent="Kitchen" unique_id=1238119356]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.4, 0.375, -1)
-shape = SubResource("BoxShape3D_s55")
+shape = SubResource("BoxShape3D_s52")
 
 [node name="TablePedestal" type="MeshInstance3D" parent="Kitchen" unique_id=160003741]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.4, 0.36, -1)
-mesh = SubResource("BoxMesh_s37")
+mesh = SubResource("BoxMesh_s34")
 surface_material_override/0 = ExtResource("7_steel")
 
 [node name="TableBase" type="MeshInstance3D" parent="Kitchen" unique_id=1616395332]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.4, 0.01, -1)
-mesh = SubResource("BoxMesh_s48")
+mesh = SubResource("BoxMesh_s45")
 surface_material_override/0 = ExtResource("7_steel")
 
 [node name="LampDisc" type="MeshInstance3D" parent="Kitchen" unique_id=1775957947]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.8, 2.585, -0.5)
 cast_shadow = 0
-mesh = SubResource("BoxMesh_s49")
+mesh = SubResource("BoxMesh_s46")
 surface_material_override/0 = ExtResource("12_lamp")
 
 [node name="Bedroom" type="StaticBody3D" parent="." unique_id=117400152]
@@ -935,13 +873,13 @@ surface_material_override/0 = ExtResource("12_lamp")
 [node name="BedNeon" type="MeshInstance3D" parent="Bedroom" unique_id=1083610049]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.79, 1.7, -0.9)
 cast_shadow = 0
-mesh = SubResource("BoxMesh_s50")
+mesh = SubResource("BoxMesh_s47")
 surface_material_override/0 = ExtResource("11_cyan")
 
 [node name="LampDisc" type="MeshInstance3D" parent="Bedroom" unique_id=1870597053]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 2.585, -0.5)
 cast_shadow = 0
-mesh = SubResource("BoxMesh_s49")
+mesh = SubResource("BoxMesh_s46")
 surface_material_override/0 = ExtResource("12_lamp")
 
 [node name="Bathroom" type="StaticBody3D" parent="." unique_id=1340615072]
@@ -949,36 +887,36 @@ surface_material_override/0 = ExtResource("12_lamp")
 [node name="LampDisc" type="MeshInstance3D" parent="Bathroom" unique_id=275970056]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 2.585, 5.2)
 cast_shadow = 0
-mesh = SubResource("BoxMesh_s51")
+mesh = SubResource("BoxMesh_s48")
 surface_material_override/0 = ExtResource("12_lamp")
 
 [node name="Hallway" type="StaticBody3D" parent="." unique_id=143067219]
 
 [node name="ShoeBench" type="MeshInstance3D" parent="Hallway" unique_id=761073421]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.6, 0.225, 3.4)
-mesh = SubResource("BoxMesh_s52")
+mesh = SubResource("BoxMesh_s49")
 surface_material_override/0 = ExtResource("15_wood")
 
 [node name="ShoeBenchCollision" type="CollisionShape3D" parent="Hallway" unique_id=1626849533]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.6, 0.225, 3.4)
-shape = SubResource("BoxShape3D_s52")
+shape = SubResource("BoxShape3D_s49")
 
 [node name="LampDisc0" type="MeshInstance3D" parent="Hallway" unique_id=719316247]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 2.585, 2.9)
 cast_shadow = 0
-mesh = SubResource("BoxMesh_s53")
+mesh = SubResource("BoxMesh_s50")
 surface_material_override/0 = ExtResource("12_lamp")
 
 [node name="LampDisc1" type="MeshInstance3D" parent="Hallway" unique_id=814532675]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.585, 2.9)
 cast_shadow = 0
-mesh = SubResource("BoxMesh_s53")
+mesh = SubResource("BoxMesh_s50")
 surface_material_override/0 = ExtResource("12_lamp")
 
 [node name="LampDisc2" type="MeshInstance3D" parent="Hallway" unique_id=1334520350]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 2.585, 2.9)
 cast_shadow = 0
-mesh = SubResource("BoxMesh_s53")
+mesh = SubResource("BoxMesh_s50")
 surface_material_override/0 = ExtResource("12_lamp")
 
 [node name="Occluders" type="Node3D" parent="." unique_id=494062144]
@@ -1128,26 +1066,6 @@ occluder = SubResource("BoxOccluder3D_o31")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1.3, 6.7)
 occluder = SubResource("BoxOccluder3D_o32")
 
-[node name="VestFloor" type="OccluderInstance3D" parent="Occluders" unique_id=435769744]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, -0.1, 2.9)
-occluder = SubResource("BoxOccluder3D_o33")
-
-[node name="VestCeiling" type="OccluderInstance3D" parent="Occluders" unique_id=652743645]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, 2.7, 2.9)
-occluder = SubResource("BoxOccluder3D_o33")
-
-[node name="VestNorth0" type="OccluderInstance3D" parent="Occluders" unique_id=2083728837]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.5, 1.3, 2.1)
-occluder = SubResource("BoxOccluder3D_o34")
-
-[node name="VestSouth0" type="OccluderInstance3D" parent="Occluders" unique_id=1214148542]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.5, 1.3, 3.7)
-occluder = SubResource("BoxOccluder3D_o34")
-
-[node name="VestEnd0" type="OccluderInstance3D" parent="Occluders" unique_id=1003196317]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.3, 1.3, 2.9)
-occluder = SubResource("BoxOccluder3D_o20")
-
 [node name="BedroomWindowView" type="VisibleOnScreenNotifier3D" parent="Occluders" unique_id=1840490519 groups=["outside_view"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, -3.1)
 aabb = AABB(-1.6, 0.07, -0.1, 3.2, 2.63, 1.1)
@@ -1159,6 +1077,28 @@ aabb = AABB(-2.8, -0.3, -0.1, 5.6, 3.05, 1.1)
 [node name="KitchenWindowView" type="VisibleOnScreenNotifier3D" parent="Occluders" unique_id=1837616088 groups=["outside_view"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.55, 0, -3.1)
 aabb = AABB(-1.25, 0.57, -0.1, 2.5, 2.13, 1.1)
+
+[node name="Bounds" type="Area3D" parent="." unique_id=891267367]
+collision_layer = 0
+collision_mask = 524288
+monitorable = false
+metadata/_doc = "Where the player is in this zone (Player Body, floor to ceiling over every floor), for ZoneStreamer (D-059). GENERATED by tools/blockout/apartment.py."
+
+[node name="Box0" type="CollisionShape3D" parent="Bounds" unique_id=2022137943]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.75, 1.3, 0.3)
+shape = SubResource("BoxShape3D_b0")
+
+[node name="Box1" type="CollisionShape3D" parent="Bounds" unique_id=181807801]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.05, 1.3, 2.95)
+shape = SubResource("BoxShape3D_b1")
+
+[node name="Box2" type="CollisionShape3D" parent="Bounds" unique_id=1145315288]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.05, 1.3, -0.55)
+shape = SubResource("BoxShape3D_b2")
+
+[node name="Box3" type="CollisionShape3D" parent="Bounds" unique_id=741071662]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1.3, 5.25)
+shape = SubResource("BoxShape3D_b3")
 
 [node name="Windows" type="Node3D" parent="." unique_id=1492266528]
 metadata/_doc = "Generated window scenes (tools/props/window.py) in the north wall openings."
@@ -1420,12 +1360,6 @@ light_color = Color(0.9, 0.95, 1, 1)
 light_energy = 0.9
 omni_range = 4.2
 
-[node name="VestibuleLight" type="OmniLight3D" parent="Lighting" unique_id=1408683217]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, 2.35, 2.9)
-light_color = Color(0.6, 0.85, 1, 1)
-light_energy = 0.4
-omni_range = 2.2
-
 [node name="BedroomWindowLight" type="Node" parent="Lighting" unique_id=660794555 node_paths=PackedStringArray("light", "glass", "shade")]
 script = ExtResource("38_window_light")
 light = NodePath("../BedroomCitySpill")
@@ -1491,9 +1425,6 @@ metadata/_doc = "Dims the lights of the rooms with windows by day and re-capture
 
 [node name="Default" type="Marker3D" parent="Entries" unique_id=1047943208]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0, -0.4)
-
-[node name="Entrance" type="Marker3D" parent="Entries" unique_id=1344376040]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 7.4, 0, 2.9)
 
 [node name="PerfPath" type="Node3D" parent="." unique_id=534046029]
 metadata/_doc = "Perf flythrough waypoints at eye height, visited in order; -Z is the view direction. See tools/perf."

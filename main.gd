@@ -1,12 +1,13 @@
 extends Node3D
 ## Entry scene: starts XR, loads the world backdrop and the first zone, and
-## places the player at the zone's entry marker.
-##
-## Zone streaming (core/zones) replaces the static zone instance in M3.
+## places the player at the zone's entry marker. The zones next to it stream
+## in (ZoneStreamer on Zones, D-059); tests, stills and perf runs wait for them.
 ## Command-line user args (after "--"):
 ##   --perf=<zone>        run the perf flythrough for that zone and quit
 ##   --perf-duration=<s>  flythrough length in seconds (default 20)
 ##   --perf-hide=<a,b>    zone-relative node paths to hide (A/B cost tests)
+##   --perf-reload=<zone> halfway through the flythrough, free that zone and stream it in again (a load's hitch)
+##   --load-depth=<n>     keep zones up to n connections from the player's loaded (ZoneStreamer; 0 = only it)
 ##   --reflections=<n>    live reflection planes at once (PlanarReflection.max_active; 0 = none)
 ##   --test=<suite>       run tools/tests/<suite>_tests.gd and quit with the failure count
 ##   --shots=<views>      render still images and quit (see tools/shots/shots.gd)
@@ -67,6 +68,11 @@ func _ready() -> void:
 			world.set_rain(float(args["rain"]), true)
 	if args.get("ab", "") == "B":
 		ABSwitch.toggle_all(get_tree())
+	if args.has("load-depth"):
+		($Zones as ZoneStreamer).set_load_depth(int(args["load-depth"]))
+	if args.has("perf") or args.has("test") or args.has("shots"):
+		# The zones next to the start stream in first (D-059).
+		await ($Zones as ZoneStreamer).wait_settled()
 	if args.has("perf"):
 		_start_perf(args)
 	elif args.has("test"):
@@ -127,7 +133,7 @@ func _set_time(args: Dictionary) -> void:
 
 func _start_perf(args: Dictionary) -> void:
 	var zone_name: String = args["perf"]
-	var zone := $Zones.find_child(zone_name.to_pascal_case(), false) as Node3D
+	var zone := ($Zones as ZoneStreamer).get_zone(StringName(zone_name))
 	if not zone:
 		push_error("PERF: zone not loaded: %s" % zone_name)
 		get_tree().quit(2)
@@ -141,6 +147,9 @@ func _start_perf(args: Dictionary) -> void:
 		perf.set("duration", float(args["perf-duration"]))
 	if args.has("perf-hide"):
 		perf.set("hide_nodes", (args["perf-hide"] as String).split(",", false))
+	perf.set("streamer", $Zones)
+	if args.has("perf-reload"):
+		perf.set("reload_zone", StringName(args["perf-reload"]))
 	add_child(perf)
 
 

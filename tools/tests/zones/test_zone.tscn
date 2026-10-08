@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[node name="Probe" type="Node3D"]
+metadata/_doc = "An empty zone for the zone streaming tests (zone_unload_far): added to the graph at runtime, connected to the corridor, never part of the world."
+
+[node name="Marker" type="Marker3D" parent="."]
+position = Vector3(30, 0, 8.2)

@@ -28,6 +28,12 @@ var duration := 20.0
 var warmup := 3.0
 ## Zone-relative node paths to hide for A/B cost comparisons (--perf-hide).
 var hide_nodes: PackedStringArray = []
+## Halfway through, free this zone and stream it in again (--perf-reload, D-059):
+## the report's zone_reload has the frames from then until 1 s after it's back.
+var reload_zone: StringName = &""
+## The player's zone follows the view (the body stands still): ZoneStreamer draws that zone
+## and what's seen through its open doors (D-059).
+var streamer: ZoneStreamer
 
 var _markers: Array[Marker3D] = []
 var _mover: Node3D
@@ -58,6 +64,8 @@ var _last_draw_compiles := 0
 var _frame_start := _FrameStart.new()
 # Other viewports that render 3D (live reflections, D-049): their GPU/CPU time counts too.
 var _extra_viewports: Array[SubViewport] = []
+var _reload_t := -1.0
+var _reloaded_t := -1.0
 
 
 ## Runs first in every idle frame so the flythrough (which runs last) can
@@ -140,6 +148,10 @@ func _process(delta: float) -> void:
 
 	var t := clampf(_elapsed / (duration + warmup), 0.0, 1.0)
 	_mover.global_transform = _sample_path(t)
+	if streamer and Engine.get_process_frames() % 10 == 0:
+		var here := streamer.zone_at(_mover.global_position)
+		if not here.is_empty():
+			streamer.set_current(here)
 
 	if _elapsed > warmup:
 		_frame_ms.append(frame)
@@ -176,6 +188,13 @@ func _process(delta: float) -> void:
 		_draw_calls.append(int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)))
 		_primitives.append(int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)))
 		_objects.append(int(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME)))
+
+	if not reload_zone.is_empty() and _reload_t < 0.0 and _elapsed > warmup + duration / 2.0:
+		_reload_t = _elapsed
+		streamer.zone_loaded.connect(func(id: StringName, _root: Node3D) -> void:
+			if id == reload_zone and _reloaded_t < 0.0:
+				_reloaded_t = _elapsed)
+		streamer.reload(reload_zone)
 
 	if _elapsed >= duration + warmup:
 		set_process(false)
@@ -268,6 +287,8 @@ func _finish() -> void:
 		# shows what culling saves where, e.g. the city from the hallway.
 		"per_marker": _per_marker(),
 	}
+	if not reload_zone.is_empty():
+		stats["zone_reload"] = _reload_stats(frame_budget)
 
 	var failures: Array[String] = []
 	for key: String in zone_budget:
@@ -322,6 +343,27 @@ func _per_marker() -> Array[Dictionary]:
 			"objects_max": _max_i(objects),
 		})
 	return out
+
+
+## The frames from the reload until 1 s after the zone was back (D-059).
+func _reload_stats(frame_budget: float) -> Dictionary:
+	var end := (_reloaded_t if _reloaded_t >= 0.0 else _elapsed) + 1.0
+	var worst := 0.0
+	var worst_cpu := 0.0
+	var dropped := 0
+	var frames := 0
+	for i in _frame_ms.size():
+		if _frame_time[i] < _reload_t or _frame_time[i] > end:
+			continue
+		frames += 1
+		worst = maxf(worst, _frame_ms[i])
+		worst_cpu = maxf(worst_cpu, _cpu_ms[i])
+		if _frame_ms[i] > frame_budget * 1.5:
+			dropped += 1
+	return {"zone": reload_zone, "t": snappedf(_reload_t, 0.01),
+			"back_t": snappedf(_reloaded_t, 0.01) if _reloaded_t >= 0.0 else -1.0,
+			"load_ms": snappedf(streamer.get_load_ms(reload_zone), 0.1), "frames": frames,
+			"frame_ms_max": snappedf(worst, 0.1), "cpu_ms_max": snappedf(worst_cpu, 0.1), "frames_dropped": dropped}
 
 
 func _foveation_label() -> String:

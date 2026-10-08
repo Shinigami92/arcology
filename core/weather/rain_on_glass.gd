@@ -10,7 +10,8 @@ extends Node
 ##   gain = rain).
 ##
 ## Entry point: [method set_rain]. The M2 weather system calls it later; for
-## now the living room's debug button and `--rain=<0..1>` do.
+## now the living room's debug button and `--rain=<0..1>` do. Zones that
+## stream in or out (ZoneStreamer, D-059) bring their windows along.
 ##
 ## After the rain stops, the runners stop within [member slide_stop_time],
 ## then the beads evaporate over [member dry_time]. Fully dry, every uniform is
@@ -61,6 +62,11 @@ func _ready() -> void:
 	add_to_group(GROUP)
 	refresh_targets()
 	set_process(false)
+	var streamer := ZoneStreamer.find(get_tree())
+	if streamer:
+		streamer.zone_loaded.connect(func(_id: StringName, _root: Node3D) -> void: refresh_targets())
+		streamer.zone_unloading.connect(func(_id: StringName, root: Node3D) -> void:
+			root.tree_exited.connect(refresh_targets, CONNECT_ONE_SHOT))
 	_prime()
 
 
@@ -105,8 +111,11 @@ func refresh_targets() -> void:
 	for node in get_tree().get_nodes_in_group(GROUP_PATTER):
 		var player := node as AudioStreamPlayer3D
 		if player:
+			# The authored volume, kept on the node: _apply() changes volume_db while it rains.
+			if not player.has_meta(&"rain_full_db"):
+				player.set_meta(&"rain_full_db", player.volume_db)
 			_patter.append(player)
-			_patter_db.append(player.volume_db)
+			_patter_db.append(player.get_meta(&"rain_full_db"))
 	for node in get_tree().get_nodes_in_group(GROUP_AMBIENCE):
 		var ambience := node as HingeAmbience
 		if ambience:

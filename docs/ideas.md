@@ -79,13 +79,15 @@ The user's long-term direction (2026-10-04). Too big for one session: each phase
 ### Phase 0: draw only what can be seen (next)
 
 - [M3] Visibility tiers for everything outside: near ring, far city and traffic per window cluster, and per-node `visibility_range` fades instead of hard cuts. The city layers already switch off when no window is in view (D-048).
-- [M3] Zone streaming (`core/zones/`): zones load in the background (`ResourceLoader.load_threaded_request`) when the player nears a connection (door, elevator, station), unload when two connections away; a zone graph says what connects to what. Each zone has tiers: full interior, exterior shell only, impostor. Budget per tier in `tools/perf/budgets.json`.
+- [M3] Zone streaming (`core/zones/`): done for doors (D-059): `ZoneStreamer` loads the zones next to the player's from `zones/zone_graph.json` in the background, frees those two connections away, holds a connection's door shut until both sides are in (amber "ID scan"), and draws a zone the player isn't in only through an open door or the peephole. Still to do: tiers per zone (full interior, exterior shell only, impostor) with a budget per tier; connections other than doors (elevator, station); loading on approach for zones too big to keep loaded next door.
+- [M3] Spread a big zone's load over frames: streaming the apartment back in costs two ~100 ms frames (its `_ready` work, five probe captures, the first draw; D-059). Before the elevator makes that happen in play: stagger probe captures, defer heavy `_ready` work, or add the zone in parts.
+- [later] Port `tools/blockout/apartment.py` onto the shared writer `tools/blockout/blockout.py` (it still has its own copy).
 - [M3] Perf flythrough per zone and per transition (the hitch of loading a zone counts), in XR before a phase is done.
 
 ### Phase 1: our own building
 
 - [M3] The arcology we live in as a real building: its exterior shell (seen later from outside and from the transit), its floor plan, and the stack of floors as modular, generated parts (one floor in full, the others as shells).
-- [M3] Outer hallway behind the entrance door: neighbors' doors, lighting, signage, a window onto the city at the end.
+- [M3] Outer hallway behind the entrance door: blockout done (D-059): side corridor from a facade window past our door (4417) and two neighbors, main corridor with four more units, service and stairs doors, an elevator lobby with two (static) elevators, Label3D signs. Next: real geometry and materials (an `environment-artist` agent: wall panels, ceiling, lighting fixtures, skirting, the window's frame glbs), sounds (corridor hum, footsteps on its floor), signs from the world directory.
 - [M3] Elevator: call button, doors, a cabin that rides 180 m down; the ride is the streaming delay. Floor buttons for later floors.
 - [M3] Lobby at street level (y = -180): concierge desk, mailboxes, security gates, the exit doors.
 - [M3] Persistence: object state across zones, save/load.
@@ -136,6 +138,7 @@ New subagents when a phase starts (the user agreed to add or update agents whene
 
 ## Done
 
+- Zone streaming and the corridor (2026-10-08, D-059): floor 44's corridor streams in behind the entrance door (the vestibule is gone); the door waits for it with an amber LED; a zone the player isn't in is only drawn through an open door or the peephole (from the corridor: 846 → 186 draw calls); tests `zones`, `--perf-reload`, `--load-depth`.
 - Ambient occlusion (2026-10-06, D-055): SSAO in the world environment, blind headset A/B won clearly; radius 0.6 m after halos at 1.0 m by day. `ABEnvironment` A/Bs Environment settings with the same panel.
 - Ray presses and a deeper skyline (2026-10-05): every button can be pressed from afar by pointing the controller ray and pulling R1/R2 (snap and hover highlight); the world terminal floats in the living room window's left bay; a far skyline band out to 3.5 km (D-054).
 

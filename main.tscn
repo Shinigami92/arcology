@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://dxpdkfn6mi08q" path="res://core/player/player.tscn" id="5_player"]
 [ext_resource type="Script" uid="uid://csc6fql8ak2g7" path="res://core/weather/rain_on_glass.gd" id="6_rain"]
 [ext_resource type="Script" path="res://core/world_state/world_state.gd" id="7_world_state"]
+[ext_resource type="Script" path="res://core/zones/zone_streamer.gd" id="8_zones"]
 
 [node name="Main" type="Node3D" unique_id=324402590]
 script = ExtResource("1_main")
@@ -21,6 +22,8 @@ metadata/_doc = "Time of day and weather (D-051): follows the PC clock by defaul
 [node name="Skyline" parent="." unique_id=329166165 instance=ExtResource("3_skyline")]
 
 [node name="Zones" type="Node3D" parent="." unique_id=491480088]
+script = ExtResource("8_zones")
+metadata/_doc = "ZoneStreamer (D-059): loads the zones next to the player's from zones/zone_graph.json in the background and frees the ones two connections away. The apartment is placed here at start; the corridor streams in."
 
 [node name="Apartment" parent="Zones" unique_id=173145416 instance=ExtResource("4_apartment")]
 

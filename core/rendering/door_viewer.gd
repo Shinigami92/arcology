@@ -6,7 +6,9 @@ extends Node3D
 ## as through a fisheye. The camera renders once at start (its pipelines
 ## compile while loading, D-057) and then only while the viewer's eye is
 ## within [member wake_distance] in front of the lens, checked 4 times a
-## second; in between the lens keeps the last image.
+## second; in between the lens keeps the last image. When a zone streams in
+## (the corridor behind the door, D-059) it renders once more, so the new
+## zone's pipelines compile then and the lens doesn't show the empty void.
 ##
 ## Like a real one, it's seen with one eye: the eye nearer the lens axis, or
 ## [member dominant_eye] when both are about as near (a head centered on it).
@@ -27,6 +29,9 @@ extends Node3D
 ## The camera's far plane.
 @export_custom(PROPERTY_HINT_NONE, "suffix:m") var reach := 12.0
 @export_flags_3d_render var cull_mask := PlanarReflection.ALL_LAYERS & ~PlanarReflection.LAYER_UNREFLECTED
+
+## The camera started or stopped rendering (an eye came to the lens or left it).
+signal awake_changed(awake: bool)
 
 enum Eye { LEFT, RIGHT }
 
@@ -88,6 +93,14 @@ func _ready() -> void:
 	timer.timeout.connect(check_eye)
 	add_child(timer)
 	set_process(false)
+	var streamer := ZoneStreamer.find(get_tree())
+	if streamer:
+		streamer.zone_loaded.connect(_on_zone_loaded)
+
+
+func _on_zone_loaded(_id: StringName, _root: Node3D) -> void:
+	if not is_awake():
+		_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 
 ## Rendering now (an eye is at the lens).
@@ -145,6 +158,7 @@ func check_eye() -> void:
 		return
 	_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS if awake else SubViewport.UPDATE_DISABLED
 	set_process(awake)
+	awake_changed.emit(awake)
 	if not awake:
 		_shown_view = -1
 		_material.set_shader_parameter("shown_view", -1)

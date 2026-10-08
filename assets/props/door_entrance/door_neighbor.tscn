@@ -1,0 +1,25 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/props/door_entrance/door_entrance_frame.glb" id="door_entrance_frame"]
+[ext_resource type="PackedScene" path="res://assets/props/door_entrance/door_entrance_leaf.glb" id="door_entrance_leaf"]
+[ext_resource type="PackedScene" path="res://assets/props/door_entrance/door_entrance_lever_corridor.glb" id="door_entrance_lever_corridor"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_leaf0"]
+size = Vector3(0.843, 2.0595, 0.065)
+
+[node name="DoorNeighbor" type="Node3D"]
+metadata/_doc = "A neighbor's front door: the entrance door's steel frame and leaf (0.90 x 2.10 m opening in a 0.20 m wall), closed and static. Origin = bottom center of the opening on the wall's center plane; +Z = the unit's side. Collision: the frame's own shapes and the leaf box. Unit number: placed by the zone over the leaf's plate."
+
+[node name="Frame" parent="." instance=ExtResource("door_entrance_frame")]
+
+[node name="Leaf" type="StaticBody3D" parent="."]
+position = Vector3(-0.4235, 0, 0.124)
+
+[node name="LeafCollision" type="CollisionShape3D" parent="Leaf"]
+position = Vector3(0.423, 1.0423, -0.0465)
+shape = SubResource("BoxShape3D_leaf0")
+
+[node name="Model" parent="Leaf" instance=ExtResource("door_entrance_leaf")]
+
+[node name="LeverCorridor" parent="Leaf" instance=ExtResource("door_entrance_lever_corridor")]
+position = Vector3(0.7845, 1.1, -0.079)

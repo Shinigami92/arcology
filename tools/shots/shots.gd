@@ -123,6 +123,10 @@ func _ready() -> void:
 				cam.global_transform = Transform3D(view.basis * cam.basis, view * cam.position)
 			else:
 				push_warning("SHOTS: no player camera for %s" % views[i])
+		# The zone the camera is in is the player's (ZoneStreamer draws only it and what's seen through open doors).
+		var streamer := ZoneStreamer.find(get_tree())
+		if streamer and not streamer.zone_at(cam.global_position).is_empty():
+			streamer.set_current(streamer.zone_at(cam.global_position))
 		# Time too: some things check the view a few times a second (DoorViewer).
 		await get_tree().create_timer(0.3).timeout
 		for f in SETTLE_FRAMES:

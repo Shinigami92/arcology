@@ -8,6 +8,9 @@ extends Node
 ## The status LED (a named emissive material, optional) shows cyan unlocked,
 ## red locked. When the turn's knob is part of the door's model (a bathroom
 ## door's privacy turn), [member turn_visual] turns with the hinge.
+## [method set_held] holds the door shut the same way without the bolt: a
+## [ZoneGate] does that while the zone behind the door loads, and the LED
+## pulses amber meanwhile (an ID scan, D-059).
 
 @export var door: XRToolsInteractableHinge
 @export var turn: XRToolsInteractableHinge
@@ -24,6 +27,9 @@ extends Node
 @export var led_material := "door_entrance_lock_led"
 @export var unlocked_color := Color(0.02, 0.85, 0.91)
 @export var locked_color := Color(1.0, 0.06, 0.04)
+## The LED pulses between this and dark while the door is held (an ID scan).
+@export var held_color := Color(1.0, 0.5, 0.04)
+@export_custom(PROPERTY_HINT_NONE, "suffix:s") var held_pulse := 0.9
 ## Played when the bolt is thrown or drawn back (locked, unlocked).
 @export var beep_locked: AudioStreamPlayer3D
 @export var beep_unlocked: AudioStreamPlayer3D
@@ -31,6 +37,8 @@ extends Node
 @export var rattle: AudioStreamPlayer3D
 
 var _locked := false
+var _held := false
+var _pulse: Tween
 var _door_max := 0.0
 var _turn_max := 0.0
 var _leds: Array[BaseMaterial3D] = []
@@ -59,6 +67,18 @@ func is_locked() -> bool:
 	return _locked
 
 
+## Holds the door shut (once it's closed) without throwing the bolt.
+func set_held(held: bool) -> void:
+	if held == _held:
+		return
+	_held = held
+	_apply()
+
+
+func is_held() -> bool:
+	return _held
+
+
 func _on_turn_moved(angle: float) -> void:
 	_turn_visual(angle)
 	var locked := angle > lock_angle
@@ -81,16 +101,28 @@ func _on_door_moved(_angle: float) -> void:
 
 
 func _on_door_grabbed(_hinge: XRToolsInteractableHinge) -> void:
-	if _locked and rattle:
+	if door.hinge_limit_max <= door.hinge_limit_min and rattle:
 		rattle.play()
 
 
 func _apply() -> void:
 	var closed := door.hinge_position - door.hinge_limit_min < closed_angle
-	door.hinge_limit_max = door.hinge_limit_min if _locked else _door_max
+	door.hinge_limit_max = door.hinge_limit_min if _locked or (_held and closed) else _door_max
 	# The turn stays where it is while the door is open (unlocked, at 0).
 	turn.hinge_limit_max = _turn_max if closed else maxf(turn.hinge_position, turn.hinge_limit_min)
-	var c := locked_color if _locked else unlocked_color
+	var pulsing := _held and not _locked
+	if pulsing and not _pulse and not _leds.is_empty():
+		_pulse = create_tween().set_loops()
+		_pulse.tween_method(_set_led, held_color, held_color * 0.08, held_pulse / 2.0).set_trans(Tween.TRANS_SINE)
+		_pulse.tween_method(_set_led, held_color * 0.08, held_color, held_pulse / 2.0).set_trans(Tween.TRANS_SINE)
+	elif not pulsing and _pulse:
+		_pulse.kill()
+		_pulse = null
+	if not _pulse:
+		_set_led(locked_color if _locked else unlocked_color)
+
+
+func _set_led(c: Color) -> void:
 	for led in _leds:
 		led.emission = c
 		led.albedo_color = c * 0.15

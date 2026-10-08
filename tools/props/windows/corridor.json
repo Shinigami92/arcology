@@ -1,0 +1,31 @@
+{
+	"_doc": "Window specs for floor 44's corridors (D-059), same contract as apartment.json (D-033): read by blender/architecture/windows/ (pass --spec tools/props/windows/corridor.json) and tools/props/window.py; tools/blockout/corridor.py cuts the openings and places the windows. A corridor window has no shades, tint or panel.",
+	"profile": {
+		"_doc": "The apartment's frame profile, so both look alike from outside.",
+		"frame_face": 0.045,
+		"frame_z": [-0.1, 0.02],
+		"mullion_face": 0.05,
+		"glass_z": -0.05,
+		"sash_face": 0.055,
+		"sash_z": [-0.07, 0.0],
+		"interior_sill_overhang": 0.03
+	},
+	"windows": [
+		{
+			"name": "corridor_end",
+			"_doc": "Floor-to-ceiling glass at the side corridor's north end, onto the city: the view down the corridor from our door.",
+			"width": 1.8,
+			"bottom": 0.0,
+			"top": 2.45,
+			"wall_depth": 0.2,
+			"bays": 1,
+			"sill": "floor",
+			"vent": null,
+			"shade": false,
+			"tint": false,
+			"led": "cyan",
+			"hud": false,
+			"panel": null
+		}
+	]
+}

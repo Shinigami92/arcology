@@ -23,7 +23,9 @@ extends Node3D
 ##
 ## On the first drawn frame every plane renders once from a viewer in front of
 ## it, unseen: the reflection passes compile their pipelines while the game
-## loads, not when a mirror first comes into view (a 20-35 ms stall).
+## loads, not when a mirror first comes into view (a 20-35 ms stall). A surface
+## added later (a streamed zone, D-059) warms its plane on its first frame the
+## same way, unless that plane is live then (it waits until it isn't).
 ##
 ## The cameras are placed on the RenderingServer right before drawing: a node
 ## transform set then would only reach the renderer a frame later, while the
@@ -79,7 +81,6 @@ static var _instances: Array[PlanarReflection] = []
 static var _reflection_env: Environment
 static var _frame := -1
 static var _last_usec := 0
-static var _warmed := false
 
 ## Rectangle size (m): local X, Y.
 @export var size := Vector2(1.0, 1.0)
@@ -111,6 +112,7 @@ var _fade := 0.0
 var _live := false
 var _score := 0.0
 var _plane := Transform3D()   # orthonormal, +Z toward the viewer
+var _warm_pending := true
 
 
 func _ready() -> void:
@@ -213,15 +215,23 @@ static func _update_all(eyes: PackedVector3Array, forward: Vector3, space: Physi
 			scored.append([score, g])
 	scored.sort_custom(func(a: Array, b: Array) -> bool: return a[0] > b[0])
 
-	if not _warmed:
-		# Once, all planes at once, nothing shown (see the class doc).
-		_warmed = true
-		for g in groups:
-			var lead: PlanarReflection = g[0]
-			lead._warm(g)
+	# Planes with a surface that never rendered: once, nothing shown (see the class doc).
+	var cold: Array[Array] = []
+	for g in groups:
+		var pending := g.any(func(r: PlanarReflection) -> bool: return r._warm_pending)
+		if pending and not g.any(func(r: PlanarReflection) -> bool: return r._rendering):
+			cold.append(g)
+	for g in cold:
+		var lead: PlanarReflection = g[0]
+		var at: PlanarReflection = g[g.find_custom(func(r: PlanarReflection) -> bool: return r._warm_pending)]
+		lead._warm(g, at)
+		for r: PlanarReflection in g:
+			r._warm_pending = false
+	if not cold.is_empty() and cold.size() == groups.size():
 		for r in _instances:
 			r._live = false
 		return
+	scored = scored.filter(func(entry: Array) -> bool: return not cold.has(entry[1]))
 
 	var leads: Array[PlanarReflection] = []
 	for i in mini(scored.size(), max_active):
@@ -367,10 +377,11 @@ func _set_rendering(on: bool, eye_count: int) -> void:
 
 
 ## Warm-up: renders this plane once for a viewer [constant WARM_DISTANCE] in
-## front of its middle (what a mirror sees in use), compiling its pipelines.
-func _warm(group: Array) -> void:
-	var eye := _plane.origin + _plane.basis.z * WARM_DISTANCE
-	var half_ipd := _plane.basis.x * DESKTOP_IPD * 0.5
+## front of the middle of [param at] (a surface of the group; what a mirror
+## sees in use), compiling its pipelines.
+func _warm(group: Array, at: PlanarReflection = self) -> void:
+	var eye := at._plane.origin + at._plane.basis.z * WARM_DISTANCE
+	var half_ipd := at._plane.basis.x * DESKTOP_IPD * 0.5
 	var seen: Array[PlanarReflection] = []
 	seen.assign(group)
 	_render(group, seen, PackedVector3Array([eye - half_ipd, eye + half_ipd]))

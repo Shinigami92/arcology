@@ -1,0 +1,20 @@
+{
+	"_doc": "The zone graph (roadmap phase 0, D-059): every zone's scene and the connections between zones. Read by ZoneStreamer (core/zones/zone_streamer.gd), which keeps the zones within load_depth connections of the player's zone loaded and frees the rest. A zone's node under Main/Zones is its id in PascalCase. A connection's door is '<zone>:<node path in that zone>'; ZoneStreamer gives it a ZoneGate, which holds it shut until the zones on both sides are loaded.",
+	"zones": {
+		"apartment": {
+			"scene": "res://zones/apartment/apartment.tscn",
+			"_doc": "Unit 4417 on floor 44: five rooms, the city windows face -Z."
+		},
+		"corridor": {
+			"scene": "res://zones/corridor/corridor.tscn",
+			"_doc": "Floor 44's corridors: the side corridor from the facade window past our entrance, the main corridor behind the units, the elevator lobby."
+		}
+	},
+	"connections": [
+		{
+			"name": "entrance",
+			"zones": ["apartment", "corridor"],
+			"door": "apartment:Props/DoorEntrance"
+		}
+	]
+}
