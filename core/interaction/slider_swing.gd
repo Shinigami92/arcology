@@ -23,6 +23,8 @@ const SAMPLE_WINDOW := 0.12
 
 var _velocity := 0.0
 var _held := false
+# Engine time while held (process delta, not the wall clock), as in HingeSwing.
+var _clock := 0.0
 var _times: PackedFloat64Array = []
 var _positions: PackedFloat32Array = []
 
@@ -47,7 +49,7 @@ func _on_grabbed(_slider: XRToolsInteractableSlider) -> void:
 	_velocity = 0.0
 	_times.clear()
 	_positions.clear()
-	set_process(false)
+	set_process(true)
 
 
 func _on_released(_slider: XRToolsInteractableSlider) -> void:
@@ -59,7 +61,7 @@ func _on_released(_slider: XRToolsInteractableSlider) -> void:
 func _on_moved(pos: float) -> void:
 	if not _held:
 		return
-	var now := Time.get_ticks_usec() / 1e6
+	var now := _clock
 	_times.append(now)
 	_positions.append(pos)
 	while _times.size() > 2 and now - _times[0] > SAMPLE_WINDOW:
@@ -71,13 +73,16 @@ func _release_velocity() -> float:
 	var n := _times.size()
 	if n < 2:
 		return 0.0
-	if Time.get_ticks_usec() / 1e6 - _times[n - 1] > SAMPLE_WINDOW:
+	if _clock - _times[n - 1] > SAMPLE_WINDOW:
 		return 0.0
 	var dt := _times[n - 1] - _times[0]
 	return 0.0 if dt < 0.02 else (_positions[n - 1] - _positions[0]) / dt
 
 
 func _process(delta: float) -> void:
+	_clock += delta
+	if _held:
+		return
 	var closed := slider.slider_limit_min
 	var pos := slider.slider_position
 	var closing := soft_close > 0.0 and pos - closed < soft_close

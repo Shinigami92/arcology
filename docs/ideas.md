@@ -87,6 +87,14 @@ The user's long-term direction (2026-10-04). Too big for one session: each phase
 - [later] Port `tools/blockout/apartment.py` onto the shared writer `tools/blockout/blockout.py` (it still has its own copy).
 - [M3] Perf flythrough per zone and per transition (the hitch of loading a zone counts), in XR before a phase is done.
 
+### Next session (user's notes, 2026-10-08, after the headset test of D-062)
+
+The plan's three steps: 1. corridor dressing (done, D-060), 2. floor 44's units and the city all around (done, D-061, D-062; headset-tested), 3. **the elevator down to a big lobby** (tall walls, a reception, a front where we later exit into the streets). Before step 3, fix what the step 2 test showed:
+- [M3] **Spikes when zones stream in.** The headset showed hitches when unloaded zones loaded back (units near their doors; the apartment coming back from the corridor). Desktop: a unit costs one ~16-19 ms frame (instantiate + `_ready` on the main thread, D-062), the apartment two ~100 ms frames (D-059). Measure in XR with `--perf=corridor --perf-reload=<zone>`; then spread the work: profile which nodes' `_ready` cost the most (props with XR Tools pickables, windows with PlanarReflection, the fridge, the wardrobe), retry part-by-part attach on a quiet machine (only another Godot running alongside made it look slow), keep recently left units loaded a while (hysteresis in time, not only distance), or preload the next zone earlier (bigger approach range, lower priority).
+- [M3] **Zone visibility is too coarse.** From unit 4418 the user could see into 4417 (our apartment) although it should be hidden. Find the path (an open door chain through the corridor? a window reflection sharing the north facade's renderer? the apartment drawn because the corridor's door-keeping logic shows a zone seen through any open connection from the *player's* zone only?) and replace the "drawn while a connection to the player's zone is open" rule with a real portal walk: from the player's zone through open doors (and windows onto the same building) only as far as they can actually be seen, with frustum checks per portal.
+- [M3] **Every unit needs a shower** (immersion). The shower set (2.8 x 1.4 m) doesn't fit the units' 2.2 m bathrooms: make bathrooms at least 3.0 m wide in units.py (shift the bath partition, move the wardrobe), or have blender-artist build a compact corner shower (0.9 x 0.9 m) from the same parts, then add it per unit with its hose and water (ShowerHose, ShowerWater).
+- [done] **Faster, targeted tests** (D-063): `--fixed-fps 90` on engine time (full suite ~50 s instead of ~114 s), `--affected[=<rev>]` runs what the changes touch (`tools/tests/affected.gd`). Still possible: wait until things stop moving instead of fixed frame counts (the frames are now the cost: ~4.5 ms each, barely less at a tiny window or without reflections).
+
 ### Phase 1: our own building
 
 - [M3] The arcology we live in as a real building: its exterior shell (seen later from outside and from the transit), its floor plan, and the stack of floors as modular, generated parts (one floor in full, the others as shells).
@@ -133,7 +141,6 @@ New subagents when a phase starts (the user agreed to add or update agents whene
 - [M2] Refresh the perf baselines with the avatar, occlusion culling, live reflections, the sun's shadows and the world terminal: an XR perf run in the headset (the user), then the zone table in CLAUDE.md; and a desktop run at night and by day (`--time=17 --weather=clear`) with SteamVR closed (it adds ~0.9 ms GPU to desktop runs, D-052), copied over `tools/perf/baselines/`.
 - [M2] Ambient occlusion budget (D-055): SSAO is on and the user wants it, but costs +1.8 ms GPU p95 on the desktop flythrough (8.2–8.4 ms, over 8.0), mostly from its normal buffer under MSAA 2x. Measure in XR; if over budget, bake AO into the static shell (generator surfaces or LightmapGI) and keep SSAO small for the furniture, or trade MSAA for another AA.
 - [later] Stagger the probe re-captures (one probe at a time instead of four for 8 frames) if a hitch shows at dawn or dusk (D-051).
-- [later] Faster interaction tests: with `--fixed-fps 90 --disable-vsync` the full suite takes ~17 s instead of ~87 s, but `HingeSwing`/`SliderSwing` measure release speed with the real clock (`Time.get_ticks_usec`); move them and the tests' throws onto engine time first. Waiting until things stop moving instead of fixed frame counts would save another ~13 s.
 
 ## Rejected or low priority
 

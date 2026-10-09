@@ -2,16 +2,20 @@ extends Node
 ## Interaction tests on the real main scene (desktop, no XR). Started by
 ## main.gd:
 ##
-##   "$GODOT4_EDITOR" --path . --xr-mode off -- --test=interaction
+##   "$GODOT4_EDITOR" --path . --xr-mode off --fixed-fps 90 -- --test=interaction
 ##
 ## Prints one line per check ("TEST PASS/FAIL <name>: <details>") and quits
 ## with the number of failures (2 for a bad --only). Runs through main.gd (not
-## --script) so the XR Tools autoloads exist.
+## --script) so the XR Tools autoloads exist. --fixed-fps 90 (an engine option,
+## before "--") steps 1/90 s per frame as fast as the machine renders: tests
+## wait in frames and engine time, never the wall clock, so they hold.
 ##
 ## Subsets (see _registry()):
 ##   --only=<a,b>   groups, or tests whose name contains the word
 ##                  (--only=avatar, --only=doors_fridge,windows, --only=arm_ik)
-##   --list         print the groups and their tests, run nothing
+##   --affected[=<rev>]  the tests the changes since <rev> touch (default HEAD:
+##                  staged, unstaged, untracked; tools/tests/affected.gd)
+##   --list         print the groups and their tests (or the picked ones), run nothing
 ## Before each test the rig is put back (nothing held, pickups at their hands,
 ## player at HOME), so a test or group run alone sees what it sees in a full run.
 
@@ -22,6 +26,7 @@ const SKELETON := "Player/Avatar/Model/Armature/Skeleton3D"
 # player return to; _reset_rig() puts it there before each test.
 const HOME := Transform3D(Basis.IDENTITY, Vector3(0.4, 0, -0.4))
 const CAN_SCENE := "res://assets/props/beverage_can/beverage_can.tscn"
+const Affected := preload("res://tools/tests/affected.gd")
 # Sweep start and motion through each doorway (capsule center at 0.9 m).
 const DOORWAYS := {
 	"DoorLiving": [Vector3(2.05, 0.9, 1.2), Vector3(0, 0, 1.7)],
@@ -137,27 +142,42 @@ func _ready() -> void:
 	_main = get_parent() as Node3D
 	var tests := _registry()
 	var args := OS.get_cmdline_user_args()
-	if args.has("--list"):
-		_print_list(tests)
-		get_tree().quit(0)
-		return
 	var only: PackedStringArray = []
+	var subset := ""
 	for arg in args:
 		if arg.begins_with("--only="):
 			only = arg.trim_prefix("--only=").split(",", false)
+			subset = arg
+		elif arg == "--affected" or arg.begins_with("--affected="):
+			subset = arg
 	if not only.is_empty():
 		tests = _select(tests, only)
 		if tests.is_empty():
 			get_tree().quit(2)
 			return
+	elif subset != "":
+		var rev := subset.trim_prefix("--affected").trim_prefix("=")
+		tests = Affected.select(tests, rev if rev != "" else "HEAD", ProjectSettings.globalize_path("res://"))
+		if tests.is_empty():
+			print("TEST AFFECTED: nothing to run")
+			print("TEST DONE: 0 failure(s)")
+			get_tree().quit(0)
+			return
+	if args.has("--list"):
+		_print_list(tests)
+		get_tree().quit(0)
+		return
+	if subset != "":
 		var names: Array[String] = []
 		for test in tests:
 			names.append(test[1])
-		print("TEST ONLY %s: %s" % [",".join(only), ", ".join(names)])
+		print("TEST ONLY %s: %s" % [subset.trim_prefix("--").trim_prefix("only="), ", ".join(names)])
 
 	await _frames(30)
 	for side in SIDES:
 		_pickup_rest.append((_main.get_node("Player/%sHand/CollisionHand/FunctionPickup" % side) as Node3D).transform)
+	var run_start := Time.get_ticks_msec()
+	var engine_start := Engine.get_physics_frames()
 	var group_ms := {}
 	for test in tests:
 		var start := Time.get_ticks_msec()
@@ -167,7 +187,11 @@ func _ready() -> void:
 	var ran: Array[String] = []
 	for group: String in group_ms:
 		ran.append("%s %.1f s" % [group, group_ms[group] / 1000.0])
-	print("TEST GROUPS: %s%s" % [", ".join(ran), "" if only.is_empty() else " (--only=%s)" % ",".join(only)])
+	print("TEST GROUPS: %s%s" % [", ".join(ran), "" if subset == "" else " (%s)" % subset])
+	var wall := (Time.get_ticks_msec() - run_start) / 1000.0
+	var engine := float(Engine.get_physics_frames() - engine_start) / Engine.physics_ticks_per_second
+	print("TEST TIME: %.1f s for %.1f s of engine time%s" % [wall, engine,
+			" (add --fixed-fps 90 before -- to run faster)" if engine > 10.0 and wall > 0.8 * engine else ""])
 	print("TEST DONE: %d failure(s)" % _failures)
 	get_tree().quit(_failures)
 
@@ -233,6 +257,12 @@ func _check(name: String, ok: bool, details: String) -> void:
 func _frames(n: int) -> void:
 	for i in n:
 		await get_tree().physics_frame
+
+
+## One physics frame in engine seconds: throws move by engine time, not the
+## wall clock, so they hold with --fixed-fps.
+func _step() -> float:
+	return 1.0 / Engine.physics_ticks_per_second
 
 
 func _hinge(door: String) -> XRToolsInteractableHinge:
@@ -499,10 +529,9 @@ func _throw_hinge(door: String, from: float, speed: float) -> void:
 	var hinge := _hinge(door)
 	_set_hinge(door, from)
 	hinge.grabbed.emit(hinge)
-	var start := Time.get_ticks_usec()
 	for i in 10:
 		await get_tree().physics_frame
-		_set_hinge(door, from + speed * (Time.get_ticks_usec() - start) / 1e6)
+		_set_hinge(door, from + speed * (i + 1) * _step())
 	hinge.released.emit(hinge)
 
 
@@ -862,10 +891,9 @@ func _test_bedroom(v: String) -> void:
 	# release at 1 cm soft-closes; pulled out at 0.4 m/s it slides on.
 	slider.move_slider(0.10)
 	slider.grabbed.emit(slider)
-	var start := Time.get_ticks_usec()
 	for i in 10:
 		await get_tree().physics_frame
-		slider.move_slider(0.10 + 0.4 * (Time.get_ticks_usec() - start) / 1e6)
+		slider.move_slider(0.10 + 0.4 * (i + 1) * _step())
 	var released_at := slider.slider_position
 	slider.released.emit(slider)
 	await _frames(120)

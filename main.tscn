@@ -6,8 +6,8 @@
 [ext_resource type="PackedScene" uid="uid://bd6rw8fw0bab" path="res://zones/apartment/apartment.tscn" id="4_apartment"]
 [ext_resource type="PackedScene" uid="uid://dxpdkfn6mi08q" path="res://core/player/player.tscn" id="5_player"]
 [ext_resource type="Script" uid="uid://csc6fql8ak2g7" path="res://core/weather/rain_on_glass.gd" id="6_rain"]
-[ext_resource type="Script" path="res://core/world_state/world_state.gd" id="7_world_state"]
-[ext_resource type="Script" path="res://core/zones/zone_streamer.gd" id="8_zones"]
+[ext_resource type="Script" uid="uid://mogd7jo0wvp0" path="res://core/world_state/world_state.gd" id="7_world_state"]
+[ext_resource type="Script" uid="uid://c5bpo17q67o6b" path="res://core/zones/zone_streamer.gd" id="8_zones"]
 
 [node name="Main" type="Node3D" unique_id=324402590]
 script = ExtResource("1_main")

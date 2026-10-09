@@ -26,6 +26,9 @@ extends Node
 const SAMPLE_WINDOW := 0.12
 
 var _velocity := 0.0
+# Engine time while held (process delta, not the wall clock), so the release
+# speed holds in --fixed-fps test runs too.
+var _clock := 0.0
 var _held := false
 var _was_closed := true
 var _sample_times: PackedFloat64Array = []
@@ -62,7 +65,7 @@ func _on_grabbed(_hinge: XRToolsInteractableHinge) -> void:
 	_velocity = 0.0
 	_sample_times.clear()
 	_sample_angles.clear()
-	set_process(false)
+	set_process(true)
 
 
 func _on_released(_hinge: XRToolsInteractableHinge) -> void:
@@ -78,7 +81,7 @@ func _on_hinge_moved(angle: float) -> void:
 	_was_closed = closed
 	if not _held:
 		return
-	var now := Time.get_ticks_usec() / 1e6
+	var now := _clock
 	_sample_times.append(now)
 	_sample_angles.append(angle)
 	while _sample_times.size() > 2 and now - _sample_times[0] > SAMPLE_WINDOW:
@@ -90,7 +93,7 @@ func _release_velocity() -> float:
 	var n := _sample_times.size()
 	if n < 2:
 		return 0.0
-	var now := Time.get_ticks_usec() / 1e6
+	var now := _clock
 	# The hand stopped before letting go.
 	if now - _sample_times[n - 1] > SAMPLE_WINDOW:
 		return 0.0
@@ -101,6 +104,9 @@ func _release_velocity() -> float:
 
 
 func _process(delta: float) -> void:
+	_clock += delta
+	if _held:
+		return
 	var closed := hinge.hinge_limit_min
 	var angle := hinge.hinge_position
 	var latching := latch_angle > 0.0 and angle - closed < latch_angle
