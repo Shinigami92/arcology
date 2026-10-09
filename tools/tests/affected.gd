@@ -6,11 +6,9 @@ extends RefCounted
 ## (String.match: * spans folders); "*" is every group, [] nothing to run
 ## (docs, looks, perf, Blender sources), "skyline" the other suite (a hint).
 ## A path no rule matches runs everything: add a rule when that happens.
-## The runner itself (interaction_tests.gd) picks tests by its diff: a changed
-## test, a new registry line, or a changed helper, const or class picks the
-## tests that use it.
+## A group's own test file (tools/tests/interaction/<group>.gd) picks its group.
 
-const RUNNER := "tools/tests/interaction_tests.gd"
+const TESTS := "tools/tests/interaction/"
 const ALL := ["*"]
 
 const RULES := [
@@ -21,7 +19,8 @@ const RULES := [
 			"assets/architecture/skirting/*", "tools/blockout/*skirting*", "tools/tests/affected.gd"], []],
 	# The whole scene: everything.
 	[["main.gd", "main.tscn", "project.godot", "addons/*", "tools/props/prop_scenes.py",
-			"zones/apartment/*", "tools/blockout/apartment.py"], ALL],
+			"zones/apartment/*", "tools/blockout/apartment.py", "tools/tests/interaction_tests.gd",
+			"tools/tests/interaction/base.gd"], ALL],
 	[["openxr_action_map.tres"], ["player", "avatar", "world"]],
 
 	# Player
@@ -92,11 +91,6 @@ const RULES := [
 	[["assets/architecture/windows/*", "tools/props/window.py", "tools/props/windows/*"], ["windows", "world"]],
 ]
 
-# Top-level declarations in the runner's source: what a diff hunk changed.
-const _DECL := "^(?:static )?(?:func|const|var|class) ([A-Za-z_]\\w*)"
-# Functions that call everything (the runner): their callees aren't tests to run.
-const _RUNNER_ONLY := ["_registry", "_ready", "_select", "_print_list"]
-
 
 ## The tests (registry entries, in order) the changes since `rev` touch;
 ## prints which file picked what. Empty when nothing is affected.
@@ -108,28 +102,18 @@ static func select(tests: Array[Array], rev: String, root: String) -> Array[Arra
 	var files := _git(root, ["diff", "--name-only", rev])
 	files.append_array(_git(root, ["ls-files", "--others", "--exclude-standard"]))
 	var groups: Array[String] = []
-	var methods: Array[String] = []
-	var names: Array[String] = []
 	var skyline := false
 	print("TEST AFFECTED since %s: %d file(s)" % [rev, files.size()])
 	for path in files:
-		if path == RUNNER:
-			var changed := _changed_in_runner(root, rev, names)
-			methods.append_array(_users(root.path_join(RUNNER), changed))
-			print("  %s -> tests using %s" % [path, ", ".join(changed) if not changed.is_empty() else "(nothing)"])
-			continue
-		var picked: Array[String] = []
-		var matched := false
-		for rule: Array in RULES:
-			for glob: String in rule[0]:
-				if path.match(glob):
-					matched = true
-					for group: String in rule[1]:
-						if not picked.has(group):
-							picked.append(group)
-					break
-		if not matched:
-			picked = ["*"]
+		var picked: Array[String] = ["*"]
+		var own := path.get_file().get_basename()
+		var ruled: Variant = _rules(path)
+		var matched := ruled != null
+		if path.begins_with(TESTS) and path.get_extension() == "gd" and known.has(own):
+			picked = [own]
+			matched = true
+		elif matched:
+			picked = ruled
 		print("  %s -> %s%s" % [path, ", ".join(picked) if not picked.is_empty() else "(nothing)",
 				"" if matched else " (no rule in tools/tests/affected.gd: everything)"])
 		for group in picked:
@@ -143,8 +127,22 @@ static func select(tests: Array[Array], rev: String, root: String) -> Array[Arra
 				groups.append(group)
 	if skyline:
 		print("TEST AFFECTED: also run --test=skyline")
-	return tests.filter(func(test: Array) -> bool:
-		return groups.has(test[0]) or names.has(test[1]) or methods.has((test[2] as Callable).get_method()))
+	return tests.filter(func(test: Array) -> bool: return groups.has(test[0]))
+
+
+## The groups of every rule one of whose globs matches `path`; null if no rule does.
+static func _rules(path: String) -> Variant:
+	var picked: Array[String] = []
+	var matched := false
+	for rule: Array in RULES:
+		for glob: String in rule[0]:
+			if path.match(glob):
+				matched = true
+				for group: String in rule[1]:
+					if not picked.has(group):
+						picked.append(group)
+				break
+	return picked if matched else null
 
 
 static func _git(root: String, args: Array[String]) -> Array[String]:
@@ -159,72 +157,3 @@ static func _git(root: String, args: Array[String]) -> Array[String]:
 	for line in ("".join(output) as String).split("\n", false):
 		lines.append(line.strip_edges())
 	return lines
-
-
-## The runner's top-level functions, consts and classes the diff touches (by
-## the hunk headers and added or removed declarations); test names on new
-## registry lines go into `names`.
-static func _changed_in_runner(root: String, rev: String, names: Array[String]) -> Array[String]:
-	var decl := RegEx.create_from_string(_DECL)
-	var hunk := RegEx.create_from_string("^@@ [^@]* @@ (.*)$")
-	var entry := RegEx.create_from_string("^\\+\\s*\\[\"\\w+\", \"(\\w+)\"")
-	var changed: Array[String] = []
-	# The declaration a changed indented line belongs to: the hunk header's, or
-	# one the hunk declares (lines added after a function aren't its body).
-	var enclosing := ""
-	for line in _git(root, ["diff", "-U0", rev, "--", RUNNER]):
-		var m := hunk.search(line)
-		if m:
-			var header := decl.search(m.get_string(1))
-			enclosing = header.get_string(1) if header else ""
-			continue
-		if not (line.begins_with("+") or line.begins_with("-")) or line.begins_with("+++") or line.begins_with("---"):
-			continue
-		var text := line.substr(1)
-		var e := entry.search(line)
-		if e and not names.has(e.get_string(1)):
-			names.append(e.get_string(1))
-		var name := ""
-		var d := decl.search(text)
-		if d:
-			name = d.get_string(1)
-			enclosing = name
-		elif text.begins_with("\t") and enclosing != "":
-			name = enclosing
-		if name != "" and not changed.has(name) and not _RUNNER_ONLY.has(name):
-			changed.append(name)
-	return changed
-
-
-## Every top-level function that reaches one of `changed` (itself included),
-## following calls and references through the runner's source.
-static func _users(path: String, changed: Array[String]) -> Array[String]:
-	var decl := RegEx.create_from_string(_DECL)
-	var bodies := {}
-	var current := ""
-	for line in FileAccess.get_file_as_string(path).split("\n"):
-		var d := decl.search(line)
-		if d:
-			current = d.get_string(1)
-			bodies[current] = ""
-		elif current != "" and not line.is_empty() and not line.begins_with("\t") and not line.begins_with("#"):
-			current = ""
-		if current != "":
-			bodies[current] += line + "\n"
-	var reached: Array[String] = changed.duplicate()
-	var words: Array[RegEx] = []
-	for name in reached:
-		words.append(RegEx.create_from_string("\\b%s\\b" % name))
-	var grew := true
-	while grew:
-		grew = false
-		for fn: String in bodies:
-			if reached.has(fn) or _RUNNER_ONLY.has(fn):
-				continue
-			for word in words:
-				if word.search(bodies[fn]):
-					reached.append(fn)
-					words.append(RegEx.create_from_string("\\b%s\\b" % fn))
-					grew = true
-					break
-	return reached
